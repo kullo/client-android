@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/nav_drawer_header_layout">
+
+    <ImageView
+        android:id="@+id/header_background"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
+        android:adjustViewBounds="true"
+        android:scaleType="centerCrop"
+        android:src="@drawable/kullo_bg_nav_drawer" />
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/avatar"
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="24dp"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignLeft="@+id/avatar"
+        android:paddingBottom="8dp"
+        android:orientation="vertical" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:id="@+id/username"
+            android:textSize="14sp"
+            android:textColor="#fff"
+            android:textStyle="bold"
+            android:gravity="left"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:id="@+id/address"
+            android:gravity="left"
+            android:textSize="14sp"
+            android:textColor="#fff"
+            />
+
+    </LinearLayout>
+
+</RelativeLayout>

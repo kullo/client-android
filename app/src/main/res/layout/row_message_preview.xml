@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    >
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginRight="@dimen/md_additions_list_padding"
+        >
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/img_sender"
+            android:layout_width="@dimen/md_additions_list_avatar_size"
+            android:layout_height="@dimen/md_additions_list_avatar_size"
+            android:layout_marginLeft="@dimen/md_additions_list_padding"
+            android:layout_marginRight="@dimen/md_additions_list_padding"
+            android:src="@drawable/kullo_settings_avatar"
+            />
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            >
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                >
+
+                <TextView
+                    android:id="@+id/sender_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sender Name"
+                    android:textSize="14sp"
+                    android:textColor="@color/onKulloBackgroundTextColorPrimary"
+                    />
+
+                <TextView
+                    android:id="@+id/message_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="today"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignBottom="@+id/sender_name"
+                    android:textSize="12sp"
+                    android:textColor="@color/onKulloBackgroundTextColorSecondary"
+                    />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <!--
+                Ellilsis somehow broken. See
+                https://code.google.com/p/android/issues/detail?id=2254
+
+                Using EllipsizingTextView with space added to ELLIPSIS (" …")
+                https://github.com/triposo/barone/blob/master/src/com/triposo/barone/EllipsizingTextView.java
+                -->
+                <net.kullo.android.thirdparty.EllipsizingTextView
+                    android:id="@+id/message_content"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/message_text_placeholder"
+                    android:autoLink="web"
+                    android:textColor="@color/onKulloBackgroundTextColorSecondary"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentLeft="true"
+                    android:layout_marginRight="16dp"
+                    android:layout_toLeftOf="@+id/icon_space" />
+
+                <LinearLayout
+                    android:id="@+id/icon_space"
+                    android:orientation="vertical"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignParentRight="true"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        android:id="@+id/unread_icon"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginBottom="9dp"
+                        android:src="@drawable/unread_indicator" />
+
+                    <ImageView
+                        android:id="@+id/has_attachments_icon"
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:alpha="0.5"
+                        android:src="@drawable/ic_attachment_black_18dp" />
+
+                </LinearLayout>
+
+            </RelativeLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

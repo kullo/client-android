@@ -1,0 +1,422 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/header_background"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
+            android:adjustViewBounds="true"
+            android:scaleType="centerCrop"
+            android:layout_marginBottom="16dp"
+            android:src="@drawable/kullo_account_switcher_bg" />
+
+        <LinearLayout
+            android:id="@+id/text_input_fields"
+            android:layout_below="@+id/header_background"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/kullo_address"
+                android:textSize="16sp"
+                android:textColor="@color/kulloTextPrimaryColor"
+                />
+
+            <android.support.design.widget.TextInputLayout
+                android:id="@+id/edit_kullo_address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp">
+
+                <EditText
+                    android:id="@+id/edit_kullo_address_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textEmailAddress"
+                    android:maxLines="1"
+                    android:nextFocusDown="@+id/edit_block_a_text"/>
+
+            </android.support.design.widget.TextInputLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/kullo_masterkey"
+                android:textSize="16sp"
+                android:textColor="@color/kulloTextPrimaryColor"
+                />
+
+            <LinearLayout
+                android:id="@+id/row1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_a"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_a_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_b_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_b"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_b_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_c_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_c"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_c_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_d_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_d"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
+
+                    <EditText
+                        android:id="@+id/edit_block_d_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_e_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/row2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_e"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_e_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_f_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_f"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_f_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_g_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_g"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_g_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_h_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_h"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
+
+                    <EditText
+                        android:id="@+id/edit_block_h_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_i_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/row3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_i"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_i_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_j_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_j"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_j_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_k_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_k"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_k_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_l_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_l"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
+
+                    <EditText
+                        android:id="@+id/edit_block_l_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_m_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/row4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_m"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_m_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_n_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_n"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_n_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_o_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_o"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginRight="8dp">
+
+                    <EditText
+                        android:id="@+id/edit_block_o_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:maxLength="6"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:nextFocusDown="@+id/edit_block_p_text"/>
+
+                </android.support.design.widget.TextInputLayout>
+
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/edit_block_p"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
+
+                    <EditText
+                        android:id="@+id/edit_block_p_text"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:inputType="number"
+                        android:maxLines="1"
+                        android:textSize="@dimen/login_edit_fields_textsize"
+                        android:maxLength="6" />
+
+                </android.support.design.widget.TextInputLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/buttons_layout"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_below="@+id/text_input_fields"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp">
+
+            <Button
+                android:id="@+id/button_register"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/register"
+                android:theme="@style/Button.Tinted"/>
+
+            <Button
+                android:id="@+id/button_login"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/login"
+                android:theme="@style/Button.Tinted"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+</ScrollView>

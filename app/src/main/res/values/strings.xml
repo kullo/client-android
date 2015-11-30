@@ -1,0 +1,160 @@
+<!--
+
+ellipsis (…)
+============
+    In english, use ellipsis as a single character with no space in front as seen in
+    https://www.google.com/design/spec/style/writing.html
+
+    In German use ellipsis with a space in front, as seen in
+    https://en.wikipedia.org/wiki/Ellipsis#In_German
+
+-->
+<resources>
+    <!-- general -->
+    <string name="app_name">Kullo</string>
+    <string name="app_name_full">Kullo for Android</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="today">today</string>
+    <string name="yesterday">yesterday</string>
+    <string name="save">Save</string>
+    <string name="cancel">@android:string/cancel</string>
+    <string name="ok">@android:string/ok</string>
+    <string name="error_title">Something went wrong</string>
+    <string name="please_wait">Please wait…</string>
+    <string name="kullo_address">Kullo address</string>
+    <string name="kullo_masterkey">MasterKey</string>
+    <!-- use \u0020… in German -->
+    <string name="text_view_ellipsis">…</string>
+
+    <!-- general actions -->
+    <string name="action_delete">Delete</string>
+    <string name="action_sync">Synchronize</string>
+    <string name="action_finish">Finish</string>
+    <string name="action_done">Done</string>
+
+    <!-- error messages -->
+    <string name="error_login_failed">Login failed.</string>
+    <string name="network_error_connection">Network connection couldn\'t be established</string>
+
+    <!-- login -->
+    <string name="login_error_address_invalid">Invalid Kullo address</string>
+    <string name="login_error_masterkey_block_invalid">Invalid</string>
+    <string name="progress_login">Login</string>
+    <string name="login">Login</string>
+
+    <!-- registration -->
+    <string name="register">Register</string>
+    <string name="kullo_domain">#kullo.net</string>
+    <string name="enter_address">Choose your Kullo address</string>
+    <string name="handle">Username</string>
+    <string name="creating_masterkey">Generating Master Key</string>
+    <string name="wait_masterkey">This may take a few minutes. Please wait.</string>
+    <string name="valid_address_instructions">You can use letters and numbers.  You can use more than one word, separated by . - or _.</string>
+    <string name="username_is_empty">Must not be empty</string>
+    <string name="address_is_invalid">Address format not valid</string>
+    <string name="address_already_exists">Address already exists</string>
+    <string name="address_blocked">Address blocked</string>
+    <string name="address_rejected">Server rejected this address.</string>
+    <string name="could_not_start_registration">Registration process failed.</string>
+
+    <!-- nav drawer -->
+    <string name="menu_conversations">Inbox</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_feedback">Feedback</string>
+    <string name="menu_account">Account</string>
+    <string name="menu_about">About</string>
+    <string name="menu_logout">Logout</string>
+    <string name="open_drawer">Open menu</string>
+    <string name="close_drawer">Close menu</string>
+    <string name="logout_warning_header">Log out now?</string>
+    <string name="logout_warning">After logging out you\'ll need to type in MasterKey and sender settings again.</string>
+    <string name="logout_warning_button_positive">Logout</string>
+    <string name="logout_warning_button_negative">Cancel</string>
+
+    <!-- conversations list -->
+    <string name="footer">Footer</string>
+    <string name="show_footer">Show footer</string>
+    <string name="hide_footer">Hide footer</string>
+    <string name="action_toggle_message_size">Inflate</string>
+    <string name="empty_conversation_title">New</string>
+    <string name="download_attachments">Download</string>
+    <string name="swipe_to_refresh">Swipe down to synchronize inbox</string>
+    <string name="conversation_options">Edit conversation</string>
+    <string name="title_n_selected">%1$d selected</string>
+    <string name="toast_n_skipped">%1$d non-empty conversations skipped</string>
+
+    <!-- messages list -->
+    <string name="message_text_placeholder" translatable="false">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</string>
+    <string name="message_options">Edit message</string>
+    <string name="empty_messages_list">There are no messages in this conversation.</string>
+
+    <!-- single message -->
+    <string name="action_write">Write</string>
+
+    <!-- message attachments -->
+    <string name="attachments_cannot_open_externaldir_title">Cannot open external storage</string>
+    <string name="attachments_cannot_open_externaldir_text">Cannot open external directory for attachment storage.</string>
+    <string name="attachments_unknown_mimetype_title">Unknown file type</string>
+    <string name="attachments_unknown_mimetype_text">No app found that can open this file type.</string>
+    <string name="exporting_to_downloads_folder">Exporting file to downloads folder</string>
+    <string name="export_successful_header">Finished export to downloads folder</string>
+    <string name="export_successful_confirm_file_opening">Do you want to open the file now?</string>
+
+    <!-- settings -->
+    <string name="settings_remove_avatar">Clear avatar</string>
+    <string name="settings_save_confirmation">Settings saved</string>
+    <string name="settings_name_empty_error">Name must not be empty</string>
+    <string name="name">Name</string>
+    <string name="organization">Organization</string>
+    <string name="organization_opt">Organization (optional)</string>
+    <string name="select_image_source">Select image source</string>
+    <string name="capture_image_canceled">Image capture canceled</string>
+    <string name="capture_image_failed">Image capture failed</string>
+    <string name="action_rotate_image">Rotate</string>
+    <string name="crop_image">Crop image</string>
+
+    <!-- about -->
+    <string name="app_version">version %1$s</string>
+    <string name="impressum_card_title">Carefully crafted</string>
+    <string name="impressum_card_subtitle">in Germany</string>
+    <string name="impressum_content_address" translatable="false">Kullo GmbH\nKranzplatz 5–6\n65183 Wiesbaden</string>
+    <string name="action_impressum">Impressum</string>
+    <string name="open_website">Website</string>
+    <string name="action_licenses">Licenses</string>
+
+    <!-- licenses -->
+    <string name="activity_title_licenses">Licenses</string>
+    <string name="licenses_text_kudos">Kullo is proudly based on open source software.Kudos to %1$s.</string>
+
+    <!-- impressum -->
+    <string name="activity_title_impressum">Impressum</string>
+    <string name="impressum_content_full">Provider\nKullo GmbH\nKranzplatz 5–6\n65183 Wiesbaden\n\nRepresentation\nVertretungsberechtigte Geschäftsführer:\nSimon Warta, Daniel Seither\n\nContact\n0175 1930541\nsimon@kullo.net\nsimon#kullo.net\n\nCommercial register\nRegistergericht: Amtsgericht Wiesbaden\nRegisternummer: HRB 27626\n\nVAT identification number\nDE294537976\n\nBerlin office\nKullo GmbH\nc/o xit GmbH\nBülowstraße 66\n10783 Berlin</string>
+
+    <!-- start conversation -->
+    <string name="new_conversation">New Conversation</string>
+    <string name="add_participant">Add</string>
+    <string name="recipients">Recipients</string>
+    <string name="address_not_exist">Address does not exist</string>
+    <string name="address_check_failed_error_header">Address verification failed</string>
+    <string name="address_check_failed_connection_error">Address could not be verified. Are you online? Is the address correct?</string>
+    <string name="progress_new_participant">Address validation</string>
+    <string name="create_conversation_failed">Could not create conversation</string>
+    <string name="participant_needed">At least one participant is needed</string>
+
+    <!-- compose -->
+    <string name="activity_title_compose">Write</string>
+    <string name="hint_new_message">Your message</string>
+    <string name="progress_send">Sending</string>
+    <string name="action_send">Send</string>
+    <string name="action_add_attachment">Attach file</string>
+    <string name="error_attachment_too_big">Draft attachment too big.</string>
+    <string name="new_message_settings_incomplete_dialog_title">User settings incomplete</string>
+    <string name="new_message_settings_incomplete_dialog_content">Your user settings are incomplete. Do you want to set these now?</string>
+    <string name="new_message_input_placeholder">Message</string>
+    <string name="new_message_receivers_label">To</string>
+    <string name="select_file_canceled">Select file canceled</string>
+    <string name="select_file_failed">Select file failed</string>
+    <string name="no_tmp_dir_found">Cannot find temporary directory</string>
+
+</resources>

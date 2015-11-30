@@ -1,0 +1,146 @@
+Kullo for Android
+-----------------
+
+## v22 (2015-11-30)
+
+ * Feature: Implement deleting of messages
+ * UI: New app icon
+ * UI: Improve scroll performance in conversations list
+ * UI: Add write button to single message view
+ * UI: Fix initial scroll position in single message view
+ * UI: Minor style updates
+ * UI: Fix multiple sync buttons bug
+ * Update libkullo v38
+
+## v21 (2015-11-26)
+
+ * Improve database speed
+ * Update libkullo v36
+ * Update SmartSqlite v3
+
+## v20 (2015-11-20)
+
+ * Split messages in overview list and detail view
+ * Mark message as read when detail view is opened
+
+## v19 (2015-11-17)
+
+ * Fix bug when opening a draft attachment
+ * Use Android's local date and time format
+ * Add third-party licenses
+
+## v18 (2015-11-14)
+
+ * Add image cropper for choosing an avatar
+ * Allow selecting multiple conversations
+ * Mark conversations that contain unread messages
+
+## v17 (2015-11-05)
+
+ * Sync buttons and pull-to-refresh in messages list
+ * Allow removing of empty conversations
+ * Simplify starting a conversation
+ * Add Registration
+ * Add screen to show MasterKey
+
+## v16 (2015-10-26)
+
+ * Fix broken conversation title on Android 5
+ * UI updates and add missing translations
+ * Update libraries
+
+## v15 (2015-10-21)
+
+ * Send attachments
+ * Move avatars to the left of conversations list
+ * Allow user to clear an existing avatar
+ * Avoid crash when trying to open a file and SD card is not available
+
+## v14 (2015-10-09)
+
+ * Minor UI fixes
+
+## v13 (2015-10-03)
+
+ * Avoid crash when Kullo was not running for a while and is restarted in Messages List (thanks Frank)
+ * Show attachments filesize
+ * Update title in conversations list "today" -> "yesterday" when user opens the app after midnight
+
+## v12 (2015-10-01)
+
+ * Avoid crash when Kullo was not running for a while and is restarted (thanks Frank)
+ * Save avatar as base64. This update throws away user's local avatar
+ * Minor UI adjustments
+
+## v11 (2015-09-26)
+
+ * Open attachmets
+ * Fix sorting bug in conversations list
+ * Show time for messages received today
+
+## v10 (2015-09-22)
+
+ * Make message input box multiline again (regression bug v8 -> v9)
+ * Improve sorting performance in messages list and conversations list
+ * Fix crash after pressing "+" button to start a conversation (thanks Jens)
+ * Minor UI adjustments
+
+## v9 (2015-09-21)
+
+ * Show list of attachments (which cannot be opened yet)
+ * Fix crash after sending message (thanks Jens)
+ * Minor UI, performance and stability improvements
+
+## v8 (2015-09-15)
+
+ * Improve performance and stability on sorting
+ * Fix crash on sender names of length 1
+ * Clear draft after sending
+ * Settings: Save sender information live
+ * Login: Store input data when app is switched
+ * Logout: Add confirmation dialog
+
+## v7 (2015-09-11)
+
+ * Add Feedback and About screen
+ * Refresh screen during sync
+ * Check login credentials before moving on to inbox
+ * Fix behavior on logout
+
+### 3rd party components
+
+ * Update Botan 1.11.20
+
+## v6 (2015-09-09)
+
+ * Optimize message input field for long text
+ * Minor UI improvements like icon changes
+ * Favour crash over logout when main screen is started in an unexpected way. That way, user does not have to type in the MasterKey again
+ * Save message draft more reliably (thanks Colin)
+ * Remove locally stored message database on logout
+
+## v5 (2015-09-04)
+
+ * Translate parts of the app to German
+ * Replace @ by # in all Kullo address inputs
+ * Update menu icons
+ * Login: Live validation of MasterKey blocks; make validation more strict
+ * Login: Fix app signals
+
+## v4 (2015-09-02)
+
+ * Improve sync speed
+ * Improve sync feedback to UI
+ * Fix conversations sorting
+
+## v3 (2015-08-28)
+
+ * Login: screen scrollable
+ * Login: Cursor springt automatisch ins nächste Feld
+ * Login: Gültigkeit einzelner Blocks wird geprüft
+ * Nachricht schreiben: Landscape möglich
+ * Überarbeitung der Signalverarbeitung
+
+## v2 (2015-08-25)
+
+ * Initial alpha release

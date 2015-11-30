@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/img_avatar"
+        android:layout_width="@dimen/md_additions_list_avatar_size"
+        android:layout_height="@dimen/md_additions_list_avatar_size"
+        android:layout_alignParentLeft="true"
+        android:layout_marginLeft="@dimen/md_additions_list_padding"
+        android:layout_marginRight="@dimen/md_additions_list_padding" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Conversation Name"
+        android:id="@+id/conversation_name"
+        android:layout_toRightOf="@id/img_avatar"
+        android:layout_marginRight="@dimen/md_additions_list_padding"
+        android:layout_centerVertical="true"
+        android:textSize="14sp"
+        android:textColor="@color/onKulloBackgroundTextColorPrimary"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="&#x25CF;"
+        android:id="@+id/unread_mark"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="@dimen/md_additions_list_padding"
+        android:layout_centerVertical="true"
+        android:textSize="14sp"
+        android:textColor="@color/kulloUnreadMarkColor"
+    />
+
+</RelativeLayout>

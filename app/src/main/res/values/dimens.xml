@@ -1,0 +1,41 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+
+    <!-- https://www.google.com/design/spec/components/cards.html#cards-content-blocks-->
+    <dimen name="md_additions_card_padding_big">24dp</dimen>
+    <dimen name="md_additions_card_padding">16dp</dimen>
+    <dimen name="md_additions_card_padding_action">8dp</dimen>
+    <dimen name="md_additions_card_title_big">24sp</dimen>
+    <dimen name="md_additions_card_title_small">14sp</dimen>
+    <dimen name="md_additions_card_subtitle">14sp</dimen>
+    <dimen name="md_additions_card_margin">8dp</dimen>
+    <dimen name="md_additions_list_avatar_size">40dp</dimen>
+    <dimen name="md_additions_list_padding">16dp</dimen>
+    <dimen name="md_additions_list_divider_margin_left">72dp</dimen>
+    <dimen name="md_additions_content_margin">16dp</dimen>
+
+    <!-- Per the design guidelines, navigation drawers should be between 240dp and 320dp:
+         https://developer.android.com/design/patterns/navigation-drawer.html -->
+    <dimen name="navigation_drawer_width">304dp</dimen>
+    <dimen name="toolbar_elevation">4dp</dimen>
+
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="fab_pressed_translation">12dp</dimen>
+    <dimen name="fab_elevation">6dp</dimen>
+
+    <dimen name="detail_backdrop_height">202dp</dimen>
+
+    <dimen name="avatar_bitmap_initials_size">40dp</dimen>
+    <!-- Don't use `sp` size unit here because we need to ignore user's preferred font size -->
+    <dimen name="avatar_bitmap_initials_text_size">16dp</dimen>
+
+    <dimen name="new_conversation_participant_text_size">16sp</dimen>
+    <dimen name="new_conversation_participant_header_size">20sp</dimen>
+
+    <dimen name="login_edit_fields_textsize">14sp</dimen>
+
+    <dimen name="debug_dp">1dp</dimen>
+    <dimen name="debug_sp">1sp</dimen>
+</resources>

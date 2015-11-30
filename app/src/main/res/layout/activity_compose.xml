@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Don't focus input by default. Let the user review the current draft first
+http://stackoverflow.com/a/8639921
+-->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:background="@color/cardview_light_background"
+    android:focusableInTouchMode="true"
+    >
+
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/toolbar_default"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
+
+    <ScrollView
+        android:id="@+id/new_message_frame"
+        android:layout_below="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        >
+
+        <LinearLayout
+            android:id="@+id/new_message_frame_content"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:divider="?android:attr/listDivider"
+            android:showDividers="middle">
+
+            <RelativeLayout
+                android:id="@+id/new_message_header"
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <EditText
+                    android:id="@+id/new_message_receivers_label"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:background="@null"
+                    android:gravity="center_vertical|start"
+                    android:minHeight="?listPreferredItemHeight"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="20dp"
+                    android:paddingLeft="?listPreferredItemPaddingLeft"
+                    android:paddingRight="?listPreferredItemPaddingRight"
+                    android:hint="@string/new_message_receivers_label"
+                    android:textSize="16sp"
+                    android:enabled="false"
+                    android:focusable="false"
+                    />
+
+                <TextView
+                    android:id="@+id/new_message_receivers"
+                    android:layout_toRightOf="@+id/new_message_receivers_label"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="?listPreferredItemHeight"
+                    android:paddingTop="20dp"
+                    android:paddingBottom="20dp"
+                    android:gravity="center_vertical|start"
+                    android:textSize="16sp"
+                    android:textColor="@color/kulloTextPrimaryColor"
+                    android:layout_gravity="center_horizontal"
+                    />
+            </RelativeLayout>
+
+            <EditText
+                android:id="@+id/new_message_text"
+                android:layout_height="wrap_content"
+                android:layout_width="match_parent"
+                android:background="@null"
+                android:textColor="@color/kulloTextPrimaryColor"
+                android:gravity="left|start"
+                android:minHeight="?listPreferredItemHeight"
+                android:paddingTop="20dp"
+                android:paddingBottom="20dp"
+                android:textSize="16sp"
+                android:paddingLeft="?listPreferredItemPaddingLeft"
+                android:paddingRight="?listPreferredItemPaddingRight"
+                android:hint="@string/new_message_input_placeholder"
+                android:inputType="textMultiLine|textCapSentences"
+                />
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/draft_attachments_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="8dp"
+                android:layout_gravity="bottom"
+                />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</RelativeLayout>

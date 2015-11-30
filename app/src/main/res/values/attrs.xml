@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array
+        name="settings_image_dialog_options">
+        <item>Take image</item>
+        <item>Choose image</item>
+    </string-array>
+
+
+</resources>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true">
+
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/toolbar_default"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
+
+    <com.isseiaoki.simplecropview.CropImageView
+        android:id="@+id/cropImageView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/toolbar"
+        android:padding="8dp"
+        custom:cropMode="ratio_1_1"
+        custom:handleSize="6dp"
+        custom:touchPadding="12dp"
+        custom:handleShowMode="show_on_touch"
+        custom:guideShowMode="not_show"
+        custom:minFrameSize="20dp"
+        custom:handleColor="@color/kulloAccentColor"
+        custom:frameColor="@color/kulloAccentColor"
+        custom:frameStrokeWeight="1dp"
+        />
+
+</RelativeLayout>

@@ -1,0 +1,73 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:layout_margin="16dp"
+    android:id="@+id/fragment_root"
+    android:focusable="true"
+    android:focusableInTouchMode="true">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/enter_address"
+        android:textSize="16sp"
+        android:textColor="@color/kulloTextPrimaryColor"
+        />
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        >
+
+        <android.support.design.widget.TextInputLayout
+            android:id="@+id/edit_kullo_address"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_toLeftOf="@+id/kullo_domain_label"
+            >
+
+            <EditText
+                android:id="@+id/edit_kullo_address_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textEmailAddress"
+                android:hint="@string/handle"
+                android:maxLines="1" />
+
+        </android.support.design.widget.TextInputLayout>
+
+        <TextView
+            android:id="@+id/kullo_domain_label"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:text="@string/kullo_domain"
+            android:textSize="16sp"
+            android:textColor="@color/kulloTextPrimaryColor"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            />
+
+    </RelativeLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/valid_address_instructions"
+        android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+        />
+
+    <Button
+        android:id="@+id/button_register"
+        android:layout_gravity="right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:theme="@style/Button.Tinted"
+        android:text="@string/register"
+        />
+
+</LinearLayout>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:id="@+id/group_conversations">
+        <item
+            android:id="@+id/menuitem_conversations"
+            android:checked="false"
+            android:icon="@drawable/ic_message_black_24dp"
+            android:title="@string/menu_conversations" />
+    </group>
+
+    <group android:id="@+id/group_settings">
+        <item
+            android:id="@+id/menuitem_settings"
+            android:checked="false"
+            android:icon="@drawable/ic_settings_black_24dp"
+            android:title="@string/menu_settings" />
+        <item
+            android:id="@+id/menuitem_account"
+            android:checked="false"
+            android:icon="@drawable/ic_account_box_black_24dp"
+            android:title="@string/menu_account" />
+    </group>
+
+    <group android:id="@+id/group_feedback">
+        <item
+            android:id="@+id/menuitem_feedback"
+            android:checked="false"
+            android:icon="@drawable/ic_feedback_black_24dp"
+            android:title="@string/menu_feedback" />
+        <item
+            android:id="@+id/menuitem_about"
+            android:checked="false"
+            android:icon="@drawable/ic_info_outline_black_24dp"
+            android:title="@string/menu_about" />
+    </group>
+
+    <group android:id="@+id/group_logout">
+        <item
+            android:id="@+id/menuitem_logout"
+            android:checked="false"
+            android:icon="@drawable/ic_exit_to_app_black_24dp"
+            android:title="@string/menu_logout" />
+    </group>
+</menu>

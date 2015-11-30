@@ -1,0 +1,61 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    defaultConfig {
+        applicationId 'net.kullo.android'
+        minSdkVersion 15
+        targetSdkVersion 22
+        versionCode 22
+        versionName "22"
+    }
+    buildTypes {
+        debug {
+            debuggable true
+        }
+
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    productFlavors {
+    }
+
+    lintOptions {
+        // See `lint --list` for available issue ids
+        disable 'RtlCompat'    // Right-to-left text compatibility issues
+        disable 'RtlHardcoded' // Using left/right instead of start/end attributes
+    }
+}
+
+dependencies {
+    compile fileTree(include: ['*.jar'], dir: 'libs')
+    compile 'org.apache.commons:commons-lang3:3.4'
+
+    compile 'com.android.support:appcompat-v7:23.1.1'
+    compile 'com.android.support:cardview-v7:23.1.1'
+    compile 'com.android.support:recyclerview-v7:23.1.1'
+    compile 'com.android.support:design:23.1.1'
+    compile 'com.android.support:support-v4:23.1.1'
+
+    compile 'de.hdodenhof:circleimageview:1.3.0'
+    compile 'com.timehop.stickyheadersrecyclerview:library:0.4.2@aar'
+    compile 'net.danlew:android.joda:2.8.+'
+    compile 'com.github.bumptech.glide:glide:3.6.+'
+    compile 'com.afollestad:material-dialogs:0.7.+'
+    compile 'org.solovyev.android.views:linear-layout-manager:0.5@aar'
+    compile 'com.isseiaoki:simplecropview:1.0.10'
+
+    compile project(':libkullo')
+    compile project(':javautils')
+}
+
+android {
+    packagingOptions {
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/NOTICE.txt'
+    }
+}

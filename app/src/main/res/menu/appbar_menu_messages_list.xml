@@ -1,0 +1,13 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/action_toggle_message_size"
+        android:title="@string/action_toggle_message_size"
+        app:showAsAction="always"
+        android:icon="@drawable/kullo_unfold_more"/>
+    <item
+        android:id="@+id/action_refresh"
+        android:title="@string/action_sync"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_sync_white_24dp"/>
+</menu>

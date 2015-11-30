@@ -1,0 +1,6 @@
+[submodule "javautils"]
+	path = javautils
+	url = https://github.com/kullo/javautils.git
+[submodule "libkullo/src/main/jniLibs"]
+	path = libkullo/src/main/jniLibs
+	url = git@bitbucket.org:kullo/libkullo-android-bin.git

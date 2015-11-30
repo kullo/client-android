@@ -1,0 +1,5 @@
+build/
+
+# .iml files are not needed, see
+# http://stackoverflow.com/questions/25504982/is-it-mandatory-to-save-iml-files-in-version-control
+*.iml

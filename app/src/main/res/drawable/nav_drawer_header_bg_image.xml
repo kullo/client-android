@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/kullo_bg_nav_drawer"
+    android:gravity="top|right|fill_vertical"
+    android:fitsSystemWindows="true"
+    android:adjustViewBounds="true"
+    android:scaleType="centerCrop"
+    />
+

@@ -1,0 +1,143 @@
+<!--
+
+ellipsis (…)
+============
+    In english, use ellipsis as a single character with no space in front as seen in
+    https://www.google.com/design/spec/style/writing.html
+
+    In German use ellipsis with a space in front, as seen in
+    https://en.wikipedia.org/wiki/Ellipsis#In_German
+
+-->
+<resources>
+    <!-- general -->
+    <string name="app_name">Kullo</string>
+    <string name="app_name_full">Kullo für Android</string>
+    <string name="yes">Ja</string>
+    <string name="no">Nein</string>
+    <string name="today">heute</string>
+    <string name="yesterday">gestern</string>
+    <string name="save">Speichern</string>
+    <string name="cancel">@android:string/cancel</string>
+    <string name="ok">@android:string/ok</string>
+    <string name="please_wait">Bitte warten …</string>
+    <string name="error_title">Ein Fehler ist aufgetreten</string>
+    <string name="kullo_address">Kullo-Adresse</string>
+    <string name="kullo_masterkey">MasterKey</string>
+    <!-- use \u0020… in German -->
+    <string name="text_view_ellipsis">\u0020…</string>
+
+    <!-- general actions -->
+    <string name="action_delete">Löschen</string>
+    <string name="action_sync">Synchronisieren</string>
+    <string name="action_finish">Fertigstellen</string>
+    <string name="action_done">Fertig</string>
+
+    <!-- error messages -->
+    <string name="error_login_failed">Anmeldung fehlgeschlagen.</string>
+    <string name="network_error_connection">Netzwerkverbindung konnte nicht hergestellt werden</string>
+
+    <!-- login -->
+    <string name="login_error_address_invalid">Ungültige Kullo-Adresse</string>
+    <string name="login_error_masterkey_block_invalid">Ungültig</string>
+    <string name="progress_login">Einloggen</string>
+    <string name="login">Einloggen</string>
+    <string name="register">Registrieren</string>
+
+    <!-- registration -->
+    <string name="address_blocked">Adresse gesperrt</string>
+    <string name="address_already_exists">Adresse existiert bereits</string>
+    <string name="address_is_invalid">Ungültiges Adressformat</string>
+
+    <!-- nav drawer -->
+    <string name="menu_conversations">Nachrichten</string>
+    <string name="menu_settings">Einstellungen</string>
+    <string name="menu_feedback">Feedback</string>
+    <string name="menu_account">Konto</string>
+    <string name="menu_about">Über</string>
+    <string name="menu_logout">Logout</string>
+    <string name="open_drawer">Menü öffnen</string>
+    <string name="close_drawer">Menü schließen</string>
+    <string name="logout_warning_header">Wirklich ausloggen?</string>
+    <string name="logout_warning">Nach dem Logout musst du MasterKey und Absender-Informationen erneut eingeben.</string>
+    <string name="logout_warning_button_positive">Logout</string>
+    <string name="logout_warning_button_negative">Abbrechen</string>
+
+    <!-- conversations list -->
+    <string name="footer">Impressum</string>
+    <string name="show_footer">Impressum einblenden</string>
+    <string name="hide_footer">Impressum ausblenden</string>
+    <string name="action_toggle_message_size">Inflate</string>
+    <string name="empty_conversation_title">Neu</string>
+    <string name="download_attachments">Herunterladen</string>
+    <string name="swipe_to_refresh">Wische nach unten, um Posteingang zu synchronisieren</string>
+    <string name="conversation_options">Konversation bearbeiten</string>
+    <string name="title_n_selected">%1$d ausgewählt</string>
+    <string name="toast_n_skipped">%1$d nicht-leere Konversationen übersprungen</string>
+
+    <!-- messages list -->
+    <string name="message_options">Nachricht bearbeiten</string>
+    <string name="empty_messages_list">Es befinden sich keine Nachrichten in dieser Konversation.</string>
+
+    <!-- message attachments -->
+    <string name="attachments_unknown_mimetype_title">Unbekannter Dateityp</string>
+    <string name="attachments_unknown_mimetype_text">Es wurde keine App gefunden, mit der dieser Dateityp geöffnet werden kann.</string>
+    <string name="exporting_to_downloads_folder">Exportiere Datei in den Downloads Ordner</string>
+    <string name="export_successful_header">Export erfolgreich</string>
+    <string name="export_successful_confirm_file_opening">Möchtest du die Datei jetzt öffnen?</string>
+
+    <!-- single message -->
+    <string name="action_write">Schreiben</string>
+
+    <!-- settings -->
+    <string name="settings_remove_avatar">Avatar löschen</string>
+    <string name="settings_save_confirmation">Einstellungen gespeichert</string>
+    <string name="settings_name_empty_error">Name darf nicht leer sein</string>
+    <string name="name">Name</string>
+    <string name="organization">Organisation</string>
+    <string name="select_image_source">Bildquelle auswählen</string>
+    <string name="capture_image_canceled">Bildauswahl abgebrochen</string>
+    <string name="capture_image_failed">Bildauswahl fehlgeschlagen</string>
+    <string name="action_rotate_image">Drehen</string>
+    <string name="crop_image">Zuschneiden</string>
+
+    <!-- about -->
+    <string name="app_version">Version %1$s</string>
+    <string name="impressum_card_title">Sorgfältig hergestellt</string>
+    <string name="impressum_card_subtitle">in Deutschland</string>
+    <string name="action_impressum">Impressum</string>
+    <string name="open_website">Webseite</string>
+    <string name="action_licenses">Lizenzen</string>
+
+    <!-- licenses -->
+    <string name="activity_title_licenses">Lizenzen</string>
+    <string name="licenses_text_kudos">Kullo baut auf Open-Source-Software auf. Kudos an %1$s.</string>
+
+    <!-- impressum -->
+    <string name="activity_title_impressum">Impressum</string>
+    <string name="impressum_content_full">Anbieter\nKullo GmbH\nKranzplatz 5–6\n65183 Wiesbaden\n\nVertretung\nVertretungsberechtigte Geschäftsführer:\nSimon Warta, Daniel Seither\n\nKontakt\n0175 1930541\nsimon@kullo.net\nsimon#kullo.net\n\nHandelsregister\nRegistergericht: Amtsgericht Wiesbaden\nRegisternummer: HRB 27626\n\nUmsatzsteuer-Identifikationsnummer\nDE294537976\n\nStandort Berlin\nKullo GmbH\nc/o xit GmbH\nBülowstraße 66\n10783 Berlin</string>
+
+    <!-- start conversation -->
+    <string name="new_conversation">Neue Konversation</string>
+    <string name="add_participant">+</string>
+    <string name="recipients">Empfänger</string>
+    <string name="address_not_exist">Adresse existiert nicht</string>
+    <string name="address_check_failed_error_header">Adressverifikation fehlgeschlagen</string>
+    <string name="address_check_failed_connection_error">Adresse konnte nicht verifiziert werden. Bist du online? Ist die Adresse korrekt?</string>
+    <string name="progress_new_participant">Adressprüfung</string>
+
+    <!-- compose -->
+    <string name="activity_title_compose">Schreiben</string>
+    <string name="hint_new_message">Deine Nachricht</string>
+    <string name="progress_send">Senden</string>
+    <string name="action_send">Absenden</string>
+    <string name="action_add_attachment">Datei anhängen</string>
+    <string name="new_message_settings_incomplete_dialog_title">Absender-Einstellungen unvollständig</string>
+    <string name="new_message_settings_incomplete_dialog_content">Deine Absender-Einstellungen sind unvollständig. Jetzt ergänzen?</string>
+    <string name="new_message_input_placeholder">Nachricht</string>
+    <string name="new_message_receivers_label">An</string>
+    <string name="select_file_failed">Dateiauswahl fehlgeschlagen</string>
+    <string name="select_file_canceled">Dateiauswahl abgebrochen</string>
+    <string name="no_tmp_dir_found">Kein temporäres Verzeichnis gefunden</string>
+
+</resources>

@@ -15,8 +15,10 @@ import net.kullo.android.kulloapi.KulloConnector;
 import net.kullo.android.observers.listenerobservers.ClientGenerateKeysListenerObserver;
 import net.kullo.android.screens.RegistrationActivity;
 
+import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
+
 public class KeygenFragment extends Fragment {
-    private ProgressBar mProgressBar;
+    private MaterialProgressBar mProgressBar;
     private ClientGenerateKeysListenerObserver mGenerateKeysListenerObserver;
 
     @Nullable
@@ -24,7 +26,7 @@ public class KeygenFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_registration_keygen, container, false);
 
-        mProgressBar = (ProgressBar) view.findViewById(R.id.masterkey_creation_progress);
+        mProgressBar = (MaterialProgressBar) view.findViewById(R.id.masterkey_creation_progress);
         mProgressBar.setProgress(0);
 
         return view;

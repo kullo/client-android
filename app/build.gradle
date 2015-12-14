@@ -8,8 +8,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 22
-        versionName "22"
+        versionCode 23
+        versionName "23"
     }
     buildTypes {
         debug {
@@ -45,9 +45,13 @@ dependencies {
     compile 'com.timehop.stickyheadersrecyclerview:library:0.4.2@aar'
     compile 'net.danlew:android.joda:2.8.+'
     compile 'com.github.bumptech.glide:glide:3.6.+'
-    compile 'com.afollestad:material-dialogs:0.7.+'
     compile 'org.solovyev.android.views:linear-layout-manager:0.5@aar'
     compile 'com.isseiaoki:simplecropview:1.0.10'
+    compile 'me.zhanghai.android.materialprogressbar:library:1.1.4'
+
+    // MaterialDialogs pulls in MaterialProgressBar as a dependency
+    // At the moment, the versions match.
+    compile('com.github.afollestad.material-dialogs:core:0.8.5.2@aar') { transitive = true }
 
     compile project(':libkullo')
     compile project(':javautils')

@@ -10,6 +10,7 @@ import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.DateTime;
 import net.kullo.libkullo.api.MasterKey;
+import net.kullo.libkullo.api.SyncProgress;
 
 public class KulloUtils {
     public static String generateInitialsForAddressAndName(@NonNull Address address, @Nullable String name) {
@@ -30,6 +31,11 @@ public class KulloUtils {
         }
 
         return out.toUpperCase();
+    }
+
+    public static boolean showSyncProgressAsBar(final SyncProgress progress) {
+        return progress.getCountTotal() > 3 &&
+                (100.0 * progress.getCountProcessed() / progress.getCountTotal()) >= 5.0;
     }
 
     public static boolean isValidKulloAddress(String address) {

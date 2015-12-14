@@ -23,12 +23,13 @@ import net.kullo.android.kulloapi.KulloConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.observers.eventobservers.MessageAttachmentsDownloadedChangedEventObserver;
-import net.kullo.android.observers.listenerobservers.DownloadAttachmentsForMessageListenerObserver;
+import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
 import net.kullo.android.screens.messageslist.AttachmentsAdapter;
 import net.kullo.android.screens.messageslist.MessageAttachmentsOpener;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AsyncTask;
+import net.kullo.libkullo.api.SyncProgress;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -44,7 +45,7 @@ public class SingleMessageActivity extends AppCompatActivity {
     private long mMessageId;
 
     private MessageAttachmentsOpener mMessageAttachmentsOpener;
-    private DownloadAttachmentsForMessageListenerObserver mDownloadAttachmentsFinishedObserver;
+    private SyncerListenerObserver mDownloadAttachmentsFinishedObserver;
     private MessageAttachmentsDownloadedChangedEventObserver mMessageAttachmentsDownloadedChangedEventObserver;
 
     public static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
@@ -83,10 +84,23 @@ public class SingleMessageActivity extends AppCompatActivity {
         mFormatterCalendarDate = ((KulloApplication) getApplication()).getShortDateFormatter();
         mFormatterClock = ((KulloApplication) getApplication()).getShortTimeFormatter();
 
-        mDownloadAttachmentsFinishedObserver = new DownloadAttachmentsForMessageListenerObserver() {
+        mDownloadAttachmentsFinishedObserver = new SyncerListenerObserver() {
+            @Override
+            public void draftAttachmentsTooBig(long convId) {
+            }
+
+            @Override
+            public void progressed(SyncProgress progress) {
+            }
+
             @Override
             public void finished() {
-                showAttachmentsListIfAvailable();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        showAttachmentsListIfAvailable();
+                    }
+                });
             }
 
             @Override
@@ -104,7 +118,7 @@ public class SingleMessageActivity extends AppCompatActivity {
                 });
             }
         };
-        KulloConnector.get().addListenerObserver(DownloadAttachmentsForMessageListenerObserver.class,
+        KulloConnector.get().addListenerObserver(SyncerListenerObserver.class,
                 mDownloadAttachmentsFinishedObserver);
 
         mMessageAttachmentsDownloadedChangedEventObserver = new MessageAttachmentsDownloadedChangedEventObserver() {
@@ -168,7 +182,7 @@ public class SingleMessageActivity extends AppCompatActivity {
         KulloConnector.get().removeEventObserver(MessageAttachmentsDownloadedChangedEventObserver.class,
                 mMessageAttachmentsDownloadedChangedEventObserver);
         KulloConnector.get().removeListenerObserver(
-                DownloadAttachmentsForMessageListenerObserver.class,
+                SyncerListenerObserver.class,
                 mDownloadAttachmentsFinishedObserver);
     }
 

@@ -10,7 +10,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * or until it is canceled. If its destructor is called, it will call cancel().
  */
 public abstract class AsyncTask {
-    /** Cancels the asynchronous task. This will also stop all callbacks. */
+    /**
+     * Tells the asynchronous task to finish, but doesn't wait for termination.
+     * Stops all callbacks, even if the task continues to run.
+     */
     public abstract void cancel();
 
     /** Returns true iff the task has finished its work. */

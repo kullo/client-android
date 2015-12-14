@@ -22,23 +22,26 @@ import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.kulloapi.MessagesComparatorDsc;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.observers.eventobservers.MessageAddedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageStateEventObserver;
-import net.kullo.android.observers.listenerobservers.DownloadAttachmentsForMessageListenerObserver;
-import net.kullo.android.observers.listenerobservers.SyncerRunListenerObserver;
+import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.conversationslist.DividerDecoration;
 import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
 import net.kullo.android.screens.messageslist.MessageAttachmentsOpener;
 import net.kullo.android.screens.messageslist.MessagesAdapter;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AsyncTask;
+import net.kullo.libkullo.api.SyncProgress;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
 public class MessagesListActivity extends AppCompatActivity {
     public static final String TAG = "MessagesListActivity";
@@ -51,12 +54,13 @@ public class MessagesListActivity extends AppCompatActivity {
     private MessageAddedEventObserver mMessageAddedObserver;
     private MessageRemovedEventObserver mMessageDeletedObserver;
     private MessageStateEventObserver mMessageStateObserver;
-    private DownloadAttachmentsForMessageListenerObserver mDownloadAttachmentsFinishedObserver;
+    private SyncerListenerObserver mDownloadAttachmentsFinishedObserver;
 
-    private SyncerRunListenerObserver mSyncerRunListenerObserver;
+    private SyncerListenerObserver mSyncerListenerObserver;
     private ActionMode mActionMode = null;
     // Views
     private SwipeRefreshLayout mSwipeLayout;
+    private MaterialProgressBar mProgressBar;
     private RecyclerView mMessagesList;
     private MaterialDialog mShowSettingsDialog;
     private TextView mConversationEmptyLabel;
@@ -77,7 +81,15 @@ public class MessagesListActivity extends AppCompatActivity {
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 
-        mDownloadAttachmentsFinishedObserver = new DownloadAttachmentsForMessageListenerObserver() {
+        mDownloadAttachmentsFinishedObserver = new SyncerListenerObserver() {
+            @Override
+            public void draftAttachmentsTooBig(long convId) {
+            }
+
+            @Override
+            public void progressed(SyncProgress progress) {
+            }
+
             @Override
             public void finished() {
             }
@@ -98,11 +110,12 @@ public class MessagesListActivity extends AppCompatActivity {
             }
         };
         KulloConnector.get().addListenerObserver(
-                DownloadAttachmentsForMessageListenerObserver.class,
+                SyncerListenerObserver.class,
                 mDownloadAttachmentsFinishedObserver);
 
         setupMessagesList();
 
+        mProgressBar = (MaterialProgressBar) findViewById(R.id.horizontal_progress_toolbar);
         mSwipeLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh_layout);
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -281,6 +294,11 @@ public class MessagesListActivity extends AppCompatActivity {
         // Fill adapter with the most recent data
         mMessagesAdapter.updateDataSet();
 
+        if (!KulloConnector.get().isSyncing()) {
+            mSwipeLayout.setEnabled(true);
+            mSwipeLayout.setRefreshing(false);
+            mProgressBar.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -321,7 +339,7 @@ public class MessagesListActivity extends AppCompatActivity {
         super.onDestroy();
         mMessageAttachmentsOpener.unregisterSaveFinishedListenerObserver();
         KulloConnector.get().removeListenerObserver(
-                DownloadAttachmentsForMessageListenerObserver.class,
+                SyncerListenerObserver.class,
                 mDownloadAttachmentsFinishedObserver);
     }
 
@@ -394,16 +412,35 @@ public class MessagesListActivity extends AppCompatActivity {
 
     private void registerSyncFinishedListenerObserver() {
         // avoid any unnecessary work when fragment's activity is paused (mIsPaused == true)
-        mSyncerRunListenerObserver = new SyncerRunListenerObserver() {
+        mSyncerListenerObserver = new SyncerListenerObserver() {
             @Override
             public void draftAttachmentsTooBig(long convId) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (mSwipeLayout != null) {
-                            // mSwipeLayout.setEnabled(mAppbarOffset == 0);
-                            mSwipeLayout.setEnabled(true);
+                        mSwipeLayout.setEnabled(true);
+                        mSwipeLayout.setRefreshing(false);
+                        mProgressBar.setVisibility(View.GONE);
+                    }
+                });
+            }
+
+            @Override
+            public void progressed(final SyncProgress progress) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (KulloUtils.showSyncProgressAsBar(progress)) {
+                            int percent = Math.round(100 * ((float) progress.getCountProcessed() / progress.getCountTotal()));
+
+                            mSwipeLayout.setEnabled(false);
                             mSwipeLayout.setRefreshing(false);
+                            mProgressBar.setVisibility(View.VISIBLE);
+
+                            mProgressBar.setProgress(percent);
+                        } else {
+                            mSwipeLayout.setEnabled(false);
+                            mSwipeLayout.setRefreshing(true);
                         }
                     }
                 });
@@ -414,11 +451,9 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (mSwipeLayout != null) {
-                            // mSwipeLayout.setEnabled(mAppbarOffset == 0);
-                            mSwipeLayout.setEnabled(true);
-                            mSwipeLayout.setRefreshing(false);
-                        }
+                        mSwipeLayout.setEnabled(true);
+                        mSwipeLayout.setRefreshing(false);
+                        mProgressBar.setVisibility(View.GONE);
                     }
                 });
             }
@@ -428,24 +463,22 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (mSwipeLayout != null) {
-                            // mSwipeLayout.setEnabled(mAppbarOffset == 0);
-                            mSwipeLayout.setEnabled(true);
-                            mSwipeLayout.setRefreshing(false);
-                        }
+                        mSwipeLayout.setEnabled(true);
+                        mSwipeLayout.setRefreshing(false);
+                        mProgressBar.setVisibility(View.GONE);
                     }
                 });
             }
         };
         KulloConnector.get().addListenerObserver(
-                SyncerRunListenerObserver.class,
-                mSyncerRunListenerObserver);
+                SyncerListenerObserver.class,
+                mSyncerListenerObserver);
     }
 
     private void unregisterSyncFinishedListenerObserver() {
         KulloConnector.get().removeListenerObserver(
-                SyncerRunListenerObserver.class,
-                mSyncerRunListenerObserver);
+                SyncerListenerObserver.class,
+                mSyncerListenerObserver);
     }
 
     // CONTEXT MENU

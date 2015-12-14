@@ -45,6 +45,17 @@
                 android:layout_height="match_parent"
                 >
 
+                <me.zhanghai.android.materialprogressbar.MaterialProgressBar
+                    android:id="@+id/horizontal_progress_toolbar"
+                    android:visibility="gone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:progress="30"
+                    app:mpb_progressStyle="horizontal"
+                    app:mpb_useIntrinsicPadding="false"
+                    app:mpb_showTrack="false"
+                    style="@style/Widget.MaterialProgressBar.ProgressBar.Horizontal.NoPadding" />
+
                 <TextView
                     android:id="@+id/empty_list_label"
                     android:layout_width="match_parent"

@@ -27,12 +27,11 @@ import net.kullo.android.observers.eventobservers.MessageRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageStateEventObserver;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
 import net.kullo.android.observers.listenerobservers.ClientGenerateKeysListenerObserver;
-import net.kullo.android.observers.listenerobservers.DownloadAttachmentsForMessageListenerObserver;
 import net.kullo.android.observers.listenerobservers.DraftAttachmentsAddListenerObserver;
 import net.kullo.android.observers.listenerobservers.DraftAttachmentsSaveListenerObserver;
 import net.kullo.android.observers.listenerobservers.MessageAttachmentsSaveListenerObserver;
 import net.kullo.android.observers.listenerobservers.RegistrationRegisterAccountListenerObserver;
-import net.kullo.android.observers.listenerobservers.SyncerRunListenerObserver;
+import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.LoginActivity;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.javautils.StrictBase64;
@@ -61,7 +60,8 @@ import net.kullo.libkullo.api.RegistrationRegisterAccountListener;
 import net.kullo.libkullo.api.Session;
 import net.kullo.libkullo.api.SessionListener;
 import net.kullo.libkullo.api.SyncMode;
-import net.kullo.libkullo.api.SyncerRunListener;
+import net.kullo.libkullo.api.SyncProgress;
+import net.kullo.libkullo.api.SyncerListener;
 import net.kullo.libkullo.api.UserSettings;
 
 import org.apache.commons.lang3.StringUtils;
@@ -80,7 +80,6 @@ public class KulloConnector {
     private static final String TAG = "KulloConnector";
 
     private static final KulloConnector SINGLETON = new KulloConnector();
-
     public static KulloConnector get() {
         return SINGLETON;
     }
@@ -90,12 +89,10 @@ public class KulloConnector {
     private AsyncTask mCreateSessionTask;
     private AsyncTask mSaveDraftAttachmentTask;
     private AsyncTask mSaveMessageAttachmentTask;
-    private AsyncTask mDownloadAttachmentsTask;
     private AsyncTask mRegistrationGenerateKeysTask;
     private AsyncTask mRegistrationRegisterAccountTask;
     private Session mSession = null;
     private final Client mClient;
-    private final SyncManager mSyncManager;
     private Registration mRegistration;
 
     private Map<Class, LinkedList<ListenerObserver>> mListenerObservers;
@@ -112,10 +109,9 @@ public class KulloConnector {
         mListenerObservers.put(ClientCreateSessionListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(DraftAttachmentsAddListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(DraftAttachmentsSaveListenerObserver.class, new LinkedList<ListenerObserver>());
-        mListenerObservers.put(DownloadAttachmentsForMessageListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(MessageAttachmentsSaveListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(RegistrationRegisterAccountListenerObserver.class, new LinkedList<ListenerObserver>());
-        mListenerObservers.put(SyncerRunListenerObserver.class, new LinkedList<ListenerObserver>());
+        mListenerObservers.put(SyncerListenerObserver.class, new LinkedList<ListenerObserver>());
 
         mEventObservers = new HashMap<>(10);
         mEventObservers.put(ConversationsEventObserver.class, new LinkedList<EventObserver>());
@@ -126,8 +122,6 @@ public class KulloConnector {
         mEventObservers.put(MessageRemovedEventObserver.class, new LinkedList<EventObserver>());
         mEventObservers.put(MessageStateEventObserver.class, new LinkedList<EventObserver>());
         mEventObservers.put(MessageAttachmentsDownloadedChangedEventObserver.class, new LinkedList<EventObserver>());
-
-        mSyncManager = new SyncManager();
     }
 
     //LOGIN LOGOUT
@@ -287,6 +281,7 @@ public class KulloConnector {
             public void finished(Session session) {
                 Log.d(TAG, "createSession finished :)");
                 mSession = session;
+                mSession.syncer().setListener(new ConnectorSyncerListener());
 
                 synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
                     for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
@@ -465,46 +460,57 @@ public class KulloConnector {
 
     // SYNC
     public boolean isSyncing() {
-        return mSyncManager.isBusy();
+        return !mSession.syncer().asyncTask().isDone();
     }
 
     public void syncKullo() {
-        mSyncManager.triggerSync(SyncMode.WITHOUTATTACHMENTS);
+        mSession.syncer().requestSync(SyncMode.WITHOUTATTACHMENTS);
     }
 
     public void sendMessages() {
-        mSyncManager.triggerSync(SyncMode.SENDONLY);
+        mSession.syncer().requestSync(SyncMode.SENDONLY);
     }
 
-    protected AsyncTask startSyncTask(SyncMode syncMode) {
-        return mSession.syncer().runAsync(syncMode, new SyncerRunListener() {
-            @Override
-            public void draftAttachmentsTooBig(long convId) {
-                synchronized (mListenerObservers.get(SyncerRunListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(SyncerRunListenerObserver.class)) {
-                        ((SyncerRunListenerObserver) observer).draftAttachmentsTooBig(convId);
-                    }
+    private class ConnectorSyncerListener extends SyncerListener {
+        @Override
+        public void draftAttachmentsTooBig(long convId) {
+            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
+                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                    ((SyncerListenerObserver) observer).draftAttachmentsTooBig(convId);
                 }
             }
+        }
 
-            @Override
-            public void finished() {
-                synchronized (mListenerObservers.get(SyncerRunListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(SyncerRunListenerObserver.class)) {
-                        ((SyncerRunListenerObserver) observer).finished();
-                    }
+        @Override
+        public void progressed(SyncProgress progress) {
+            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
+                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                    ((SyncerListenerObserver) observer).progressed(progress);
                 }
             }
+        }
 
-            @Override
-            public void error(NetworkError error) {
-                synchronized (mListenerObservers.get(SyncerRunListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(SyncerRunListenerObserver.class)) {
-                        ((SyncerRunListenerObserver) observer).error(error.toString());
-                    }
+        @Override
+        public void finished() {
+            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
+                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                    ((SyncerListenerObserver) observer).finished();
                 }
             }
-        });
+        }
+
+        @Override
+        public void error(NetworkError error) {
+            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
+                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                    ((SyncerListenerObserver) observer).error(error.toString());
+                }
+            }
+        }
+    }
+
+    protected void startSync(SyncMode syncMode) {
+        mSession.syncer().requestSync(syncMode);
     }
 
     // CONVERSATIONS
@@ -879,30 +885,7 @@ public class KulloConnector {
 
     public void downloadAttachments(long messageId) {
         RuntimeAssertion.require(mSession != null);
-        mDownloadAttachmentsTask = mSession.syncer().downloadAttachmentsForMessageAsync(messageId, new SyncerRunListener() {
-            @Override
-            public void draftAttachmentsTooBig(long convId) {
-                RuntimeAssertion.require(false); // This must not happen when downloading attachments
-            }
-
-            @Override
-            public void finished() {
-                synchronized (mListenerObservers.get(DownloadAttachmentsForMessageListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(DownloadAttachmentsForMessageListenerObserver.class)) {
-                        ((DownloadAttachmentsForMessageListenerObserver) observer).finished();
-                    }
-                }
-            }
-
-            @Override
-            public void error(NetworkError error) {
-                synchronized (mListenerObservers.get(DownloadAttachmentsForMessageListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(DownloadAttachmentsForMessageListenerObserver.class)) {
-                        ((DownloadAttachmentsForMessageListenerObserver) observer).error(error.toString());
-                    }
-                }
-            }
-        });
+        mSession.syncer().requestDownloadingAttachmentsForMessage(messageId);
     }
 
     public void saveMessageAttachment(long messageId, long attachmentId, String path) {

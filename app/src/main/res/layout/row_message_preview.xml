@@ -88,8 +88,9 @@
 
                     <ImageView
                         android:id="@+id/unread_icon"
+                        android:scaleType="centerInside"
                         android:layout_width="18dp"
-                        android:layout_height="18dp"
+                        android:layout_height="16dp"
                         android:layout_marginBottom="9dp"
                         android:src="@drawable/unread_indicator" />
 

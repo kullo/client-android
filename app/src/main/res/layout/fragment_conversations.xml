@@ -12,21 +12,40 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/conversations_recycler_view"
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:color/transparent"
-            />
+            android:layout_height="match_parent">
 
+            <me.zhanghai.android.materialprogressbar.MaterialProgressBar
+                android:id="@+id/horizontal_progress_toolbar"
+                android:visibility="gone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:progress="30"
+                app:mpb_progressStyle="horizontal"
+                app:mpb_useIntrinsicPadding="false"
+                app:mpb_showTrack="false"
+                style="@style/Widget.MaterialProgressBar.ProgressBar.Horizontal.NoPadding" />
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/conversations_recycler_view"
+                    android:layout_below="@+id/horizontal_progress_toolbar"
+                    android:layout_alignParentBottom="true"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@android:color/transparent"
+                    />
+        </RelativeLayout>
     </android.support.v4.widget.SwipeRefreshLayout>
 
 
+    <!-- bottom padding to move things up a bit -->
     <LinearLayout
         android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        android:paddingBottom="100dp"
         >
 
         <TextView

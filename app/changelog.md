@@ -1,6 +1,14 @@
 Kullo for Android
 -----------------
 
+## v23 (2015-12-11)
+
+ * Show sync progress bar for long syncs
+ * Minor UI updates and translations
+ * Update libkullo v39
+ * Update SmartSqlite v4
+ * Update Botan 1.11.25
+
 ## v22 (2015-11-30)
 
  * Feature: Implement deleting of messages

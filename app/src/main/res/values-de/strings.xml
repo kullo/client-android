@@ -139,5 +139,14 @@ ellipsis (…)
     <string name="select_file_failed">Dateiauswahl fehlgeschlagen</string>
     <string name="select_file_canceled">Dateiauswahl abgebrochen</string>
     <string name="no_tmp_dir_found">Kein temporäres Verzeichnis gefunden</string>
+    <string name="valid_address_instructions">Du kannst Buchstaben und Ziffern benutzen. Außerdem kannst du . oder - oder _ benutzen, um deine Adresse zu unterteilen.</string>
+    <string name="wait_masterkey">Das kann einige Minuten dauern. Bitte habe Geduld.</string>
+    <string name="username_is_empty">Darf nicht leer sein</string>
+    <string name="organization_opt">Organisation (optional)</string>
+    <string name="participant_needed">Mindestens ein Teilnehmer ist nötig</string>
+    <string name="handle">Benutzername</string>
+    <string name="enter_address">Wähle deine Kullo-Adresse</string>
+    <string name="creating_masterkey">Erzeuge Schlüssel</string>
+    <string name="could_not_start_registration">Registrierung fehlgeschlagen</string>
 
 </resources>

@@ -26,16 +26,13 @@
         android:textColor="@color/onKulloBackgroundTextColorPrimary"
         />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="&#x25CF;"
-        android:id="@+id/unread_mark"
+    <ImageView
+        android:id="@+id/unread_icon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
         android:layout_alignParentRight="true"
         android:layout_marginRight="@dimen/md_additions_list_padding"
         android:layout_centerVertical="true"
-        android:textSize="14sp"
-        android:textColor="@color/kulloUnreadMarkColor"
-    />
+        android:src="@drawable/unread_indicator" />
 
 </RelativeLayout>

@@ -2,9 +2,11 @@
 package net.kullo.android.observers.listenerobservers;
 
 import net.kullo.android.observers.ListenerObserver;
+import net.kullo.libkullo.api.SyncProgress;
 
-public interface SyncerRunListenerObserver extends ListenerObserver {
+public interface SyncerListenerObserver extends ListenerObserver {
     void draftAttachmentsTooBig(long convId);
+    void progressed(SyncProgress progress);
     void finished();
     void error(String error);
 }

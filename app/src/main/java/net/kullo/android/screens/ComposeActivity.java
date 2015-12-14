@@ -34,11 +34,12 @@ import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.observers.eventobservers.DraftAttachmentAddedEventObserver;
 import net.kullo.android.observers.eventobservers.DraftAttachmentRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.DraftEventObserver;
-import net.kullo.android.observers.listenerobservers.SyncerRunListenerObserver;
+import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.compose.DraftAttachmentOpener;
 import net.kullo.android.screens.compose.DraftAttachmentsAdapter;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AsyncTask;
+import net.kullo.libkullo.api.SyncProgress;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -55,7 +56,7 @@ public class ComposeActivity extends AppCompatActivity {
     private RecyclerView mDraftAttachmentsList;
     private MaterialDialog mProgressSync;
     private DraftEventObserver mDraftEventObserver;
-    private SyncerRunListenerObserver mSyncerRunListenerObserver;
+    private SyncerListenerObserver mSyncerListenerObserver;
     private DraftAttachmentsAdapter mDraftAttachmentsAdapter;
     private DraftAttachmentOpener mDraftAttachmentOpener;
 
@@ -287,7 +288,7 @@ public class ComposeActivity extends AppCompatActivity {
     }
 
     private void registerSyncFinishedListenerObserver() {
-        mSyncerRunListenerObserver = new SyncerRunListenerObserver() {
+        mSyncerListenerObserver = new SyncerListenerObserver() {
             @Override
             public void draftAttachmentsTooBig(long convId) {
                 runOnUiThread(new Runnable() {
@@ -299,6 +300,10 @@ public class ComposeActivity extends AppCompatActivity {
                         }
                     }
                 });
+            }
+
+            @Override
+            public void progressed(SyncProgress progress) {
             }
 
             @Override
@@ -337,13 +342,13 @@ public class ComposeActivity extends AppCompatActivity {
                 });
             }
         };
-        KulloConnector.get().addListenerObserver(SyncerRunListenerObserver.class,
-                mSyncerRunListenerObserver);
+        KulloConnector.get().addListenerObserver(SyncerListenerObserver.class,
+                mSyncerListenerObserver);
     }
 
     private void unregisterSyncFinishedListenerObserver() {
-        KulloConnector.get().removeListenerObserver(SyncerRunListenerObserver.class,
-                mSyncerRunListenerObserver);
+        KulloConnector.get().removeListenerObserver(SyncerListenerObserver.class,
+                mSyncerListenerObserver);
     }
 
 

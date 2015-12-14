@@ -45,18 +45,18 @@ ellipsis (…)
 
     <!-- registration -->
     <string name="register">Register</string>
-    <string name="kullo_domain">#kullo.net</string>
+    <string name="kullo_domain" translatable="false">#kullo.net</string>
     <string name="enter_address">Choose your Kullo address</string>
     <string name="handle">Username</string>
-    <string name="creating_masterkey">Generating Master Key</string>
-    <string name="wait_masterkey">This may take a few minutes. Please wait.</string>
+    <string name="creating_masterkey">Generating keys</string>
+    <string name="wait_masterkey">This may take a few minutes. Please be patient.</string>
     <string name="valid_address_instructions">You can use letters and numbers.  You can use more than one word, separated by . - or _.</string>
     <string name="username_is_empty">Must not be empty</string>
     <string name="address_is_invalid">Address format not valid</string>
     <string name="address_already_exists">Address already exists</string>
     <string name="address_blocked">Address blocked</string>
     <string name="address_rejected">Server rejected this address.</string>
-    <string name="could_not_start_registration">Registration process failed.</string>
+    <string name="could_not_start_registration">Registration failed.</string>
 
     <!-- nav drawer -->
     <string name="menu_conversations">Inbox</string>

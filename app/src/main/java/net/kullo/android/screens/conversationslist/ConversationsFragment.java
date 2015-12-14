@@ -27,25 +27,29 @@ import com.timehop.stickyheadersrecyclerview.StickyRecyclerHeadersDecoration;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.observers.eventobservers.ConversationsEventObserver;
-import net.kullo.android.observers.listenerobservers.SyncerRunListenerObserver;
+import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.MessagesListActivity;
 import net.kullo.javautils.RuntimeAssertion;
+import net.kullo.libkullo.api.SyncProgress;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
 public class ConversationsFragment extends Fragment {
     public static final String TAG = "ConversationsFragment";
 
     protected RecyclerView mRecyclerView;
     private ConversationsAdapter mAdapter;
-    View mRootView;
-    SwipeRefreshLayout mSwipeLayout;
-    boolean mIsPaused;
+    private View mRootView;
+    private SwipeRefreshLayout mSwipeLayout;
+    private MaterialProgressBar mProgressBar;
+    private boolean mIsPaused;
     private ConversationsEventObserver mConversationsEventObserver;
-    private SyncerRunListenerObserver mSyncerRunListenerObserver;
+    private SyncerListenerObserver mSyncerListenerObserver;
     private ActionMode mActionMode = null;
 
     @Override
@@ -112,7 +116,7 @@ public class ConversationsFragment extends Fragment {
                 ConversationsEventObserver.class,
                 mConversationsEventObserver);
 
-        registerSyncFinishedListenerObserver();
+        registerSyncListenerObserver();
     }
 
     @Override
@@ -159,6 +163,7 @@ public class ConversationsFragment extends Fragment {
         } else {
             mSwipeLayout.setEnabled(true);
             mSwipeLayout.setRefreshing(false);
+            mProgressBar.setVisibility(View.GONE);
         }
 
         reloadConversationsList();
@@ -184,6 +189,8 @@ public class ConversationsFragment extends Fragment {
     }
 
     private void setupSwipeRefreshLayout() {
+        mProgressBar = (MaterialProgressBar) mRootView.findViewById(R.id.horizontal_progress_toolbar);
+
         mSwipeLayout = (SwipeRefreshLayout) mRootView.findViewById(R.id.swipe_refresh_layout);
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -194,9 +201,9 @@ public class ConversationsFragment extends Fragment {
         });
     }
 
-    private void registerSyncFinishedListenerObserver() {
+    private void registerSyncListenerObserver() {
         // avoid any unnecessary work when fragment's activity is paused (mIsPaused == true)
-        mSyncerRunListenerObserver = new SyncerRunListenerObserver() {
+        mSyncerListenerObserver = new SyncerListenerObserver() {
             @Override
             public void draftAttachmentsTooBig(long convId) {
                 getActivity().runOnUiThread(new Runnable() {
@@ -208,6 +215,27 @@ public class ConversationsFragment extends Fragment {
                         }
 
                         //TODO: dialog with the option to clear the attachments of the drafts --> comes later with attachments
+                    }
+                });
+            }
+
+            @Override
+            public void progressed(final SyncProgress progress) {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (KulloUtils.showSyncProgressAsBar(progress)) {
+                            int percent = Math.round(100 * ((float) progress.getCountProcessed() / progress.getCountTotal()));
+
+                            mSwipeLayout.setEnabled(false);
+                            mSwipeLayout.setRefreshing(false);
+                            mProgressBar.setVisibility(View.VISIBLE);
+
+                            mProgressBar.setProgress(percent);
+                        } else {
+                            mSwipeLayout.setEnabled(false);
+                            mSwipeLayout.setRefreshing(true);
+                        }
                     }
                 });
             }
@@ -225,6 +253,8 @@ public class ConversationsFragment extends Fragment {
                                 mSwipeLayout.setEnabled(true);
                                 mSwipeLayout.setRefreshing(false);
                             }
+
+                            mProgressBar.setVisibility(View.GONE);
 
                             if (!mIsPaused) reloadConversationsList();
                         }
@@ -250,14 +280,14 @@ public class ConversationsFragment extends Fragment {
             }
         };
         KulloConnector.get().addListenerObserver(
-                SyncerRunListenerObserver.class,
-                mSyncerRunListenerObserver);
+                SyncerListenerObserver.class,
+                mSyncerListenerObserver);
     }
 
     private void unregisterSyncFinishedListenerObserver() {
         KulloConnector.get().removeListenerObserver(
-                SyncerRunListenerObserver.class,
-                mSyncerRunListenerObserver);
+                SyncerListenerObserver.class,
+                mSyncerListenerObserver);
     }
 
     private void setupConversationsList() {

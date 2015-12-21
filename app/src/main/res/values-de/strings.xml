@@ -34,8 +34,9 @@ ellipsis (…)
     <string name="action_done">Fertig</string>
 
     <!-- error messages -->
-    <string name="error_login_failed">Anmeldung fehlgeschlagen.</string>
-    <string name="network_error_connection">Netzwerkverbindung konnte nicht hergestellt werden</string>
+    <string name="network_error_title">Netzwerkfehler</string>
+    <string name="network_error_connection">Netzwerkverbindung konnte nicht hergestellt werden.</string>
+    <string name="network_error_unknown">Unbekannter Fehler.</string>
 
     <!-- login -->
     <string name="login_error_address_invalid">Ungültige Kullo-Adresse</string>
@@ -43,6 +44,12 @@ ellipsis (…)
     <string name="progress_login">Einloggen</string>
     <string name="login">Einloggen</string>
     <string name="register">Registrieren</string>
+    <string name="error_login_failed_title">Anmeldung fehlgeschlagen</string>
+    <string name="error_login_failed_description">Ungültige Kombination aus Kullo-Adresse und MasterKey.</string>
+
+    <!-- logout -->
+    <string name="logging_out">Ausloggen …</string>
+    <string name="logging_out_description">Lokale Nachrichten und Benutzerinformationen werden gelöscht</string>
 
     <!-- registration -->
     <string name="address_blocked">Adresse gesperrt</string>

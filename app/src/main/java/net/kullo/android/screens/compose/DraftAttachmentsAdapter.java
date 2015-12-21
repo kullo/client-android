@@ -7,7 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloIdsAdapter;
 import net.kullo.android.littlehelpers.Formatting;
 
@@ -21,7 +21,7 @@ public class DraftAttachmentsAdapter extends KulloIdsAdapter<DraftAttachmentsVie
         mContext = context;
         mConversationId = conversationId;
         mDraftAttachmentOpener = draftAttachmentOpener;
-        replaceAll(KulloConnector.get().getAttachmentsForDraft(conversationId));
+        replaceAll(SessionConnector.get().getAttachmentsForDraft(conversationId));
     }
 
     @Override
@@ -37,8 +37,8 @@ public class DraftAttachmentsAdapter extends KulloIdsAdapter<DraftAttachmentsVie
     public void onBindViewHolder(DraftAttachmentsViewHolder attachmentsViewHolder, final int position) {
         final long attachmentId = getItem(position);
 
-        String filename = KulloConnector.get().getDraftAttachmentFilename(mConversationId, attachmentId);
-        String sizeText = Formatting.filesizeHuman(KulloConnector.get().getDraftAttachmentFilesize(mConversationId, attachmentId));
+        String filename = SessionConnector.get().getDraftAttachmentFilename(mConversationId, attachmentId);
+        String sizeText = Formatting.filesizeHuman(SessionConnector.get().getDraftAttachmentFilesize(mConversationId, attachmentId));
         String text = filename + " (" + sizeText + ")";
         attachmentsViewHolder.mAttachmentName.setText(text);
 
@@ -48,7 +48,7 @@ public class DraftAttachmentsAdapter extends KulloIdsAdapter<DraftAttachmentsVie
         attachmentsViewHolder.mRemoveButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                KulloConnector.get().removeDraftAttachment(mConversationId, attachmentId);
+                SessionConnector.get().removeDraftAttachment(mConversationId, attachmentId);
             }
         });
 

@@ -1,6 +1,12 @@
 Kullo for Android
 -----------------
 
+## v24 (2015-12-22)
+
+ * Improve error handling
+ * Stop running tasks on logout
+ * Update libkullo v40
+
 ## v23 (2015-12-11)
 
  * Show sync progress bar for long syncs

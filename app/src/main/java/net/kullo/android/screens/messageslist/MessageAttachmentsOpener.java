@@ -11,7 +11,7 @@ import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.observers.listenerobservers.MessageAttachmentsSaveListenerObserver;
 
 import java.io.File;
@@ -27,8 +27,8 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
     }
 
     public void saveAndOpenAttachment(long messageId, long attachmentId) {
-        String filename = KulloConnector.get().getMessageAttachmentFilename(messageId, attachmentId);
-        String mimeType = KulloConnector.get().getMessageAttachmentMimeType(messageId, attachmentId);
+        String filename = SessionConnector.get().getMessageAttachmentFilename(messageId, attachmentId);
+        String mimeType = SessionConnector.get().getMessageAttachmentMimeType(messageId, attachmentId);
         File tmpDirectory = mBaseActivity.getExternalFilesDir("tmp");
         if (tmpDirectory == null) {
             Log.d(TAG, "Cannot open tmp directory for storing attachments");
@@ -72,15 +72,15 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
                 .show();
 
         Log.d(TAG, "Saving file to: " + file.getAbsolutePath());
-        KulloConnector.get().saveMessageAttachment(messageId, attachmentId, file.getAbsolutePath());
+        SessionConnector.get().saveMessageAttachment(messageId, attachmentId, file.getAbsolutePath());
     }
 
     public void registerSaveFinishedListenerObserver() {
-        KulloConnector.get().addListenerObserver(MessageAttachmentsSaveListenerObserver.class, this);
+        SessionConnector.get().addListenerObserver(MessageAttachmentsSaveListenerObserver.class, this);
     }
 
     public void unregisterSaveFinishedListenerObserver() {
-        KulloConnector.get().removeListenerObserver(MessageAttachmentsSaveListenerObserver.class, this);
+        SessionConnector.get().removeListenerObserver(MessageAttachmentsSaveListenerObserver.class, this);
     }
 
     @Override
@@ -124,7 +124,7 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
     }
 
     private void openFile(long messageId, long attachmentId, String path) {
-        String mimeType = KulloConnector.get().getMessageAttachmentMimeType(messageId, attachmentId);
+        String mimeType = SessionConnector.get().getMessageAttachmentMimeType(messageId, attachmentId);
 
         Intent openFileIntent = new Intent();
         openFileIntent.setAction(android.content.Intent.ACTION_VIEW);

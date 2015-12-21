@@ -11,7 +11,7 @@ import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.observers.listenerobservers.DraftAttachmentsSaveListenerObserver;
 
 import java.io.File;
@@ -27,8 +27,8 @@ public class DraftAttachmentOpener implements DraftAttachmentsSaveListenerObserv
     }
 
     public void saveAndOpenAttachment(long conversationId, long attachmentId) {
-        String filename = KulloConnector.get().getDraftAttachmentFilename(conversationId, attachmentId);
-        String mimeType = KulloConnector.get().getDraftAttachmentMimeType(conversationId, attachmentId);
+        String filename = SessionConnector.get().getDraftAttachmentFilename(conversationId, attachmentId);
+        String mimeType = SessionConnector.get().getDraftAttachmentMimeType(conversationId, attachmentId);
         File tmpDirectory = mBaseActivity.getExternalFilesDir("tmp");
         if (tmpDirectory == null) {
             Log.d(TAG, "Cannot open tmp directory for storing attachments");
@@ -72,17 +72,17 @@ public class DraftAttachmentOpener implements DraftAttachmentsSaveListenerObserv
                 .show();
 
         Log.d(TAG, "Saving file to: " + file.getAbsolutePath());
-        KulloConnector.get().saveDraftAttachmentContent(conversationId, attachmentId, file.getAbsolutePath());
+        SessionConnector.get().saveDraftAttachmentContent(conversationId, attachmentId, file.getAbsolutePath());
     }
 
     public void registerSaveFinishedListenerObserver() {
-        KulloConnector.get().addListenerObserver(
+        SessionConnector.get().addListenerObserver(
                 DraftAttachmentsSaveListenerObserver.class,
                 this);
     }
 
     public void unregisterSaveFinishedListenerObserver() {
-        KulloConnector.get().removeListenerObserver(
+        SessionConnector.get().removeListenerObserver(
                 DraftAttachmentsSaveListenerObserver.class,
                 this);
     }
@@ -128,7 +128,7 @@ public class DraftAttachmentOpener implements DraftAttachmentsSaveListenerObserv
     }
 
     private void openFile(long conversationId, long attachmentId, String path) {
-        String mimeType = KulloConnector.get().getDraftAttachmentMimeType(conversationId, attachmentId);
+        String mimeType = SessionConnector.get().getDraftAttachmentMimeType(conversationId, attachmentId);
 
         Intent openFileIntent = new Intent();
         openFileIntent.setAction(android.content.Intent.ACTION_VIEW);

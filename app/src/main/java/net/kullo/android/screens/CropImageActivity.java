@@ -7,7 +7,6 @@ import android.graphics.Bitmap;
 import com.isseiaoki.simplecropview.CropImageView;
 import android.view.MenuItem;
 import android.view.Menu;
-import android.util.Log;
 import android.content.Intent;
 import android.net.Uri;
 import java.io.InputStream;
@@ -15,11 +14,10 @@ import android.graphics.BitmapFactory;
 import java.io.FileNotFoundException;
 
 import net.kullo.android.R;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Ui;
-import net.kullo.android.kulloapi.KulloConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.KulloConstants;
-import net.kullo.android.screens.SettingsActivity;
 
 public class CropImageActivity extends AppCompatActivity {
     public static final String INPUT_METHOD = "InputMethod";
@@ -92,8 +90,8 @@ public class CropImageActivity extends AppCompatActivity {
         Bitmap sourceAvatar = AvatarUtils.cropFromCenterForThumbnail(resizedBitmap, KulloConstants.AVATAR_DIMENSION);
         byte[] avatar = AvatarUtils.bitmapToJpegBinaryWithDownsamplingQualityAndMaxByteArraySize(
                     sourceAvatar, KulloConstants.AVATAR_BEST_QUALITY, KulloConstants.AVATAR_MAX_SIZE);
-        KulloConnector.get().setClientAvatar(avatar);
-        KulloConnector.get().setClientAvatarMimeType("image/jpeg");
+        SessionConnector.get().setClientAvatar(avatar);
+        SessionConnector.get().setClientAvatarMimeType("image/jpeg");
     }
 
     private void rotateImage() {

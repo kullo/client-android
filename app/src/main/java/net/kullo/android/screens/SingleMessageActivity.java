@@ -14,12 +14,14 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.DialogMaker;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.observers.eventobservers.MessageAttachmentsDownloadedChangedEventObserver;
@@ -29,6 +31,7 @@ import net.kullo.android.screens.messageslist.AttachmentsAdapter;
 import net.kullo.android.screens.messageslist.MessageAttachmentsOpener;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AsyncTask;
+import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
 import org.joda.time.DateTime;
@@ -70,7 +73,7 @@ public class SingleMessageActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = KulloConnector.get().createActivityWithSession(this);
+        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
 
         setContentView(R.layout.activity_single_message);
 
@@ -95,30 +98,21 @@ public class SingleMessageActivity extends AppCompatActivity {
 
             @Override
             public void finished() {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        showAttachmentsListIfAvailable();
-                    }
-                });
             }
 
             @Override
-            public void error(final String error) {
+            public void error(final NetworkError error) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        new MaterialDialog.Builder(SingleMessageActivity.this)
-                                .title(R.string.error_title)
-                                .content(error)
-                                .neutralText(R.string.ok)
-                                .cancelable(false)
-                                .show();
+                        Toast.makeText(SingleMessageActivity.this,
+                                DialogMaker.getTextForNetworkError(SingleMessageActivity.this, error),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
             }
         };
-        KulloConnector.get().addListenerObserver(SyncerListenerObserver.class,
+        SessionConnector.get().addListenerObserver(SyncerListenerObserver.class,
                 mDownloadAttachmentsFinishedObserver);
 
         mMessageAttachmentsDownloadedChangedEventObserver = new MessageAttachmentsDownloadedChangedEventObserver() {
@@ -132,7 +126,7 @@ public class SingleMessageActivity extends AppCompatActivity {
                 });
             }
         };
-        KulloConnector.get().addEventObserver(MessageAttachmentsDownloadedChangedEventObserver.class,
+        SessionConnector.get().addEventObserver(MessageAttachmentsDownloadedChangedEventObserver.class,
                 mMessageAttachmentsDownloadedChangedEventObserver);
 
         mMessageAttachmentsOpener = new MessageAttachmentsOpener(this);
@@ -156,7 +150,7 @@ public class SingleMessageActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        KulloConnector.get().setMessageRead(mMessageId);
+        SessionConnector.get().setMessageRead(mMessageId);
     }
 
     @Override
@@ -179,9 +173,9 @@ public class SingleMessageActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         mMessageAttachmentsOpener.unregisterSaveFinishedListenerObserver();
-        KulloConnector.get().removeEventObserver(MessageAttachmentsDownloadedChangedEventObserver.class,
+        SessionConnector.get().removeEventObserver(MessageAttachmentsDownloadedChangedEventObserver.class,
                 mMessageAttachmentsDownloadedChangedEventObserver);
-        KulloConnector.get().removeListenerObserver(
+        SessionConnector.get().removeListenerObserver(
                 SyncerListenerObserver.class,
                 mDownloadAttachmentsFinishedObserver);
     }
@@ -193,8 +187,8 @@ public class SingleMessageActivity extends AppCompatActivity {
                 finish();
                 return true;
             case R.id.action_write:
-                if (KulloConnector.get().userSettingsAreValidForSync()) {
-                    long conversationId = KulloConnector.get().getMessageConversation(mMessageId);
+                if (SessionConnector.get().userSettingsAreValidForSync()) {
+                    long conversationId = SessionConnector.get().getMessageConversation(mMessageId);
                     Intent intent = new Intent(this, ComposeActivity.class);
                     intent.putExtra(KulloConstants.CONVERSATION_ID, conversationId);
                     startActivityForResult(intent, KulloConstants.REQUEST_CODE_NEW_MESSAGE);
@@ -212,13 +206,13 @@ public class SingleMessageActivity extends AppCompatActivity {
     }
 
     public void populateMessageFields() {
-        final DateTime dateReceived = KulloConnector.get().getMessageDateReceived(mMessageId);
-        final String messageText = KulloConnector.get().getMessageText(mMessageId);
+        final DateTime dateReceived = SessionConnector.get().getMessageDateReceived(mMessageId);
+        final String messageText = SessionConnector.get().getMessageText(mMessageId);
         final String messageTextCompressed = messageText.replaceAll("\\s+", " ");
-        final String messageFooter = KulloConnector.get().getMessageFooter(mMessageId);
-        final Bitmap senderAvatar = KulloConnector.get().getSenderAvatar(this, mMessageId);
-        final String senderName = KulloConnector.get().getSenderName(mMessageId);
-        final String senderOrganization = KulloConnector.get().getSenderOrganization(mMessageId);
+        final String messageFooter = SessionConnector.get().getMessageFooter(mMessageId);
+        final Bitmap senderAvatar = SessionConnector.get().getSenderAvatar(this, mMessageId);
+        final String senderName = SessionConnector.get().getSenderName(mMessageId);
+        final String senderOrganization = SessionConnector.get().getSenderOrganization(mMessageId);
 
         mCircleImageView.setImageBitmap(senderAvatar);
         mMessageDateTextView.setText(getDateText(dateReceived));
@@ -260,8 +254,8 @@ public class SingleMessageActivity extends AppCompatActivity {
     }
 
     private void showAttachmentsListIfAvailable() {
-        final ArrayList<Long> attachmentIDs = KulloConnector.get().getMessageAttachmentsIds(mMessageId);
-        final boolean attachmentsDownloaded = KulloConnector.get().getMessageAttachmentsDownloaded(mMessageId);
+        final ArrayList<Long> attachmentIDs = SessionConnector.get().getMessageAttachmentsIds(mMessageId);
+        final boolean attachmentsDownloaded = SessionConnector.get().getMessageAttachmentsDownloaded(mMessageId);
 
         if (attachmentIDs == null || attachmentIDs.size() == 0) {
             setAttachmentsListVisibility(View.GONE);
@@ -296,7 +290,7 @@ public class SingleMessageActivity extends AppCompatActivity {
             mDownloadButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    KulloConnector.get().downloadAttachments(mMessageId);
+                    SessionConnector.get().downloadAttachments(mMessageId);
                 }
             });
         }

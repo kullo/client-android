@@ -16,13 +16,16 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.DialogMaker;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.observers.listenerobservers.RegistrationRegisterAccountListenerObserver;
 import net.kullo.android.screens.RegistrationActivity;
 import net.kullo.javautils.RuntimeAssertion;
+import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.AddressNotAvailableReason;
 import net.kullo.libkullo.api.Challenge;
+import net.kullo.libkullo.api.NetworkError;
 
 public class ChooseAddressFragment extends Fragment {
     private static final String TAG = "ChooseAddressFragment";
@@ -112,7 +115,7 @@ public class ChooseAddressFragment extends Fragment {
         // prevent re-click
         mRegisterButton.setEnabled(false);
 
-        KulloConnector.get().registerAddressAsync(addressString);
+        SessionConnector.get().registerAddressAsync(addressString);
     }
 
     private void setRegisterAddressObserver() {
@@ -155,22 +158,23 @@ public class ChooseAddressFragment extends Fragment {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        KulloConnector.get().storeAddressAndMasterkeyInSharedPreferences(getActivity(), address, masterKeyAsPem);
+                        SessionConnector.get().storeAddressAndMasterkeyInSharedPreferences(getActivity(), address, masterKeyAsPem);
                         openNextView();
                     }
                 });
             }
             @Override
-            public void error(String address, final String errorText) {
+            public void error(Address address, final NetworkError error) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        showRegistrationError(errorText);
+                        mRegisterButton.setEnabled(true);
+                        DialogMaker.makeForNetworkError(getActivity(), error).show();
                     }
                 });
             }
         };
-        KulloConnector.get().addListenerObserver(
+        SessionConnector.get().addListenerObserver(
                 RegistrationRegisterAccountListenerObserver.class,
                 mRegistrationRegisterAccountListenerObserver);
     }
@@ -189,7 +193,7 @@ public class ChooseAddressFragment extends Fragment {
 
     private void unregisterRegisterAddressObserver() {
         if (mRegistrationRegisterAccountListenerObserver != null) {
-            KulloConnector.get().removeListenerObserver(RegistrationRegisterAccountListenerObserver.class, mRegistrationRegisterAccountListenerObserver);
+            SessionConnector.get().removeListenerObserver(RegistrationRegisterAccountListenerObserver.class, mRegistrationRegisterAccountListenerObserver);
             mRegistrationRegisterAccountListenerObserver = null;
         }
     }

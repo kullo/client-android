@@ -3,12 +3,11 @@ package net.kullo.android.screens;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.libkullo.api.AsyncTask;
 
@@ -17,7 +16,7 @@ public class AccountActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = KulloConnector.get().createActivityWithSession(this);
+        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
 
         setContentView(R.layout.activity_account);
 
@@ -37,8 +36,8 @@ public class AccountActivity extends AppCompatActivity {
         TextView masterkeyView = (TextView) findViewById(R.id.account_masterkey);
         masterkeyView.setHorizontallyScrolling(true);
 
-        addressView.setText(KulloConnector.get().getClientAddressAsString());
-        masterkeyView.setText(KulloConnector.get().getMasterKeyAsPem());
+        addressView.setText(SessionConnector.get().getClientAddressAsString());
+        masterkeyView.setText(SessionConnector.get().getMasterKeyAsPem());
     }
 
     @Override

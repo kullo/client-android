@@ -8,10 +8,9 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.observers.listenerobservers.ClientGenerateKeysListenerObserver;
 import net.kullo.android.screens.RegistrationActivity;
 
@@ -48,7 +47,7 @@ public class KeygenFragment extends Fragment {
     public void onResume() {
         super.onResume();
 
-        KulloConnector.get().generateKeysAsync();
+        SessionConnector.get().generateKeysAsync();
     }
 
     private void registerGenerateKeysObserver() {
@@ -74,13 +73,13 @@ public class KeygenFragment extends Fragment {
             }
         };
 
-        KulloConnector.get().addListenerObserver(
+        SessionConnector.get().addListenerObserver(
                 ClientGenerateKeysListenerObserver.class,
                 mGenerateKeysListenerObserver);
     }
 
     private void unregisterGenerateKeysObserver() {
-        KulloConnector.get().removeListenerObserver(
+        SessionConnector.get().removeListenerObserver(
                 ClientGenerateKeysListenerObserver.class,
                 mGenerateKeysListenerObserver);
     }

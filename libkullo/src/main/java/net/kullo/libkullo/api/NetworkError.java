@@ -14,5 +14,7 @@ public enum NetworkError {
     SERVER,
     /** Network connection couldn't be established */
     CONNECTION,
+    /** Any other error */
+    UNKNOWN,
     ;
 }

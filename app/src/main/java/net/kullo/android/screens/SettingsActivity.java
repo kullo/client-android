@@ -6,8 +6,6 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -17,8 +15,6 @@ import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -27,17 +23,13 @@ import android.widget.Toast;
 import android.content.pm.LabeledIntent;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
-import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AsyncTask;
-import net.kullo.android.screens.CropImageActivity;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +55,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         if (detectClearAvatarIntent()) return;
 
-        AsyncTask task = KulloConnector.get().createActivityWithSession(this);
+        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
 
         setContentView(R.layout.activity_settings);
 
@@ -96,10 +88,10 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        KulloConnector.get().setClientName(mNameEditText.getText().toString().trim());
-        KulloConnector.get().setClientOrganization(mOrganizationEditText.getText().toString().trim());
-        KulloConnector.get().setClientFooter(mFooterEditText.getText().toString().trim());
-        KulloConnector.get().storeSessionUserSettingsInSharedPreferences(this);
+        SessionConnector.get().setClientName(mNameEditText.getText().toString().trim());
+        SessionConnector.get().setClientOrganization(mOrganizationEditText.getText().toString().trim());
+        SessionConnector.get().setClientFooter(mFooterEditText.getText().toString().trim());
+        SessionConnector.get().storeSessionUserSettingsInSharedPreferences(this);
     }
 
     @Override
@@ -275,18 +267,18 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void updateTextInputViewsFromSession() {
-        mNameEditText.setText(KulloConnector.get().getClientName());
-        mOrganizationEditText.setText(KulloConnector.get().getClientOrganization());
-        mFooterEditText.setText(KulloConnector.get().getClientFooter());
+        mNameEditText.setText(SessionConnector.get().getClientName());
+        mOrganizationEditText.setText(SessionConnector.get().getClientOrganization());
+        mFooterEditText.setText(SessionConnector.get().getClientFooter());
     }
 
     private void clearStoredSessionAvatar() {
-        KulloConnector.get().setClientAvatar(new byte[0]);
-        KulloConnector.get().setClientAvatarMimeType("");
+        SessionConnector.get().setClientAvatar(new byte[0]);
+        SessionConnector.get().setClientAvatarMimeType("");
     }
 
     private void updateAvatarViewFromSession() {
-        byte[] avatar = KulloConnector.get().getClientAvatar();
+        byte[] avatar = SessionConnector.get().getClientAvatar();
         if (avatar != null && avatar.length != 0) {
             mAvatarView.setImageBitmap(AvatarUtils.avatarToBitmap(avatar));
         } else {

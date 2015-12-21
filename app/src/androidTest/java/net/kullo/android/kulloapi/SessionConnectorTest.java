@@ -4,7 +4,7 @@ package net.kullo.android.kulloapi;
 import junit.framework.TestCase;
 
 // Junit3 test frame created by Android Studio
-public class KulloConnectorTest extends TestCase {
+public class SessionConnectorTest extends TestCase {
 
     public void testIsValidKulloAddress() {
         // hashes

@@ -9,9 +9,10 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 
 import net.danlew.android.joda.JodaTimeAndroid;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.ClientConnector;
 import net.kullo.android.littlehelpers.CiStringComparator;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.libkullo.LibKullo;
 
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -21,7 +22,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -34,6 +34,7 @@ public class KulloApplication extends Application {
         super.onCreate();
 
         JodaTimeAndroid.init(this);
+        LibKullo.init();
 
         migratePreferences();
     }
@@ -67,7 +68,7 @@ public class KulloApplication extends Application {
 
     public String softwareVersions() {
         StringBuilder out = new StringBuilder();
-        HashMap<String, String> table = KulloConnector.get().getClient().versions();
+        HashMap<String, String> table = ClientConnector.get().getClient().versions();
         List<String> keys = new ArrayList<>(table.keySet());
         Collections.sort(keys, new CiStringComparator());
         for (String key : keys) {

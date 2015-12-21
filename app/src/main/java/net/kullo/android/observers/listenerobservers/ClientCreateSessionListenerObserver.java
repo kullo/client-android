@@ -2,8 +2,12 @@
 package net.kullo.android.observers.listenerobservers;
 
 import net.kullo.android.observers.ListenerObserver;
+import net.kullo.libkullo.api.LocalError;
+import net.kullo.libkullo.api.NetworkError;
 
 public interface ClientCreateSessionListenerObserver extends ListenerObserver {
     void finished();
-    void error(String error);
+    void loginFailed();
+    void networkError(NetworkError error);
+    void localError(LocalError error);
 }

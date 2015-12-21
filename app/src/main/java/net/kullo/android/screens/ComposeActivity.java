@@ -26,7 +26,8 @@ import android.widget.Toast;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.DialogMaker;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.littlehelpers.Debug;
 import net.kullo.android.littlehelpers.KulloConstants;
@@ -39,6 +40,7 @@ import net.kullo.android.screens.compose.DraftAttachmentOpener;
 import net.kullo.android.screens.compose.DraftAttachmentsAdapter;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AsyncTask;
+import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
 import java.io.BufferedOutputStream;
@@ -66,7 +68,7 @@ public class ComposeActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = KulloConnector.get().createActivityWithSession(this);
+        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
 
         setContentView(R.layout.activity_compose);
 
@@ -76,13 +78,13 @@ public class ComposeActivity extends AppCompatActivity {
             RuntimeAssertion.require(mConversationId != -1);
         } else if (intent.hasExtra(KulloConstants.CONVERSATION_RECIPIENT)) {
             String recipient = intent.getStringExtra(KulloConstants.CONVERSATION_RECIPIENT);
-            mConversationId = KulloConnector.get().startConversationWithSingleRecipient(recipient);
+            mConversationId = SessionConnector.get().startConversationWithSingleRecipient(recipient);
         } else if (intent.getData().getScheme().equals("kullo")) {
             Log.d(TAG, Debug.getIntentDetails(intent));
 
             String addressString = intent.getData().getSchemeSpecificPart();
             if (KulloUtils.isValidKulloAddress(addressString)) {
-                mConversationId = KulloConnector.get().startConversationWithSingleRecipient(addressString);
+                mConversationId = SessionConnector.get().startConversationWithSingleRecipient(addressString);
             }
         } else {
             Log.d(TAG, Debug.getIntentDetails(intent));
@@ -106,14 +108,14 @@ public class ComposeActivity extends AppCompatActivity {
         mDraftAttachmentsAdapter = new DraftAttachmentsAdapter(this, mConversationId, mDraftAttachmentOpener);
         mDraftAttachmentsList.setAdapter(mDraftAttachmentsAdapter);
 
-        KulloConnector.get().addEventObserver(DraftAttachmentAddedEventObserver.class, new DraftAttachmentAddedEventObserver() {
+        SessionConnector.get().addEventObserver(DraftAttachmentAddedEventObserver.class, new DraftAttachmentAddedEventObserver() {
             public void draftAttachmentAdded(long conversationId, long attachmentId) {
                 mDraftAttachmentsAdapter.append(attachmentId);
                 resizeMessageTextEdit();
             }
         });
 
-        KulloConnector.get().addEventObserver(DraftAttachmentRemovedEventObserver.class, new DraftAttachmentRemovedEventObserver() {
+        SessionConnector.get().addEventObserver(DraftAttachmentRemovedEventObserver.class, new DraftAttachmentRemovedEventObserver() {
             public void draftAttachmentRemoved(long conversationId, long attachmentId) {
                 mDraftAttachmentsAdapter.remove(attachmentId);
             }
@@ -185,7 +187,7 @@ public class ComposeActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        mNewMessageReceivers.setText(KulloConnector.get().getConversationNameOrPlaceHolder(mConversationId));
+        mNewMessageReceivers.setText(SessionConnector.get().getConversationNameOrPlaceHolder(mConversationId));
 
         updateDraftTextFromStorage();
 
@@ -197,10 +199,10 @@ public class ComposeActivity extends AppCompatActivity {
 
             @Override
             public void draftTextChanged(long conversationId) {
-                mNewMessageText.setText(KulloConnector.get().getDraftText(conversationId));
+                mNewMessageText.setText(SessionConnector.get().getDraftText(conversationId));
             }
         };
-        KulloConnector.get().addEventObserver(
+        SessionConnector.get().addEventObserver(
                 DraftEventObserver.class,
                 mDraftEventObserver);
     }
@@ -209,7 +211,7 @@ public class ComposeActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
 
-        KulloConnector.get().removeEventObserver(
+        SessionConnector.get().removeEventObserver(
                 DraftEventObserver.class,
                 mDraftEventObserver);
     }
@@ -232,9 +234,9 @@ public class ComposeActivity extends AppCompatActivity {
 
     private void updateDraftTextFromStorage() {
         //set old draft text, if there is any
-        String draft = KulloConnector.get().getDraftText(mConversationId);
+        String draft = SessionConnector.get().getDraftText(mConversationId);
         if (draft != null && !draft.isEmpty()) {
-            mNewMessageText.setText(KulloConnector.get().getDraftText(mConversationId));
+            mNewMessageText.setText(SessionConnector.get().getDraftText(mConversationId));
         }
     }
 
@@ -275,13 +277,13 @@ public class ComposeActivity extends AppCompatActivity {
                         .cancelable(false)
                         .show();
 
-                KulloConnector.get().saveDraftForConversation(mConversationId, message, true);
-                KulloConnector.get().sendMessages();
+                SessionConnector.get().saveDraftForConversation(mConversationId, message, true);
+                SessionConnector.get().sendMessages();
             } else {
-                KulloConnector.get().saveDraftForConversation(mConversationId, message, false);
+                SessionConnector.get().saveDraftForConversation(mConversationId, message, false);
             }
         } else {
-            KulloConnector.get().clearDraftForConversation(mConversationId);
+            SessionConnector.get().clearDraftForConversation(mConversationId);
         }
 
         setResult(RESULT_OK);
@@ -320,19 +322,14 @@ public class ComposeActivity extends AppCompatActivity {
             }
 
             @Override
-            public void error(final String errorText) {
+            public void error(final NetworkError error) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         if (mProgressSync != null) {
                             mProgressSync.setOnDismissListener(new DialogInterface.OnDismissListener() {
                                 public void onDismiss(DialogInterface dialog) {
-                                    new MaterialDialog.Builder(ComposeActivity.this)
-                                            .title(R.string.error_title)
-                                            .content(errorText)
-                                            .neutralText(R.string.ok)
-                                            .cancelable(false)
-                                            .show();
+                                    DialogMaker.makeForNetworkError(ComposeActivity.this, error).show();
                                 }
                             });
 
@@ -342,12 +339,12 @@ public class ComposeActivity extends AppCompatActivity {
                 });
             }
         };
-        KulloConnector.get().addListenerObserver(SyncerListenerObserver.class,
+        SessionConnector.get().addListenerObserver(SyncerListenerObserver.class,
                 mSyncerListenerObserver);
     }
 
     private void unregisterSyncFinishedListenerObserver() {
-        KulloConnector.get().removeListenerObserver(SyncerListenerObserver.class,
+        SessionConnector.get().removeListenerObserver(SyncerListenerObserver.class,
                 mSyncerListenerObserver);
     }
 
@@ -439,7 +436,7 @@ public class ComposeActivity extends AppCompatActivity {
                             }
                         }
 
-                        AsyncTask task = KulloConnector.get().addAttachmentToDraft(mConversationId, destPath, mimeType);
+                        AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, destPath, mimeType);
                         if (task != null) task.waitUntilDone();
 
                         // remove temporary file now that it's been uploaded

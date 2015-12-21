@@ -16,7 +16,7 @@ import com.timehop.stickyheadersrecyclerview.StickyRecyclerHeadersAdapter;
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.ConversationData;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloIdsAdapter;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.javautils.RuntimeAssertion;
@@ -25,10 +25,7 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
-import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-
-import java.util.ArrayList;
 
 public class ConversationsAdapter extends KulloIdsAdapter<ConversationViewHolder>
         implements StickyRecyclerHeadersAdapter<RecyclerView.ViewHolder> {
@@ -56,7 +53,7 @@ public class ConversationsAdapter extends KulloIdsAdapter<ConversationViewHolder
     @Override
     public void onBindViewHolder(ConversationViewHolder holder, int position) {
         final long conversationId = getItem(position);
-        ConversationData data = KulloConnector.get().getConversationData(mBaseActivity, conversationId);
+        ConversationData data = SessionConnector.get().getConversationData(mBaseActivity, conversationId);
 
         holder.mConversationName.setText(data.mTitle);
 
@@ -83,9 +80,9 @@ public class ConversationsAdapter extends KulloIdsAdapter<ConversationViewHolder
     @Override
     public long getHeaderId(int position) {
         long conversationId = getItem(position);
-        DateTime latestMessageTimestamp = KulloConnector.get().getLatestMessageTimestamp(conversationId);
+        DateTime latestMessageTimestamp = SessionConnector.get().getLatestMessageTimestamp(conversationId);
 
-        if (latestMessageTimestamp.equals(KulloConnector.get().emptyConversationTimestamp())) {
+        if (latestMessageTimestamp.equals(SessionConnector.get().emptyConversationTimestamp())) {
             // maximum positive value for a 64-bit signed integer
             return 0x7fffffffffffffffL;
         } else {
@@ -114,9 +111,9 @@ public class ConversationsAdapter extends KulloIdsAdapter<ConversationViewHolder
         TextView textView = (TextView) holder.itemView;
         Long conversationId = getItem(position);
 
-        DateTime latestMessageTimestamp = KulloConnector.get().getLatestMessageTimestamp(conversationId);
+        DateTime latestMessageTimestamp = SessionConnector.get().getLatestMessageTimestamp(conversationId);
 
-        if (latestMessageTimestamp.getMillis() == KulloConnector.get().emptyConversationTimestamp().getMillis()) {
+        if (latestMessageTimestamp.getMillis() == SessionConnector.get().emptyConversationTimestamp().getMillis()) {
             textView.setText(R.string.empty_conversation_title);
         }
         else {

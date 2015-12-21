@@ -10,8 +10,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import net.kullo.android.R;
-import net.kullo.android.application.LogoutIntent;
 import net.kullo.android.littlehelpers.AddressSet;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.KulloConstants;
@@ -33,9 +31,9 @@ import net.kullo.android.observers.listenerobservers.MessageAttachmentsSaveListe
 import net.kullo.android.observers.listenerobservers.RegistrationRegisterAccountListenerObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.LoginActivity;
+import net.kullo.android.screens.LogoutActivity;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.javautils.StrictBase64;
-import net.kullo.libkullo.LibKullo;
 import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.AddressNotAvailableReason;
 import net.kullo.libkullo.api.AsyncTask;
@@ -76,34 +74,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class KulloConnector {
-    private static final String TAG = "KulloConnector";
+public class SessionConnector {
+    private static final String TAG = "SessionConnector";
 
-    private static final KulloConnector SINGLETON = new KulloConnector();
-    public static KulloConnector get() {
+    private static final SessionConnector SINGLETON = new SessionConnector();
+    @NonNull public static SessionConnector get() {
         return SINGLETON;
     }
 
-    private AsyncTask mClientAddressExistsTask;
-    private AsyncTask mClientCheckLoginTask;
-    private AsyncTask mCreateSessionTask;
-    private AsyncTask mSaveDraftAttachmentTask;
-    private AsyncTask mSaveMessageAttachmentTask;
-    private AsyncTask mRegistrationGenerateKeysTask;
-    private AsyncTask mRegistrationRegisterAccountTask;
+    private AsyncTasksHolder mTaskHolder = new AsyncTasksHolder();
     private Session mSession = null;
-    private final Client mClient;
     private Registration mRegistration;
 
     private Map<Class, LinkedList<ListenerObserver>> mListenerObservers;
     private Map<Class, LinkedList<EventObserver>> mEventObservers;
 
-    private KulloConnector() {
-        LibKullo.init();
-
-        mClient = Client.create();
-        Log.d(TAG, mClient.versions().toString());
-
+    private SessionConnector() {
         mListenerObservers = new HashMap<>(10);
         mListenerObservers.put(ClientGenerateKeysListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(ClientCreateSessionListenerObserver.class, new LinkedList<ListenerObserver>());
@@ -127,27 +113,28 @@ public class KulloConnector {
     //LOGIN LOGOUT
 
     @Nullable
-    public AsyncTask createActivityWithSession(Activity activity) {
+    public AsyncTask createActivityWithSession(Activity callingActivity) {
         if (sessionAvailable()) return null;
 
         Log.d(TAG, "No session available. Creating session if credential are stored ...");
-        UserSettings us = KulloConnector.get().loadStoredUserSettings(activity);
+        UserSettings us = SessionConnector.get().loadStoredUserSettings(callingActivity);
         if (us == null) {
             Log.d(TAG, "No credential found. Moving to LoginActivity ...");
-            Intent intent = new LogoutIntent(activity);
-            activity.startActivity(intent);
-            activity.finish();
+            callingActivity.startActivity(new Intent(callingActivity, LogoutActivity.class));
+            callingActivity.finish();
             return null;
         }
 
-        return KulloConnector.get().createSession(activity, us);
+        return SessionConnector.get().createSession(callingActivity, us);
     }
 
     public void checkLoginAndCreateSession(final LoginActivity callingActivity, final Address address, final MasterKey masterKey) {
         RuntimeAssertion.require(address != null);
         RuntimeAssertion.require(masterKey != null);
 
-        mClientCheckLoginTask = mClient.checkLoginAsync(address, masterKey, new ClientCheckLoginListener() {
+        Client client = ClientConnector.get().getClient();
+
+        mTaskHolder.add(client.checkLoginAsync(address, masterKey, new ClientCheckLoginListener() {
             @Override
             public void finished(Address address, MasterKey masterKey, boolean valid) {
                 if (valid) {
@@ -157,7 +144,7 @@ public class KulloConnector {
                 } else {
                     synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
                         for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                            ((ClientCreateSessionListenerObserver) observer).error(callingActivity.getResources().getString(R.string.error_login_failed));
+                            ((ClientCreateSessionListenerObserver) observer).loginFailed();
                         }
                     }
                 }
@@ -165,22 +152,13 @@ public class KulloConnector {
 
             @Override
             public void error(Address address, NetworkError error) {
-                String errorText;
-                switch (error) {
-                    case CONNECTION:
-                        errorText = callingActivity.getString(R.string.network_error_connection);
-                        break;
-                    default:
-                        errorText = error.toString();
-                }
-
                 synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
                     for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                        ((ClientCreateSessionListenerObserver) observer).error(errorText);
+                        ((ClientCreateSessionListenerObserver) observer).networkError(error);
                     }
                 }
             }
-        });
+        }));
     }
 
     public AsyncTask createSession(final Activity callingActivity, UserSettings us) {
@@ -189,9 +167,11 @@ public class KulloConnector {
         String dbFilePath = KulloUtils.getDatabasePathBase(callingActivity.getApplication(), us.address());
         Log.d(TAG, "dbFilePath = " + dbFilePath);
 
+        Client client = ClientConnector.get().getClient();
+
         // Store task in local member to ensure it is not destroyed. Pass task as return
         // value to caller to enable it to block using AsyncTask#waitUntilDone()
-        mCreateSessionTask = mClient.createSessionAsync(us, dbFilePath, new SessionListener() {
+        AsyncTask task = client.createSessionAsync(us, dbFilePath, new SessionListener() {
             @Override
             public void internalEvent(final InternalEvent event) {
                 callingActivity.runOnUiThread(new Runnable() {
@@ -296,12 +276,15 @@ public class KulloConnector {
 
                 synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
                     for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                        ((ClientCreateSessionListenerObserver) observer).error(error.toString());
+                        ((ClientCreateSessionListenerObserver) observer).localError(error);
                     }
                 }
             }
         });
-        return mCreateSessionTask;
+
+        mTaskHolder.add(task);
+
+        return task;
     }
 
     public void storeSessionUserSettingsInSharedPreferences(final Context context) {
@@ -420,37 +403,69 @@ public class KulloConnector {
         return !mSession.userSettings().name().isEmpty();
     }
 
-    public void logout(Activity callingActivity) {
+    /*
+     * Callback runs on UI thread
+     */
+    public void logout(final Activity callingActivity, final Runnable callback) {
         Log.d(TAG, "Logging out user ...");
 
         if (mSession != null) {
-            //if mSession is already null, user was never logged in
-            Address address = mSession.userSettings().address();
+            new android.os.AsyncTask<Void, Void, Void>() {
+                private Address address;
 
-            // Clear session. This closes open database files
-            mSession = null;
+                @Override
+                protected void onPreExecute() {
+                    // Access UserSetting here on UI thread
+                    address = mSession.userSettings().address();
+                }
 
-            // Remove database files
-            String dbFileBase = KulloUtils.getDatabasePathBase(callingActivity.getApplication(), address);
-            String dbFileShm = dbFileBase + "-shm";
-            String dbFileWal = dbFileBase + "-wal";
-            ArrayList<String> filesToDelete = new ArrayList<>(Arrays.asList(
-                    dbFileBase,
-                    dbFileShm,
-                    dbFileWal
-            ));
-            Log.d(TAG, "Removing " + filesToDelete + " ...");
+                @Override
+                protected Void doInBackground(Void... params) {
+                    mTaskHolder.cancelAll();
+                    mTaskHolder.waitUntilAllDone();
 
-            for (String filePath : filesToDelete) {
-                File myFile = new File(filePath);
-                if (myFile.exists()) myFile.delete();
-            }
+                    // Since all workers are done, this should be the last reference
+                    // of the session.
+                    mSession = null;
+
+                    // SystemClock.sleep(2000);
+
+                    // Remove database files
+                    String dbFileBase = KulloUtils.getDatabasePathBase(callingActivity.getApplication(), address);
+                    ArrayList<String> filesToDelete = new ArrayList<>(Arrays.asList(
+                            dbFileBase,
+                            dbFileBase + "-shm",
+                            dbFileBase + "-wal"
+                    ));
+                    Log.d(TAG, "Trying to delete " + filesToDelete + " ...");
+
+                    for (String filePath : filesToDelete) {
+                        File myFile = new File(filePath);
+                        if (myFile.exists()) {
+                            if (!myFile.delete()) {
+                                Log.e(TAG, "Error deleting database file: " + filePath);
+                            }
+                        } else {
+                            Log.d(TAG, "Skipping non-existing database file: " + filePath);
+                        }
+                    }
+
+                    // delete credentials from shared preferences
+                    SharedPreferences sharedPref = callingActivity.getApplicationContext().getSharedPreferences(
+                            KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
+                    sharedPref.edit().clear().apply();
+
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Void aVoid) {
+                    callback.run();
+                }
+            }.execute();
+        } else {
+            callback.run();
         }
-
-        // delete credentials from shared preferences
-        SharedPreferences sharedPref = callingActivity.getApplicationContext().getSharedPreferences(
-                KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
-        sharedPref.edit().clear().commit();
     }
 
     public boolean sessionAvailable() {
@@ -464,11 +479,15 @@ public class KulloConnector {
     }
 
     public void syncKullo() {
+        RuntimeAssertion.require(mSession != null);
         mSession.syncer().requestSync(SyncMode.WITHOUTATTACHMENTS);
+        mTaskHolder.add(mSession.syncer().asyncTask());
     }
 
     public void sendMessages() {
+        RuntimeAssertion.require(mSession != null);
         mSession.syncer().requestSync(SyncMode.SENDONLY);
+        mTaskHolder.add(mSession.syncer().asyncTask());
     }
 
     private class ConnectorSyncerListener extends SyncerListener {
@@ -503,14 +522,10 @@ public class KulloConnector {
         public void error(NetworkError error) {
             synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
                 for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
-                    ((SyncerListenerObserver) observer).error(error.toString());
+                    ((SyncerListenerObserver) observer).error(error);
                 }
             }
         }
-    }
-
-    protected void startSync(SyncMode syncMode) {
-        mSession.syncer().requestSync(syncMode);
     }
 
     // CONVERSATIONS
@@ -692,7 +707,8 @@ public class KulloConnector {
 
     public void saveDraftAttachmentContent(long conversationId, long attachmentId, String path) {
         RuntimeAssertion.require(mSession != null);
-        mSaveDraftAttachmentTask = mSession.draftAttachments().saveToAsync(conversationId, attachmentId, path, new DraftAttachmentsSaveToListener() {
+
+        mTaskHolder.add(mSession.draftAttachments().saveToAsync(conversationId, attachmentId, path, new DraftAttachmentsSaveToListener() {
             @Override
             public void finished(long convId, long attId, String path) {
                 synchronized (mListenerObservers.get(DraftAttachmentsSaveListenerObserver.class)) {
@@ -710,7 +726,7 @@ public class KulloConnector {
                     }
                 }
             }
-        });
+        }));
     }
 
     // PARTICIPANTS SENDERS
@@ -889,7 +905,8 @@ public class KulloConnector {
     }
 
     public void saveMessageAttachment(long messageId, long attachmentId, String path) {
-        mSaveMessageAttachmentTask = mSession.messageAttachments().saveToAsync(messageId, attachmentId, path, new MessageAttachmentsSaveToListener() {
+        RuntimeAssertion.require(mSession != null);
+        mTaskHolder.add(mSession.messageAttachments().saveToAsync(messageId, attachmentId, path, new MessageAttachmentsSaveToListener() {
             @Override
             public void finished(long msgId, long attId, String path) {
                 synchronized (mListenerObservers.get(MessageAttachmentsSaveListenerObserver.class)) {
@@ -907,7 +924,7 @@ public class KulloConnector {
                     }
                 }
             }
-        });
+        }));
     }
 
     @NonNull
@@ -953,7 +970,9 @@ public class KulloConnector {
 
     // REGISTRATION
     public void generateKeysAsync() {
-        mRegistrationGenerateKeysTask = mClient.generateKeysAsync(new ClientGenerateKeysListener() {
+        Client client = ClientConnector.get().getClient();
+
+        mTaskHolder.add(client.generateKeysAsync(new ClientGenerateKeysListener() {
             @Override
             public void progress(byte progress) {
                 synchronized (mListenerObservers.get(ClientGenerateKeysListenerObserver.class)) {
@@ -972,7 +991,7 @@ public class KulloConnector {
                     }
                 }
             }
-        });
+        }));
     }
 
     public void registerAddressAsync(@NonNull final String addressString) {
@@ -981,7 +1000,7 @@ public class KulloConnector {
         Address address = Address.create(addressString);
         RuntimeAssertion.require(address != null);
 
-        mRegistrationRegisterAccountTask = mRegistration.registerAccountAsync(address, null, "", new RegistrationRegisterAccountListener() {
+        mTaskHolder.add(mRegistration.registerAccountAsync(address, null, "", new RegistrationRegisterAccountListener() {
             @Override
             public void challengeNeeded(Address address, Challenge challenge) {
                 synchronized (mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
@@ -1013,11 +1032,11 @@ public class KulloConnector {
             public void error(Address address, NetworkError error) {
                 synchronized (mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
                     for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                        ((RegistrationRegisterAccountListenerObserver) observer).error(addressString, error.toString());
+                        ((RegistrationRegisterAccountListenerObserver) observer).error(address, error);
                     }
                 }
             }
-        });
+        }));
     }
 
     // Observers
@@ -1062,12 +1081,6 @@ public class KulloConnector {
             }
         }
         Log.w(TAG, "Event observer to be removed not found for type: '" + type.toString() + "'");
-    }
-
-    @NonNull
-    public Client getClient() {
-        RuntimeAssertion.require(mClient != null);
-        return mClient;
     }
 
     @NonNull

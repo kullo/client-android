@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.KulloIdsAdapter;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Formatting;
 
 public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
@@ -22,7 +22,7 @@ public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
         mContext = context;
         mMessageId = messageId;
         mAttachmentsDownloaded = attachmentsDownloaded;
-        replaceAll(KulloConnector.get().getMessageAttachmentsIds(mMessageId));
+        replaceAll(SessionConnector.get().getMessageAttachmentsIds(mMessageId));
     }
 
     @Override
@@ -38,8 +38,8 @@ public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
     public void onBindViewHolder(AttachmentsViewHolder attachmentsViewHolder, int position) {
         final long attachmentId = getItem(position);
 
-        String filename = KulloConnector.get().getMessageAttachmentFilename(mMessageId, attachmentId);
-        String sizeText = Formatting.filesizeHuman(KulloConnector.get().getMessageAttachmentFilesize(mMessageId, attachmentId));
+        String filename = SessionConnector.get().getMessageAttachmentFilename(mMessageId, attachmentId);
+        String sizeText = Formatting.filesizeHuman(SessionConnector.get().getMessageAttachmentFilesize(mMessageId, attachmentId));
         String text = filename + " (" + sizeText + ")";
         attachmentsViewHolder.mAttachmentName.setText(text);
 

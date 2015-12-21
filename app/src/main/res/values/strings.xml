@@ -34,14 +34,25 @@ ellipsis (…)
     <string name="action_done">Done</string>
 
     <!-- error messages -->
-    <string name="error_login_failed">Login failed.</string>
-    <string name="network_error_connection">Network connection couldn\'t be established</string>
+    <string name="network_error_title">Network error</string>
+    <string name="network_error_forbidden">Client too old or otherwise blocked. Please check for update.</string>
+    <string name="network_error_protocol">Client and server incompatible. Please check for update.</string>
+    <string name="network_error_unauthorized">Invalid login credentials (Kullo address + MasterKey).</string>
+    <string name="network_error_server">Server-side error. This is not your fault.</string>
+    <string name="network_error_connection">Network connection couldn\'t be established.</string>
+    <string name="network_error_unknown">Unknown error.</string>
 
     <!-- login -->
     <string name="login_error_address_invalid">Invalid Kullo address</string>
     <string name="login_error_masterkey_block_invalid">Invalid</string>
     <string name="progress_login">Login</string>
     <string name="login">Login</string>
+    <string name="error_login_failed_title">Login failed</string>
+    <string name="error_login_failed_description">Invalid combination of Kullo address and MasterKey.</string>
+
+    <!-- logout -->
+    <string name="logging_out">Logging out…</string>
+    <string name="logging_out_description">Deleting local messages and user settings</string>
 
     <!-- registration -->
     <string name="register">Register</string>

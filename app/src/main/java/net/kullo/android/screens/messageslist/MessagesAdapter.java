@@ -12,7 +12,7 @@ import android.view.ViewGroup;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloIdsAdapter;
 
 import org.joda.time.DateTime;
@@ -67,13 +67,13 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
     public void onBindViewHolder(MessagesViewHolder messagesViewHolder, final int position) {
         final Long messageId = getItem(position);
 
-        final boolean unread = KulloConnector.get().getMessageUnread(messageId);
-        final DateTime dateReceived = KulloConnector.get().getMessageDateReceived(messageId);
-        final String text = KulloConnector.get().getMessageText(messageId);
+        final boolean unread = SessionConnector.get().getMessageUnread(messageId);
+        final DateTime dateReceived = SessionConnector.get().getMessageDateReceived(messageId);
+        final String text = SessionConnector.get().getMessageText(messageId);
         final String textCompressed = text.replaceAll("\\s+", " ");
-        final Bitmap senderAvatar = KulloConnector.get().getSenderAvatar(mBaseActivity, messageId);
-        final String senderName = KulloConnector.get().getSenderName(messageId);
-        final ArrayList<Long> attachmentIds = KulloConnector.get().getMessageAttachmentsIds(messageId);
+        final Bitmap senderAvatar = SessionConnector.get().getSenderAvatar(mBaseActivity, messageId);
+        final String senderName = SessionConnector.get().getSenderName(messageId);
+        final ArrayList<Long> attachmentIds = SessionConnector.get().getMessageAttachmentsIds(messageId);
 
         messagesViewHolder.mMessageDateTextView.setText(getDateText(dateReceived));
         messagesViewHolder.mSenderAvatarImage.setImageBitmap(senderAvatar);
@@ -100,7 +100,7 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
     }
 
     private void addMessageIds() {
-        replaceAll(KulloConnector.get().getAllMessageIdsSorted(mConversationId));
+        replaceAll(SessionConnector.get().getAllMessageIdsSorted(mConversationId));
     }
 
     private String getDateText(DateTime dateReceived) {

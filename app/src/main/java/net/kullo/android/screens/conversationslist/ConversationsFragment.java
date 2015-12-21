@@ -26,13 +26,15 @@ import android.widget.Toast;
 import com.timehop.stickyheadersrecyclerview.StickyRecyclerHeadersDecoration;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.DialogMaker;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.observers.eventobservers.ConversationsEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.MessagesListActivity;
 import net.kullo.javautils.RuntimeAssertion;
+import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
 import java.util.List;
@@ -112,7 +114,7 @@ public class ConversationsFragment extends Fragment {
                 });
             }
         };
-        KulloConnector.get().addEventObserver(
+        SessionConnector.get().addEventObserver(
                 ConversationsEventObserver.class,
                 mConversationsEventObserver);
 
@@ -125,7 +127,7 @@ public class ConversationsFragment extends Fragment {
 
         unregisterSyncFinishedListenerObserver();
 
-        KulloConnector.get().removeEventObserver(
+        SessionConnector.get().removeEventObserver(
                 ConversationsEventObserver.class,
                 mConversationsEventObserver);
     }
@@ -133,7 +135,7 @@ public class ConversationsFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        RuntimeAssertion.require(KulloConnector.get().sessionAvailable());
+        RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
 
         // set title
         getActivity().setTitle(R.string.menu_conversations);
@@ -157,7 +159,7 @@ public class ConversationsFragment extends Fragment {
 
         mIsPaused = false;
 
-        if (KulloConnector.get().isSyncing()) {
+        if (SessionConnector.get().isSyncing()) {
             mSwipeLayout.setEnabled(false);
             mSwipeLayout.setRefreshing(true);
         } else {
@@ -181,7 +183,7 @@ public class ConversationsFragment extends Fragment {
             case R.id.action_refresh:
                 mSwipeLayout.setEnabled(false);
                 mSwipeLayout.setRefreshing(true);
-                KulloConnector.get().syncKullo();
+                SessionConnector.get().syncKullo();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -196,7 +198,7 @@ public class ConversationsFragment extends Fragment {
             @Override
             public void onRefresh() {
                 mSwipeLayout.setEnabled(false); // Lock it
-                KulloConnector.get().syncKullo();
+                SessionConnector.get().syncKullo();
             }
         });
     }
@@ -265,7 +267,7 @@ public class ConversationsFragment extends Fragment {
             }
 
             @Override
-            public void error(String error) {
+            public void error(final NetworkError error) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -274,18 +276,20 @@ public class ConversationsFragment extends Fragment {
                             mSwipeLayout.setRefreshing(false);
                         }
 
-                        //TODO error message
+                        Toast.makeText(getActivity(),
+                                DialogMaker.getTextForNetworkError(getActivity(), error),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
             }
         };
-        KulloConnector.get().addListenerObserver(
+        SessionConnector.get().addListenerObserver(
                 SyncerListenerObserver.class,
                 mSyncerListenerObserver);
     }
 
     private void unregisterSyncFinishedListenerObserver() {
-        KulloConnector.get().removeListenerObserver(
+        SessionConnector.get().removeListenerObserver(
                 SyncerListenerObserver.class,
                 mSyncerListenerObserver);
     }
@@ -353,7 +357,7 @@ public class ConversationsFragment extends Fragment {
         // So stop action mode as well
         clearSelection();
 
-        List<Long> conversationIds = KulloConnector.get().getAllConversationIdsSorted();
+        List<Long> conversationIds = SessionConnector.get().getAllConversationIdsSorted();
         mAdapter.replaceAll(conversationIds);
 
         setVisibilityControlsIfListIsEmpty();
@@ -388,8 +392,8 @@ public class ConversationsFragment extends Fragment {
                             // only delete empty conversations
                             int skippedConversationsCount = 0;
                             for (Long convId : mAdapter.getSelectedItems()) {
-                                if (KulloConnector.get().getMessageCount(convId) == 0) {
-                                    KulloConnector.get().removeConversation(convId);
+                                if (SessionConnector.get().getMessageCount(convId) == 0) {
+                                    SessionConnector.get().removeConversation(convId);
                                 } else {
                                     skippedConversationsCount++;
                                 }

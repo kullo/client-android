@@ -17,14 +17,17 @@ import android.widget.RelativeLayout;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.DialogMaker;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
+import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.MasterKey;
+import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.UserSettings;
 
 import java.util.ArrayList;
@@ -34,12 +37,11 @@ import java.util.List;
 /**
  * Launching activity.
  *
- * Checks if credentials are stored and logs in using the {@link KulloConnector}.
- * After session is retrieved, {@link KulloConnector} calls Observers.
+ * Checks if credentials are stored and logs in using the {@link SessionConnector}.
+ * After session is retrieved, {@link SessionConnector} calls Observers.
  *
- * Input fields are validated, errors are shown. With shown errors we need more space, thus the header fades out if validation errors are shown.
- *
- * Created by marcusfranzen on 27.07.15.
+ * Input fields are validated, errors are shown. With shown errors we need more space,
+ * thus the header fades out if validation errors are shown.
  */
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
@@ -63,16 +65,8 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         setupLayout();
 
-        // Case 1: Activity started to logout
         // Case 2: Activity started as an intermediate step to ConversationsListActivity (must be after logout)
         // Case 3: Activity started for user to type in MasterKey
-
-        // Case 1
-        // if started from logout-button in navigationview of mainactivity --> logout first, clear saved blocks
-        if (getIntent().getBooleanExtra(KulloConstants.LOGOUT_INTENT, false)) {
-            Log.d(TAG, getIntent().toString() + "; Extras: " + getIntent().getExtras().toString());
-            KulloConnector.get().logout(this);
-        }
 
         // call registerCreateSessionListenerObserver before checkForStoredCredentialsAndCreateSession
         // to ensure existing login information cause an activity switch to ConversationsListActivity
@@ -82,7 +76,7 @@ public class LoginActivity extends AppCompatActivity {
             // Case 2
             mLayoutContent.setVisibility(View.GONE);
         } else {
-            // Case 1 and Case 3
+            // Case 3
             Ui.setColorStatusBarArrangeHeader(this);
             mPreserveStatus = true;
             connectLayout();
@@ -335,7 +329,7 @@ public class LoginActivity extends AppCompatActivity {
                     .cancelable(false)
                     .show();
 
-            KulloConnector.get().checkLoginAndCreateSession(this, address, masterKey);
+            SessionConnector.get().checkLoginAndCreateSession(this, address, masterKey);
         }
     }
 
@@ -362,7 +356,7 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             @Override
-            public void error(final String errorText) {
+            public void loginFailed() {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -370,8 +364,8 @@ public class LoginActivity extends AppCompatActivity {
                             mCreatingSessionDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
                                 public void onDismiss(DialogInterface dialog) {
                                     new MaterialDialog.Builder(LoginActivity.this)
-                                            .title(R.string.error_title)
-                                            .content(errorText)
+                                            .title(R.string.error_login_failed_title)
+                                            .content(R.string.error_login_failed_description)
                                             .neutralText(R.string.ok)
                                             .cancelable(false)
                                             .show();
@@ -382,15 +376,47 @@ public class LoginActivity extends AppCompatActivity {
                     }
                 });
             }
+
+            @Override
+            public void networkError(final NetworkError error) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mCreatingSessionDialog != null) {
+                            mCreatingSessionDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                public void onDismiss(DialogInterface dialog) {
+                                    DialogMaker.makeForNetworkError(LoginActivity.this, error).show();
+                                }});
+                            mCreatingSessionDialog.dismiss();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void localError(final LocalError error) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mCreatingSessionDialog != null) {
+                            mCreatingSessionDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                                public void onDismiss(DialogInterface dialog) {
+                                    DialogMaker.makeForLocalError(LoginActivity.this, error).show();
+                                }});
+                            mCreatingSessionDialog.dismiss();
+                        }
+                    }
+                });
+            }
         };
-        KulloConnector.get().addListenerObserver(
+        SessionConnector.get().addListenerObserver(
                 ClientCreateSessionListenerObserver.class,
                 mClientCreateSessionListenerObserver);
     }
 
     private void unregisterCreateSessionListenerObserver() {
         RuntimeAssertion.require(mClientCreateSessionListenerObserver != null);
-        KulloConnector.get().removeListenerObserver(
+        SessionConnector.get().removeListenerObserver(
                 ClientCreateSessionListenerObserver.class,
                 mClientCreateSessionListenerObserver);
     }
@@ -398,7 +424,7 @@ public class LoginActivity extends AppCompatActivity {
     //HELPERS
 
     private boolean checkForStoredCredentialsAndCreateSession() {
-        UserSettings us = KulloConnector.get().loadStoredUserSettings(this);
+        UserSettings us = SessionConnector.get().loadStoredUserSettings(this);
 
         if (us == null) {
             Log.d(TAG, "No stored Kullo user settings found");
@@ -415,7 +441,7 @@ public class LoginActivity extends AppCompatActivity {
                 .cancelable(false)
                 .show();
 
-        KulloConnector.get().createSession(this, us);
+        SessionConnector.get().createSession(this, us);
         return true;
     }
 

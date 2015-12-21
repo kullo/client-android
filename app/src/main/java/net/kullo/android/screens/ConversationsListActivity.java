@@ -3,6 +3,7 @@ package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
@@ -15,11 +16,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
-import net.kullo.android.application.LogoutIntent;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
@@ -31,7 +32,7 @@ import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ConversationsListActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
-    private static final String TAG = "ConversationsListActivity";
+    private static final String TAG = "ConversationsListAct."; // max. 23 chars
     private Toolbar mToolbar;
     private NavigationView mNavigationView;
     private View mNavigationHeaderView;
@@ -49,7 +50,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = KulloConnector.get().createActivityWithSession(this);
+        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
 
         setContentView(R.layout.activity_conversations_list);
         mToolbar = Ui.setupActionbar(this, false);
@@ -136,10 +137,10 @@ public class ConversationsListActivity extends AppCompatActivity implements
     }
 
     private void updateAccountInfoInNavigationHeader() {
-        mNavigationHeaderNameView.setText(KulloConnector.get().getClientName());
-        mNavigationHeaderAddressView.setText(KulloConnector.get().getClientAddressAsString());
+        mNavigationHeaderNameView.setText(SessionConnector.get().getClientName());
+        mNavigationHeaderAddressView.setText(SessionConnector.get().getClientAddressAsString());
 
-        byte[] avatar = KulloConnector.get().getClientAvatar();
+        byte[] avatar = SessionConnector.get().getClientAvatar();
         if (avatar != null && avatar.length > 0) {
             mNavigationHeaderAvatarView.setImageBitmap(AvatarUtils.avatarToBitmap(avatar));
             mNavigationHeaderAvatarView.setVisibility(View.VISIBLE);
@@ -186,15 +187,16 @@ public class ConversationsListActivity extends AppCompatActivity implements
                         .content(R.string.logout_warning)
                         .positiveText(R.string.logout_warning_button_positive)
                         .negativeText(R.string.logout_warning_button_negative)
-                        .callback(new MaterialDialog.ButtonCallback() {
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
                             @Override
-                            public void onPositive(MaterialDialog dialog) {
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction dialogAction) {
                                 forceLogout();
                             }
-
+                        })
+                        .onNegative(new MaterialDialog.SingleButtonCallback() {
                             @Override
-                            public void onNegative(MaterialDialog dialog) {
-                                mConfirmLogoutDialog.dismiss();
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction dialogAction) {
+                                dialog.dismiss();
                             }
                         })
                         .show();
@@ -224,8 +226,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
     }
 
     public void forceLogout() {
-        Intent intent = new LogoutIntent(this);
-        startActivity(intent);
+        startActivity(new Intent(this, LogoutActivity.class));
         finish();
     }
 }

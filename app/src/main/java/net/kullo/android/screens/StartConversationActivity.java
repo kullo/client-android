@@ -17,7 +17,8 @@ import android.content.Intent;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.ClientConnector;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.screens.startconversation.ParticipantsAdapter;
@@ -44,7 +45,7 @@ public class StartConversationActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = KulloConnector.get().createActivityWithSession(this);
+        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
 
         setContentView(R.layout.activity_start_conversation);
 
@@ -127,7 +128,7 @@ public class StartConversationActivity extends AppCompatActivity {
 
     private void proceedLeave() {
         if (mParticipantsAdapter.getItemCount() > 0) {
-            long conversationId = KulloConnector.get().addNewConversationForKulloAddresses(mParticipantsAdapter.getItems());
+            long conversationId = SessionConnector.get().addNewConversationForKulloAddresses(mParticipantsAdapter.getItems());
 
             Intent intent = new Intent(this, MessagesListActivity.class);
             intent.putExtra(MessagesListActivity.CONVERSATION_ID, conversationId);
@@ -167,7 +168,7 @@ public class StartConversationActivity extends AppCompatActivity {
                     .cancelable(false)
                     .show();
 
-            mAddrExistsTask = KulloConnector.get().getClient().addressExistsAsync(
+            mAddrExistsTask = ClientConnector.get().getClient().addressExistsAsync(
                     newParticipant,
                     new ClientAddressExistsListener() {
 

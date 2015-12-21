@@ -17,13 +17,15 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloConnector;
+import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.kulloapi.MessagesComparatorDsc;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.observers.eventobservers.MessageAddedEventObserver;
@@ -36,6 +38,7 @@ import net.kullo.android.screens.messageslist.MessageAttachmentsOpener;
 import net.kullo.android.screens.messageslist.MessagesAdapter;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AsyncTask;
+import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
 import java.util.ArrayList;
@@ -54,7 +57,6 @@ public class MessagesListActivity extends AppCompatActivity {
     private MessageAddedEventObserver mMessageAddedObserver;
     private MessageRemovedEventObserver mMessageDeletedObserver;
     private MessageStateEventObserver mMessageStateObserver;
-    private SyncerListenerObserver mDownloadAttachmentsFinishedObserver;
 
     private SyncerListenerObserver mSyncerListenerObserver;
     private ActionMode mActionMode = null;
@@ -71,7 +73,7 @@ public class MessagesListActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = KulloConnector.get().createActivityWithSession(this);
+        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
 
         setContentView(R.layout.activity_messages_list);
 
@@ -81,38 +83,6 @@ public class MessagesListActivity extends AppCompatActivity {
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 
-        mDownloadAttachmentsFinishedObserver = new SyncerListenerObserver() {
-            @Override
-            public void draftAttachmentsTooBig(long convId) {
-            }
-
-            @Override
-            public void progressed(SyncProgress progress) {
-            }
-
-            @Override
-            public void finished() {
-            }
-
-            @Override
-            public void error(final String error) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        new MaterialDialog.Builder(MessagesListActivity.this)
-                                .title(R.string.error_title)
-                                .content(error)
-                                .neutralText(R.string.ok)
-                                .cancelable(false)
-                                .show();
-                    }
-                });
-            }
-        };
-        KulloConnector.get().addListenerObserver(
-                SyncerListenerObserver.class,
-                mDownloadAttachmentsFinishedObserver);
-
         setupMessagesList();
 
         mProgressBar = (MaterialProgressBar) findViewById(R.id.horizontal_progress_toolbar);
@@ -121,7 +91,7 @@ public class MessagesListActivity extends AppCompatActivity {
             @Override
             public void onRefresh() {
                 mSwipeLayout.setEnabled(false); // Lock it
-                KulloConnector.get().syncKullo();
+                SessionConnector.get().syncKullo();
             }
         });
 
@@ -132,7 +102,7 @@ public class MessagesListActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        setTitle(KulloConnector.get().getConversationNameOrPlaceHolder(mConversationId));
+        setTitle(SessionConnector.get().getConversationNameOrPlaceHolder(mConversationId));
 
         updateSenderAvatarViewsInHeader();
 
@@ -143,7 +113,7 @@ public class MessagesListActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            MessagesComparatorDsc comparator = new MessagesComparatorDsc(KulloConnector.get().getSession());
+                            MessagesComparatorDsc comparator = new MessagesComparatorDsc(SessionConnector.get().getSession());
                             mMessagesAdapter.add(messageId, comparator);
                             Log.d(TAG, "Message item added (id: " + messageId + "). " + comparator.getStats());
                         }
@@ -151,7 +121,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 }
             }
         };
-        KulloConnector.get().addEventObserver(
+        SessionConnector.get().addEventObserver(
                 MessageAddedEventObserver.class,
                 mMessageAddedObserver);
 
@@ -169,7 +139,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 }
             }
         };
-        KulloConnector.get().addEventObserver(
+        SessionConnector.get().addEventObserver(
                 MessageRemovedEventObserver.class,
                 mMessageDeletedObserver);
 
@@ -187,7 +157,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 }
             }
         };
-        KulloConnector.get().addEventObserver(
+        SessionConnector.get().addEventObserver(
                 MessageStateEventObserver.class,
                 mMessageStateObserver);
 
@@ -198,13 +168,13 @@ public class MessagesListActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        KulloConnector.get().removeEventObserver(
+        SessionConnector.get().removeEventObserver(
                 MessageAddedEventObserver.class,
                 mMessageAddedObserver);
-        KulloConnector.get().removeEventObserver(
+        SessionConnector.get().removeEventObserver(
                 MessageRemovedEventObserver.class,
                 mMessageDeletedObserver);
-        KulloConnector.get().removeEventObserver(
+        SessionConnector.get().removeEventObserver(
                 MessageStateEventObserver.class,
                 mMessageStateObserver);
 
@@ -294,7 +264,7 @@ public class MessagesListActivity extends AppCompatActivity {
         // Fill adapter with the most recent data
         mMessagesAdapter.updateDataSet();
 
-        if (!KulloConnector.get().isSyncing()) {
+        if (!SessionConnector.get().isSyncing()) {
             mSwipeLayout.setEnabled(true);
             mSwipeLayout.setRefreshing(false);
             mProgressBar.setVisibility(View.GONE);
@@ -321,7 +291,7 @@ public class MessagesListActivity extends AppCompatActivity {
             params.setMargins(0, 0, dp8, 0);
 
             /*
-            ArrayList<Bitmap> senderAvatars = KulloConnector.get().getConversationAvatars(this, mConversationId);
+            ArrayList<Bitmap> senderAvatars = SessionConnector.get().getConversationAvatars(this, mConversationId);
             for (Bitmap avatar : senderAvatars) {
                 CircleImageView circleImageView = new CircleImageView(this);
                 circleImageView.setImageBitmap(avatar);
@@ -338,9 +308,6 @@ public class MessagesListActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         mMessageAttachmentsOpener.unregisterSaveFinishedListenerObserver();
-        KulloConnector.get().removeListenerObserver(
-                SyncerListenerObserver.class,
-                mDownloadAttachmentsFinishedObserver);
     }
 
     @Override
@@ -352,7 +319,7 @@ public class MessagesListActivity extends AppCompatActivity {
             case R.id.action_refresh:
                 mSwipeLayout.setEnabled(false);
                 mSwipeLayout.setRefreshing(true);
-                KulloConnector.get().syncKullo();
+                SessionConnector.get().syncKullo();
                 return true;
             case R.id.action_toggle_message_size:
                 toggleMessageSize();
@@ -381,7 +348,7 @@ public class MessagesListActivity extends AppCompatActivity {
     }
 
     public void replyClicked(View v) {
-        if (KulloConnector.get().userSettingsAreValidForSync()) {
+        if (SessionConnector.get().userSettingsAreValidForSync()) {
             Intent intent = new Intent(this, ComposeActivity.class);
             intent.putExtra(KulloConstants.CONVERSATION_ID, mConversationId);
             startActivityForResult(intent, KulloConstants.REQUEST_CODE_NEW_MESSAGE);
@@ -459,24 +426,28 @@ public class MessagesListActivity extends AppCompatActivity {
             }
 
             @Override
-            public void error(String error) {
+            public void error(final NetworkError error) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         mSwipeLayout.setEnabled(true);
                         mSwipeLayout.setRefreshing(false);
                         mProgressBar.setVisibility(View.GONE);
+
+                        Toast.makeText(MessagesListActivity.this,
+                                DialogMaker.getTextForNetworkError(MessagesListActivity.this, error),
+                                Toast.LENGTH_LONG).show();
                     }
                 });
             }
         };
-        KulloConnector.get().addListenerObserver(
+        SessionConnector.get().addListenerObserver(
                 SyncerListenerObserver.class,
                 mSyncerListenerObserver);
     }
 
     private void unregisterSyncFinishedListenerObserver() {
-        KulloConnector.get().removeListenerObserver(
+        SessionConnector.get().removeListenerObserver(
                 SyncerListenerObserver.class,
                 mSyncerListenerObserver);
     }
@@ -508,9 +479,9 @@ public class MessagesListActivity extends AppCompatActivity {
                         case R.id.action_delete:
                             List<Long> selectedMessageIdsCopy = new ArrayList<>(mMessagesAdapter.getSelectedItems());
                             for (long selectedMessageId : selectedMessageIdsCopy) {
-                                KulloConnector.get().removeMessage(selectedMessageId);
+                                SessionConnector.get().removeMessage(selectedMessageId);
                             }
-                            KulloConnector.get().syncKullo();
+                            SessionConnector.get().syncKullo();
 
                             mode.finish();
                             return true;

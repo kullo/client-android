@@ -36,8 +36,6 @@ public class KulloConstants {
     public static final String BLOCK_O = "block_o";
     public static final String BLOCK_P = "block_p";
 
-    public static final String LOGOUT_INTENT = "net.kullo.android.LOGOUT_INTENT";
-
     //image
     public static final int AVATAR_DIMENSION = 200;
     public static final int AVATAR_MAX_SIZE = 24*1024;

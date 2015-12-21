@@ -2,12 +2,14 @@
 package net.kullo.android.observers.listenerobservers;
 
 import net.kullo.android.observers.ListenerObserver;
+import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.AddressNotAvailableReason;
 import net.kullo.libkullo.api.Challenge;
+import net.kullo.libkullo.api.NetworkError;
 
 public interface RegistrationRegisterAccountListenerObserver extends ListenerObserver {
     void challengeNeeded(String address, Challenge challenge);
     void addressNotAvailable(String address, AddressNotAvailableReason reason);
     void finished(String address, String masterKeyAsPem);
-    void error(String address, String error);
+    void error(Address address, NetworkError error);
 }

@@ -492,6 +492,10 @@ public class SessionConnector {
 
     private class ConnectorSyncerListener extends SyncerListener {
         @Override
+        public void started() {
+        }
+
+        @Override
         public void draftAttachmentsTooBig(long convId) {
             synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
                 for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {

@@ -42,6 +42,10 @@ ellipsis (…)
     <string name="network_error_connection">Network connection couldn\'t be established.</string>
     <string name="network_error_unknown">Unknown error.</string>
 
+    <!-- welcome -->
+    <string name="welcome_already_address">You already have a Kullo address?</string>
+    <string name="welcome_need_address">You need a new Kullo address?</string>
+
     <!-- login -->
     <string name="login_error_address_invalid">Invalid Kullo address</string>
     <string name="login_error_masterkey_block_invalid">Invalid</string>
@@ -56,17 +60,18 @@ ellipsis (…)
 
     <!-- registration -->
     <string name="register">Register</string>
-    <string name="kullo_domain" translatable="false">#kullo.net</string>
-    <string name="enter_address">Choose your Kullo address</string>
-    <string name="handle">Username</string>
-    <string name="creating_masterkey">Generating keys</string>
-    <string name="wait_masterkey">This may take a few minutes. Please be patient.</string>
-    <string name="valid_address_instructions">You can use letters and numbers.  You can use more than one word, separated by . - or _.</string>
-    <string name="username_is_empty">Must not be empty</string>
-    <string name="address_is_invalid">Address format not valid</string>
-    <string name="address_already_exists">Address already exists</string>
-    <string name="address_blocked">Address blocked</string>
-    <string name="address_rejected">Server rejected this address.</string>
+    <string name="generate_keys_title">Generating keys%1$s</string>
+    <string name="generate_keys_description_short">This may take a few minutes. Please be patient.</string>
+    <string name="generate_keys_description_long">What we are doing right now is generating strong cryptographic keys for you so that you can communicate securely. Finding secure keys takes some time because we need to make sure they are as secure as advertised. We do it on your device so that nobody else (including us) learns about them.</string>
+    <string name="choose_address_title">Choose your Kullo address</string>
+    <string name="choose_address_username_placeholder">Username</string>
+    <string name="choose_address_kullo_domain" translatable="false">#kullo.net</string>
+    <string name="choose_address_valid_address_instructions">You can use letters and numbers. You can use more than one word, separated by . - or _.</string>
+    <string name="choose_address_username_is_empty">Must not be empty</string>
+    <string name="choose_address_address_is_invalid">Address format not valid</string>
+    <string name="choose_address_address_already_exists">Address already exists</string>
+    <string name="choose_address_address_blocked">Address blocked</string>
+    <string name="choose_address_challenge_needed">You cannot register this address without a challenge. Challenges are not yet supported on Kullo for Android.</string>
     <string name="could_not_start_registration">Registration failed.</string>
 
     <!-- nav drawer -->
@@ -149,6 +154,7 @@ ellipsis (…)
     <string name="address_not_exist">Address does not exist</string>
     <string name="address_check_failed_error_header">Address verification failed</string>
     <string name="address_check_failed_connection_error">Address could not be verified. Are you online? Is the address correct?</string>
+    <string name="sender_is_recipient">You cannot write a message to yourself</string>
     <string name="progress_new_participant">Address validation</string>
     <string name="create_conversation_failed">Could not create conversation</string>
     <string name="participant_needed">At least one participant is needed</string>

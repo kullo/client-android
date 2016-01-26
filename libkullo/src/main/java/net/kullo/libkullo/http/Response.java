@@ -34,4 +34,14 @@ public final class Response {
     public ArrayList<HttpHeader> getHeaders() {
         return headers;
     }
+
+    @Override
+    public String toString() {
+        return "Response{" +
+                "error=" + error +
+                "," + "statusCode=" + statusCode +
+                "," + "headers=" + headers +
+        "}";
+    }
+
 }

@@ -151,10 +151,16 @@ public class StartConversationActivity extends AppCompatActivity {
     private void addParticipant() {
         String newParticipantAddress = mNewParticipantTextInputLayout.getEditText().getText().toString();
 
-        //validation
+        // validation
         mNewParticipantTextInputLayout.setError(null);
-        Address newParticipant = Address.create(newParticipantAddress);
 
+        // prevent conversation with self
+        if (newParticipantAddress.equals(SessionConnector.get().getClientAddressAsString())) {
+            mNewParticipantTextInputLayout.setError(getResources().getText(R.string.sender_is_recipient));
+            return;
+        }
+
+        Address newParticipant = Address.create(newParticipantAddress);
         if (newParticipant == null) {
             //validation failed
             mNewParticipantTextInputLayout.setError(getResources().getText(R.string.login_error_address_invalid));

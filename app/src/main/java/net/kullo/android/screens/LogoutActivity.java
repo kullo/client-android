@@ -44,7 +44,7 @@ public class LogoutActivity extends AppCompatActivity {
     }
 
     private void goToNextScreen() {
-        startActivity(new Intent(LogoutActivity.this, LoginActivity.class));
+        startActivity(new Intent(LogoutActivity.this, WelcomeActivity.class));
         finish();
     }
 }

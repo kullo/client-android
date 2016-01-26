@@ -38,6 +38,10 @@ ellipsis (…)
     <string name="network_error_connection">Netzwerkverbindung konnte nicht hergestellt werden.</string>
     <string name="network_error_unknown">Unbekannter Fehler.</string>
 
+    <!-- welcome -->
+    <string name="welcome_already_address">Du hast bereits eine Kullo-Adresse?</string>
+    <string name="welcome_need_address">Du benötigst eine neue Kullo-Adresse?</string>
+
     <!-- login -->
     <string name="login_error_address_invalid">Ungültige Kullo-Adresse</string>
     <string name="login_error_masterkey_block_invalid">Ungültig</string>
@@ -52,9 +56,18 @@ ellipsis (…)
     <string name="logging_out_description">Lokale Nachrichten und Benutzerinformationen werden gelöscht</string>
 
     <!-- registration -->
-    <string name="address_blocked">Adresse gesperrt</string>
-    <string name="address_already_exists">Adresse existiert bereits</string>
-    <string name="address_is_invalid">Ungültiges Adressformat</string>
+    <string name="generate_keys_title">Erzeuge Schlüssel %1$s</string>
+    <string name="generate_keys_description_short">Das kann einige Minuten dauern. Bitte habe Geduld.</string>
+    <string name="generate_keys_description_long">Wir erzeugen gerade starke kryptographische Schlüssel, damit du sicher kommunizieren kannst. Schlüssel zu suchen dauert ein wenig, denn wir müssen dafür sorgen, dass sie wirklich sicher sind. Wir erzeugen sie auf deinem Gerät, damit sie niemand anderes (uns eingeschlossen) einsehen kann.</string>
+    <string name="choose_address_title">Wähle deine Kullo-Adresse</string>
+    <string name="choose_address_username_placeholder">Benutzername</string>
+    <string name="choose_address_valid_address_instructions">Du kannst Buchstaben und Ziffern benutzen. Außerdem kannst du . oder - oder _ benutzen, um deine Adresse zu unterteilen.</string>
+    <string name="choose_address_username_is_empty">Darf nicht leer sein</string>
+    <string name="choose_address_address_blocked">Adresse gesperrt</string>
+    <string name="choose_address_address_already_exists">Adresse existiert bereits</string>
+    <string name="choose_address_address_is_invalid">Ungültiges Adressformat</string>
+    <string name="choose_address_challenge_needed">Diese Adresse kann nicht ohne Challenge registriert werden. Challenges werden auf Kullo für Android derzeit nicht unterstützt.</string>
+    <string name="could_not_start_registration">Registrierung fehlgeschlagen</string>
 
     <!-- nav drawer -->
     <string name="menu_conversations">Nachrichten</string>
@@ -131,6 +144,7 @@ ellipsis (…)
     <string name="address_not_exist">Adresse existiert nicht</string>
     <string name="address_check_failed_error_header">Adressverifikation fehlgeschlagen</string>
     <string name="address_check_failed_connection_error">Adresse konnte nicht verifiziert werden. Bist du online? Ist die Adresse korrekt?</string>
+    <string name="sender_is_recipient">Du kannst keine Nachricht an dich selbst schreiben</string>
     <string name="progress_new_participant">Adressprüfung</string>
 
     <!-- compose -->
@@ -146,14 +160,7 @@ ellipsis (…)
     <string name="select_file_failed">Dateiauswahl fehlgeschlagen</string>
     <string name="select_file_canceled">Dateiauswahl abgebrochen</string>
     <string name="no_tmp_dir_found">Kein temporäres Verzeichnis gefunden</string>
-    <string name="valid_address_instructions">Du kannst Buchstaben und Ziffern benutzen. Außerdem kannst du . oder - oder _ benutzen, um deine Adresse zu unterteilen.</string>
-    <string name="wait_masterkey">Das kann einige Minuten dauern. Bitte habe Geduld.</string>
-    <string name="username_is_empty">Darf nicht leer sein</string>
     <string name="organization_opt">Organisation (optional)</string>
     <string name="participant_needed">Mindestens ein Teilnehmer ist nötig</string>
-    <string name="handle">Benutzername</string>
-    <string name="enter_address">Wähle deine Kullo-Adresse</string>
-    <string name="creating_masterkey">Erzeuge Schlüssel</string>
-    <string name="could_not_start_registration">Registrierung fehlgeschlagen</string>
 
 </resources>

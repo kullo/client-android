@@ -71,7 +71,7 @@ public class ChooseAddressFragment extends Fragment {
             public void onClick(View v) {
                 if (validateInput()) {
                     String address = mAddressEditText.getText().toString() +
-                            getResources().getText(R.string.kullo_domain);
+                            getResources().getText(R.string.choose_address_kullo_domain);
                     startAddressCreation(address);
                 }
             }
@@ -96,14 +96,14 @@ public class ChooseAddressFragment extends Fragment {
         String text = mAddressEditText.getText().toString();
 
         if (text.isEmpty()) {
-            mAddressInputLayout.setError(getResources().getText(R.string.username_is_empty));
+            mAddressInputLayout.setError(getResources().getText(R.string.choose_address_username_is_empty));
             mAddressInputLayout.setErrorEnabled(true);
             return false;
         }
 
-        String address = text + getResources().getText(R.string.kullo_domain);
+        String address = text + getResources().getText(R.string.choose_address_kullo_domain);
         if (!KulloUtils.isValidKulloAddress(address)) {
-            mAddressInputLayout.setError(getResources().getText(R.string.address_is_invalid));
+            mAddressInputLayout.setError(getResources().getText(R.string.choose_address_address_is_invalid));
             mAddressInputLayout.setErrorEnabled(true);
             return false;
         }
@@ -127,7 +127,7 @@ public class ChooseAddressFragment extends Fragment {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        showRegistrationError(getResources().getString(R.string.address_rejected));
+                        showRegistrationError(getResources().getString(R.string.choose_address_challenge_needed));
                     }
                 });
             }
@@ -140,10 +140,10 @@ public class ChooseAddressFragment extends Fragment {
                         String errorText;
                         switch (reason) {
                             case BLOCKED:
-                                errorText = getResources().getString(R.string.address_blocked);
+                                errorText = getResources().getString(R.string.choose_address_address_blocked);
                                 break;
                             case EXISTS:
-                                errorText = getResources().getString(R.string.address_already_exists);
+                                errorText = getResources().getString(R.string.choose_address_address_already_exists);
                                 break;
                             default:
                                 throw new AssertionError("Invalid enum value.");

@@ -52,8 +52,7 @@ public class SingleMessageActivity extends AppCompatActivity {
     private MessageAttachmentsDownloadedChangedEventObserver mMessageAttachmentsDownloadedChangedEventObserver;
 
     public static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
-    protected DateTimeFormatter mFormatterClock;
-    protected DateTimeFormatter mFormatterCalendarDate;
+    protected DateTimeFormatter mFormatterDate;
 
     // Views
     protected CircleImageView mCircleImageView;
@@ -84,8 +83,7 @@ public class SingleMessageActivity extends AppCompatActivity {
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 
-        mFormatterCalendarDate = ((KulloApplication) getApplication()).getShortDateFormatter();
-        mFormatterClock = ((KulloApplication) getApplication()).getShortTimeFormatter();
+        mFormatterDate = ((KulloApplication) getApplication()).getFullDateTimeFormatter();
 
         mDownloadAttachmentsFinishedObserver = new SyncerListenerObserver() {
             @Override
@@ -305,16 +303,7 @@ public class SingleMessageActivity extends AppCompatActivity {
     private String getDateText(DateTime dateReceived) {
         LocalDateTime localDateReceived = new LocalDateTime(dateReceived, LOCAL_TIME_ZONE);
 
-        String dateString;
-        if(localDateReceived.toLocalDate().equals(new LocalDate())) {
-            dateString = localDateReceived.toString(mFormatterClock);
-        } else if(localDateReceived.toLocalDate().equals((new LocalDate()).minusDays(1))) {
-            dateString = SingleMessageActivity.this.getResources().getString(R.string.yesterday);
-        } else {
-            dateString = localDateReceived.toString(mFormatterCalendarDate);
-        }
-
-        return dateString;
+        return localDateReceived.toString(mFormatterDate);
     }
 
     private void setMessageText(String messageText, String messageTextCompressed) {

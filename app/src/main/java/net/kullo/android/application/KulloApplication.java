@@ -51,6 +51,14 @@ public class KulloApplication extends Application {
         return DateTimeFormat.forPattern(pattern);
     }
 
+    public DateTimeFormatter getFullDateTimeFormatter() {
+        DateFormat systemDateFormat = android.text.format.DateFormat.getMediumDateFormat(this);
+        DateFormat systemTimeFormat = android.text.format.DateFormat.getTimeFormat(this);
+        String pattern = ((SimpleDateFormat) systemDateFormat).toLocalizedPattern() + ", " +
+            ((SimpleDateFormat) systemTimeFormat).toLocalizedPattern();
+        return DateTimeFormat.forPattern(pattern);
+    }
+
     public boolean canOpenFileType(File file, String mimeType) {
         Intent openFileIntent = new Intent();
         openFileIntent.setAction(android.content.Intent.ACTION_VIEW);

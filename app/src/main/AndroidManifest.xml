@@ -18,7 +18,7 @@
         android:screenOrientation="portrait"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".screens.LoginActivity"
+            android:name=".screens.WelcomeActivity"
             android:configChanges="orientation|keyboardHidden"
             android:noHistory="true"
             android:screenOrientation="portrait">
@@ -28,6 +28,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".screens.LoginActivity"
+            android:configChanges="orientation|keyboardHidden"
+            android:noHistory="true"
+            android:screenOrientation="portrait"></activity>
         <activity
             android:name=".screens.RegistrationActivity"
             android:configChanges="orientation|keyboardHidden"

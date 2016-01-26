@@ -34,4 +34,14 @@ public final class Request {
     public ArrayList<HttpHeader> getHeaders() {
         return headers;
     }
+
+    @Override
+    public String toString() {
+        return "Request{" +
+                "method=" + method +
+                "," + "url=" + url +
+                "," + "headers=" + headers +
+        "}";
+    }
+
 }

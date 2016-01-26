@@ -8,6 +8,9 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import java.util.Timer;
+import android.widget.TextView;
+import java.util.TimerTask;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.SessionConnector;
@@ -18,7 +21,10 @@ import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
 public class KeygenFragment extends Fragment {
     private MaterialProgressBar mProgressBar;
+    private Timer mDotAnimation;
     private ClientGenerateKeysListenerObserver mGenerateKeysListenerObserver;
+    private volatile byte mCurrentProgress = -1;
+    private volatile boolean mIsFragmentStarted = false;
 
     @Nullable
     @Override
@@ -26,7 +32,11 @@ public class KeygenFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_registration_keygen, container, false);
 
         mProgressBar = (MaterialProgressBar) view.findViewById(R.id.masterkey_creation_progress);
-        mProgressBar.setProgress(0);
+
+        mDotAnimation = launchDotAnimation(
+            (TextView) view.findViewById(R.id.masterkey_creation_title),
+            getResources().getString(R.string.generate_keys_title)
+            );
 
         return view;
     }
@@ -34,19 +44,52 @@ public class KeygenFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        registerGenerateKeysObserver();
+        mIsFragmentStarted = true;
+        if (mCurrentProgress == -1) {
+            // first start
+            launchKeygenTask();
+        }
+        if (mCurrentProgress >= 100) {
+            // keygen finished in the background
+            openNextView();
+        }
+        mProgressBar.setProgress(mCurrentProgress);
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        unregisterGenerateKeysObserver();
+        mIsFragmentStarted = false;
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
+    public void onDestroy() {
+        mDotAnimation.cancel();
+        super.onDestroy();
+    }
 
+    private Timer launchDotAnimation(final TextView textView, final String baseStringPattern) {
+        Timer anim = new Timer();
+        anim.schedule(new TimerTask() {
+                private int dotCount = 0;
+                private final String dotString = "...";
+                public void run() {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            textView.setText(String.format(baseStringPattern, dotString.substring(0, dotCount)));
+                            dotCount = ++dotCount % 4;
+                        }
+                    });
+                }
+            },
+            0,800); // launch now, repeat every 800 ms
+        return anim;
+    }
+
+    private void launchKeygenTask() {
+        mCurrentProgress = 0;
+        registerGenerateKeysObserver();
         SessionConnector.get().generateKeysAsync();
     }
 
@@ -54,22 +97,28 @@ public class KeygenFragment extends Fragment {
         mGenerateKeysListenerObserver = new ClientGenerateKeysListenerObserver() {
             @Override
             public void progress(final byte progress) {
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mProgressBar.setProgress(progress);
-                    }
-                });
+                mCurrentProgress = progress;
+                if (mIsFragmentStarted) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mProgressBar.setProgress(progress);
+                        }
+                    });
+                }
             }
 
             @Override
             public void finished() {
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        openNextView();
-                    }
-                });
+                mCurrentProgress = 100;
+                if (mIsFragmentStarted) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            openNextView();
+                        }
+                    });
+                }
             }
         };
 
@@ -86,6 +135,9 @@ public class KeygenFragment extends Fragment {
 
     @UiThread
     public void openNextView() {
+        unregisterGenerateKeysObserver();
+        mCurrentProgress = 0;
+        mDotAnimation.cancel();
         ((RegistrationActivity) getActivity()).nextFragment();
     }
 }

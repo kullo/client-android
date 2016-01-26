@@ -15,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.Pair;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -62,6 +63,7 @@ public class ComposeActivity extends AppCompatActivity {
     private DraftAttachmentsAdapter mDraftAttachmentsAdapter;
     private DraftAttachmentOpener mDraftAttachmentOpener;
 
+    private Pair<Integer, Integer> mStoredSelection = null;
     public static final int FILE_REQUEST_CODE = 1;
 
     @Override
@@ -190,6 +192,7 @@ public class ComposeActivity extends AppCompatActivity {
         mNewMessageReceivers.setText(SessionConnector.get().getConversationNameOrPlaceHolder(mConversationId));
 
         updateDraftTextFromStorage();
+        restoreSelection();
 
         mDraftEventObserver = new DraftEventObserver() {
             @Override
@@ -221,6 +224,7 @@ public class ComposeActivity extends AppCompatActivity {
         super.onPause();
 
         saveDraft(false);
+        rememberSelection();
         Log.d(TAG, "Activity paused. Draft saved.");
     }
 
@@ -346,6 +350,19 @@ public class ComposeActivity extends AppCompatActivity {
     private void unregisterSyncFinishedListenerObserver() {
         SessionConnector.get().removeListenerObserver(SyncerListenerObserver.class,
                 mSyncerListenerObserver);
+    }
+
+    private void rememberSelection() {
+        mStoredSelection = new Pair<Integer, Integer>(mNewMessageText.getSelectionStart(), mNewMessageText.getSelectionEnd());
+    }
+
+    private void restoreSelection() {
+        if (mStoredSelection != null) {
+            int textLength = mNewMessageText.getText().length();
+            mNewMessageText.setSelection(
+                    Math.min(textLength, mStoredSelection.first),
+                    Math.min(textLength, mStoredSelection.second));
+        }
     }
 
 

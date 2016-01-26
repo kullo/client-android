@@ -24,4 +24,13 @@ public final class HttpHeader {
     public String getValue() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return "HttpHeader{" +
+                "key=" + key +
+                "," + "value=" + value +
+        "}";
+    }
+
 }

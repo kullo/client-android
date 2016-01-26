@@ -5,10 +5,12 @@
     android:orientation="vertical"
     android:layout_margin="16dp">
 
-    <TextView
+
+     <TextView
+        android:id="@+id/masterkey_creation_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/creating_masterkey"
+        android:text="@string/generate_keys_title"
         android:textSize="16sp"
         android:textColor="@color/kulloTextPrimaryColor"
         />
@@ -27,8 +29,17 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/wait_masterkey"
+        android:text="@string/generate_keys_description_short"
+        android:textColor="@color/kulloTextPrimaryColor"
         android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/generate_keys_description_long"
+        android:textAppearance="@style/TextAppearance.AppCompat.Caption"
+        android:layout_marginTop="12dp"
         />
 
 </LinearLayout>

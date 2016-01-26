@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/enter_address"
+        android:text="@string/choose_address_title"
         android:textSize="16sp"
         android:textColor="@color/kulloTextPrimaryColor"
         />
@@ -34,7 +34,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textEmailAddress"
-                android:hint="@string/handle"
+                android:hint="@string/choose_address_username_placeholder"
                 android:maxLines="1" />
 
         </android.support.design.widget.TextInputLayout>
@@ -43,7 +43,7 @@
             android:id="@+id/kullo_domain_label"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:text="@string/kullo_domain"
+            android:text="@string/choose_address_kullo_domain"
             android:textSize="16sp"
             android:textColor="@color/kulloTextPrimaryColor"
             android:layout_alignParentRight="true"
@@ -57,7 +57,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
-        android:text="@string/valid_address_instructions"
+        android:text="@string/choose_address_valid_address_instructions"
         android:textAppearance="@style/TextAppearance.AppCompat.Caption"
         />
 

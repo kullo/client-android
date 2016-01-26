@@ -35,7 +35,7 @@ public class RegistrationActivity extends AppCompatActivity {
     }
 
     public void getToLoginActivity() {
-        startActivity(new Intent(RegistrationActivity.this, LoginActivity.class));
+        startActivity(new Intent(RegistrationActivity.this, WelcomeActivity.class));
         finish();
     }
 

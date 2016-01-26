@@ -1,6 +1,15 @@
 Kullo for Android
 -----------------
 
+## v25 (2016-01-26)
+
+ * UI: Optimize login/registration layout
+ * UI: Don't cancel key generation when app goes to sleep
+ * UI: Show full date and time in single message view
+ * Update libkullo v41
+ * Update SmartSqlite v5
+ * Update Botan 1.11.26
+
 ## v24 (2015-12-22)
 
  * Improve error handling

@@ -28,7 +28,6 @@ import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.MasterKey;
 import net.kullo.libkullo.api.NetworkError;
-import net.kullo.libkullo.api.UserSettings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +44,6 @@ import java.util.List;
  */
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
-    private static final boolean ACTIVATE_TESTING_ACCOUNT = false;
 
     private RelativeLayout mLayoutContent;
     private TextInputLayout mKulloAddressTextInputLayout;
@@ -65,29 +63,12 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         setupLayout();
 
-        // Case 2: Activity started as an intermediate step to ConversationsListActivity (must be after logout)
-        // Case 3: Activity started for user to type in MasterKey
+        // Activity started for user to type in MasterKey
 
-        // call registerCreateSessionListenerObserver before checkForStoredCredentialsAndCreateSession
-        // to ensure existing login information cause an activity switch to ConversationsListActivity
         registerCreateSessionListenerObserver();
-
-        if (checkForStoredCredentialsAndCreateSession()) {
-            // Case 2
-            mLayoutContent.setVisibility(View.GONE);
-        } else {
-            // Case 3
-            Ui.setColorStatusBarArrangeHeader(this);
-            mPreserveStatus = true;
-            connectLayout();
-        }
-    }
-
-    // Avoid going back from Login to Main when there has been a logout
-    // http://stackoverflow.com/questions/4190429/how-to-clear-the-android-stack-of-activities
-    @Override
-    public void onBackPressed() {
-        moveTaskToBack(true);
+        Ui.setColorStatusBarArrangeHeader(this);
+        mPreserveStatus = true;
+        connectLayout();
     }
 
     @Override
@@ -141,6 +122,14 @@ public class LoginActivity extends AppCompatActivity {
         super.onDestroy();
         Log.d(TAG, "Destroying a login activity");
         unregisterCreateSessionListenerObserver();
+    }
+
+    @Override
+    public void onBackPressed() {
+        // we kill this activity and recreate Welcome when pressing back
+        // because the two listenerobservers are tied to the create-destroy state changes of these activities
+        startActivity(new Intent(LoginActivity.this, WelcomeActivity.class));
+        finish();
     }
 
     //LAYOUT
@@ -220,25 +209,10 @@ public class LoginActivity extends AppCompatActivity {
                 loginClicked(v);
             }
         });
-
-        findViewById(R.id.button_register).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                registerClicked(v);
-            }
-        });
     }
 
     private void connectTextInputFields() {
         mKulloAddressEditText.addTextChangedListener(KulloConstants.KULLO_ADDRESS_AT_THIEF);
-
-        if (ACTIVATE_TESTING_ACCOUNT) {
-            //account data for testing
-            mKulloAddressEditText.setText("dummy#kullo.net");
-            for (EditText blockEditText : mMasterKeyBlocksEditText) {
-                blockEditText.setText("000000");
-            }
-        }
     }
 
     private void configureEditFieldsToSwitchToNextIfFilled() {
@@ -333,11 +307,6 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    public void registerClicked(View v) {
-        startActivity(new Intent(LoginActivity.this, RegistrationActivity.class));
-        finish();
-    }
-
     //API
 
     private void registerCreateSessionListenerObserver() {
@@ -421,29 +390,6 @@ public class LoginActivity extends AppCompatActivity {
                 mClientCreateSessionListenerObserver);
     }
 
-    //HELPERS
-
-    private boolean checkForStoredCredentialsAndCreateSession() {
-        UserSettings us = SessionConnector.get().loadStoredUserSettings(this);
-
-        if (us == null) {
-            Log.d(TAG, "No stored Kullo user settings found");
-            return false;
-        }
-
-        Log.d(TAG, "Stored Kullo address: " + us.address().toString());
-
-        //show waiting dialog
-        mCreatingSessionDialog = new MaterialDialog.Builder(this)
-                .title(R.string.progress_login)
-                .content(R.string.please_wait)
-                .progress(true, 0)
-                .cancelable(false)
-                .show();
-
-        SessionConnector.get().createSession(this, us);
-        return true;
-    }
 
     // validating MasterKey blocks
     private int blockIsValidIfNotSetError(TextInputLayout textInputLayout) {

@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.DialogInterface;
@@ -11,6 +11,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 
@@ -22,6 +23,7 @@ import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
@@ -200,6 +202,7 @@ public class LoginActivity extends AppCompatActivity {
         connectButtons();
         connectTextInputFields();
         configureEditFieldsToSwitchToNextIfFilled();
+        setDomainAutocompletion();
     }
 
     private void connectButtons() {
@@ -237,6 +240,11 @@ public class LoginActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    private void setDomainAutocompletion() {
+        AutoCompleteTextView textView = (AutoCompleteTextView)mKulloAddressTextInputLayout.getEditText();
+        textView.setAdapter(new AddressAutocompleteAdapter(this));
     }
 
     private boolean liveValidateInput(TextInputLayout textInputLayout) {

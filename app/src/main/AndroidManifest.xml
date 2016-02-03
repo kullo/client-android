@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="com.google.androidc2dm.permission.RECEIVE" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -32,7 +34,8 @@
             android:name=".screens.LoginActivity"
             android:configChanges="orientation|keyboardHidden"
             android:noHistory="true"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait">
+        </activity>
         <activity
             android:name=".screens.RegistrationActivity"
             android:configChanges="orientation|keyboardHidden"
@@ -41,7 +44,12 @@
             android:name=".screens.ConversationsListActivity"
             android:configChanges="orientation|keyboardHidden"
             android:label="@string/app_name"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="net.kullo.action.SYNC" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".screens.MessagesListActivity"
             android:configChanges="orientation|keyboardHidden"
@@ -101,6 +109,37 @@
             android:name=".screens.LicensesActivity"
             android:label="@string/activity_title_licenses"></activity>
         <activity android:name=".screens.LogoutActivity"></activity>
+
+        <!-- NOTIFICATIONS -->
+        <receiver
+            android:name="com.google.android.gms.gcm.GcmReceiver"
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.SEND" >
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <category android:name="net.kullo.android" />
+            </intent-filter>
+        </receiver>
+        <service
+            android:name="net.kullo.android.notifications.GcmNotificationListenerService"
+            android:exported="true" >
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="net.kullo.android.notifications.GcmInstanceIDListenerService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.android.gms.iid.InstanceID" />
+            </intent-filter>
+        </service>
+                <service
+            android:name="net.kullo.android.notifications.GcmRegistrationIntentService"
+            android:exported="false">
+        </service>
+        <!-- END NOTIFICATIONS -->
+
     </application>
 
 </manifest>

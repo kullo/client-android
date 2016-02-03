@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.app.Activity;
@@ -33,6 +33,7 @@ import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.littlehelpers.Debug;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.DraftAttachmentAddedEventObserver;
 import net.kullo.android.observers.eventobservers.DraftAttachmentRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.DraftEventObserver;
@@ -134,6 +135,7 @@ public class ComposeActivity extends AppCompatActivity {
         registerSyncFinishedListenerObserver();
 
         if (task != null) task.waitUntilDone();
+        GcmConnector.get().fetchToken(this);
     }
 
     @Override
@@ -295,6 +297,10 @@ public class ComposeActivity extends AppCompatActivity {
 
     private void registerSyncFinishedListenerObserver() {
         mSyncerListenerObserver = new SyncerListenerObserver() {
+            @Override
+            public void started() {
+            }
+
             @Override
             public void draftAttachmentsTooBig(long convId) {
                 runOnUiThread(new Runnable() {

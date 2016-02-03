@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.DialogInterface;
@@ -15,6 +15,7 @@ import net.kullo.android.R;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.LocalError;
@@ -46,18 +47,18 @@ public class WelcomeActivity extends AppCompatActivity {
 
         mLayoutContent = (RelativeLayout) findViewById(R.id.content);
 
-        // Case 2: Activity started as an intermediate step to ConversationsListActivity (must be after logout)
-        // Case 3: Activity started for user to choose login or register
+        // Check google play
+        GcmConnector.get().checkGooglePlayAndPrompt(this);
 
         // call registerCreateSessionListenerObserver before checkForStoredCredentialsAndCreateSession
         // to ensure existing login information cause an activity switch to ConversationsListActivity
         registerCreateSessionListenerObserver();
 
         if (checkForStoredCredentialsAndCreateSession()) {
-            // Case 2
+            // Activity started as an intermediate step to ConversationsListActivity (must be after logout)
             mLayoutContent.setVisibility(View.GONE);
         } else {
-            // Case 3
+            // Activity started for user to choose login or register
             Ui.setColorStatusBarArrangeHeader(this);
             connectButtons();
         }
@@ -210,4 +211,3 @@ public class WelcomeActivity extends AppCompatActivity {
         return true;
     }
 }
-

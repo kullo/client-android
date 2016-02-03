@@ -40,7 +40,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp">
 
-                <EditText
+                <AutoCompleteTextView
                     android:id="@+id/edit_kullo_address_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

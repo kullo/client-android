@@ -24,6 +24,7 @@ ellipsis (…)
     <string name="please_wait">Please wait…</string>
     <string name="kullo_address">Kullo address</string>
     <string name="kullo_masterkey">MasterKey</string>
+    <string name="kullo_domain" translatable="false">#kullo.net</string>
     <!-- use \u0020… in German -->
     <string name="text_view_ellipsis">…</string>
 
@@ -65,7 +66,6 @@ ellipsis (…)
     <string name="generate_keys_description_long">What we are doing right now is generating strong cryptographic keys for you so that you can communicate securely. Finding secure keys takes some time because we need to make sure they are as secure as advertised. We do it on your device so that nobody else (including us) learns about them.</string>
     <string name="choose_address_title">Choose your Kullo address</string>
     <string name="choose_address_username_placeholder">Username</string>
-    <string name="choose_address_kullo_domain" translatable="false">#kullo.net</string>
     <string name="choose_address_valid_address_instructions">You can use letters and numbers. You can use more than one word, separated by . - or _.</string>
     <string name="choose_address_username_is_empty">Must not be empty</string>
     <string name="choose_address_address_is_invalid">Address format not valid</string>
@@ -174,4 +174,7 @@ ellipsis (…)
     <string name="select_file_failed">Select file failed</string>
     <string name="no_tmp_dir_found">Cannot find temporary directory</string>
 
+    <!-- notifications -->
+    <string name="notification_title_new_message">Kullo</string>
+    <string name="notification_body_new_message">You received a new Kullo message</string>
 </resources>

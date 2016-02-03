@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -24,6 +24,7 @@ import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.screens.conversationslist.ConversationsFragment;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AsyncTask;
@@ -40,7 +41,6 @@ public class ConversationsListActivity extends AppCompatActivity implements
     private TextView mNavigationHeaderNameView;
     private TextView mNavigationHeaderAddressView;
     private DrawerLayout mDrawerLayout;
-    private Boolean mUserLearnedDrawer = false;
     private MaterialDialog mConfirmLogoutDialog;
     private MenuItem mPreviousMenuItemNavigationView;
 
@@ -64,6 +64,13 @@ public class ConversationsListActivity extends AppCompatActivity implements
         }
 
         if (task != null) task.waitUntilDone();
+        GcmConnector.get().fetchToken(this);
+
+        String action = getIntent().getAction();
+        if (action != null && action.equals(KulloConstants.ACTION_SYNC)) {
+            SessionConnector.get().syncKullo();
+        }
+
     }
 
     @Override
@@ -124,11 +131,6 @@ public class ConversationsListActivity extends AppCompatActivity implements
 
         // calling sync state to show menu icon
         actionBarDrawerToggle.syncState();
-
-        if (!mUserLearnedDrawer) {
-            mDrawerLayout.openDrawer(GravityCompat.START);
-            mUserLearnedDrawer = true;
-        }
 
         // Select conversations menu item
         mNavigationView.getMenu().getItem(0).setCheckable(true);

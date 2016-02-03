@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.kulloapi;
 
 import android.app.Activity;
@@ -39,7 +39,7 @@ import net.kullo.libkullo.api.AddressNotAvailableReason;
 import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.Challenge;
 import net.kullo.libkullo.api.Client;
-import net.kullo.libkullo.api.ClientCheckLoginListener;
+import net.kullo.libkullo.api.ClientCheckCredentialsListener;
 import net.kullo.libkullo.api.ClientCreateSessionListener;
 import net.kullo.libkullo.api.ClientGenerateKeysListener;
 import net.kullo.libkullo.api.Conversations;
@@ -84,6 +84,7 @@ public class SessionConnector {
 
     private AsyncTasksHolder mTaskHolder = new AsyncTasksHolder();
     private Session mSession = null;
+    private String mRegistrationToken = null;
     private Registration mRegistration;
 
     private Map<Class, LinkedList<ListenerObserver>> mListenerObservers;
@@ -134,7 +135,7 @@ public class SessionConnector {
 
         Client client = ClientConnector.get().getClient();
 
-        mTaskHolder.add(client.checkLoginAsync(address, masterKey, new ClientCheckLoginListener() {
+        mTaskHolder.add(client.checkCredentialsAsync(address, masterKey, new ClientCheckCredentialsListener() {
             @Override
             public void finished(Address address, MasterKey masterKey, boolean valid) {
                 if (valid) {
@@ -421,7 +422,9 @@ public class SessionConnector {
 
                 @Override
                 protected Void doInBackground(Void... params) {
+                    mSession.syncer().cancel();
                     mTaskHolder.cancelAll();
+                    mSession.syncer().waitUntilDone();
                     mTaskHolder.waitUntilAllDone();
 
                     // Since all workers are done, this should be the last reference
@@ -475,24 +478,27 @@ public class SessionConnector {
 
     // SYNC
     public boolean isSyncing() {
-        return !mSession.syncer().asyncTask().isDone();
+        return mSession.syncer().isSyncing();
     }
 
     public void syncKullo() {
         RuntimeAssertion.require(mSession != null);
         mSession.syncer().requestSync(SyncMode.WITHOUTATTACHMENTS);
-        mTaskHolder.add(mSession.syncer().asyncTask());
     }
 
     public void sendMessages() {
         RuntimeAssertion.require(mSession != null);
         mSession.syncer().requestSync(SyncMode.SENDONLY);
-        mTaskHolder.add(mSession.syncer().asyncTask());
     }
 
     private class ConnectorSyncerListener extends SyncerListener {
         @Override
         public void started() {
+            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
+                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                    ((SyncerListenerObserver) observer).started();
+                }
+            }
         }
 
         @Override
@@ -1041,6 +1047,42 @@ public class SessionConnector {
                 }
             }
         }));
+    }
+
+    // Push Notifications
+
+    public void registerPushToken(String registrationToken) {
+        RuntimeAssertion.require(mSession != null);
+
+        // Token changed? unregister old one
+        if (mRegistrationToken != null) {
+            unregisterPushToken();
+        }
+
+        // store token within session instance
+        mRegistrationToken = registrationToken;
+        AsyncTask registerTask = mSession.registerPushToken(registrationToken);
+        if (registerTask != null) {
+            registerTask.waitUntilDone();
+        }
+    }
+
+    public void unregisterPushToken() {
+        RuntimeAssertion.require(mSession != null);
+
+        if (mRegistrationToken != null) {
+            AsyncTask unregisterTask = mSession.unregisterPushToken(mRegistrationToken);
+            if (unregisterTask != null) {
+                unregisterTask.waitUntilDone();
+            }
+            mRegistrationToken = null;
+        }
+    }
+
+    public boolean hasPushToken() {
+        RuntimeAssertion.require(mSession != null);
+
+        return mRegistrationToken != null;
     }
 
     // Observers

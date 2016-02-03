@@ -1,7 +1,9 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens.registration;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.v4.app.Fragment;
@@ -25,6 +27,7 @@ public class KeygenFragment extends Fragment {
     private ClientGenerateKeysListenerObserver mGenerateKeysListenerObserver;
     private volatile byte mCurrentProgress = -1;
     private volatile boolean mIsFragmentStarted = false;
+    private static final int VIBRATION_TIME_MILLIS = 250;
 
     @Nullable
     @Override
@@ -133,11 +136,19 @@ public class KeygenFragment extends Fragment {
                 mGenerateKeysListenerObserver);
     }
 
+    private void notifyVibrate() {
+        Vibrator vib = (Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+        if (vib.hasVibrator()) {
+            vib.vibrate(VIBRATION_TIME_MILLIS);
+        }
+    }
+
     @UiThread
     public void openNextView() {
         unregisterGenerateKeysObserver();
         mCurrentProgress = 0;
         mDotAnimation.cancel();
+        notifyVibrate();
         ((RegistrationActivity) getActivity()).nextFragment();
     }
 }

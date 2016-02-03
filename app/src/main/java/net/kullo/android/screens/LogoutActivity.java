@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -34,6 +34,7 @@ public class LogoutActivity extends AppCompatActivity {
                 .cancelable(false)
                 .show();
 
+        SessionConnector.get().unregisterPushToken();
         SessionConnector.get().logout(LogoutActivity.this, new Runnable() {
             @Override
             public void run() {

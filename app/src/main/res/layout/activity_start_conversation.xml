@@ -31,7 +31,7 @@
                 android:layout_height="wrap_content"
                 style="@style/Widget.CardContent">
 
-                <EditText
+                <AutoCompleteTextView
                     android:id="@+id/new_participant"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

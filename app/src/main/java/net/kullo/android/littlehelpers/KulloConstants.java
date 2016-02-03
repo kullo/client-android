@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.littlehelpers;
 
 import android.text.Editable;
@@ -44,6 +44,8 @@ public class KulloConstants {
     public static final int AVATAR_MAX_ALLOWED_SIDE = 640;
 
     public static final int BLOCK_SIZE = 6;
+
+    public static final String ACTION_SYNC = "net.kullo.action.SYNC";
 
     public static final TextWatcher KULLO_ADDRESS_AT_THIEF = new TextWatcher() {
         public void onTextChanged(CharSequence s, int start, int before, int count) { }

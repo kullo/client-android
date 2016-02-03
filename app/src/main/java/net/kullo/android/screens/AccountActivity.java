@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.os.Bundle;
@@ -9,6 +9,7 @@ import android.widget.TextView;
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.notifications.GcmConnector;
 import net.kullo.libkullo.api.AsyncTask;
 
 public class AccountActivity extends AppCompatActivity {
@@ -24,6 +25,8 @@ public class AccountActivity extends AppCompatActivity {
         Ui.setupActionbar(this);
 
         if (task != null) task.waitUntilDone();
+
+        GcmConnector.get().fetchToken(this);
     }
 
     @Override

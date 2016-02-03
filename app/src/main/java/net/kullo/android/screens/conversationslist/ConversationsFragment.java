@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens.conversationslist;
 
 import android.app.Activity;
@@ -48,7 +48,8 @@ public class ConversationsFragment extends Fragment {
     private ConversationsAdapter mAdapter;
     private View mRootView;
     private SwipeRefreshLayout mSwipeLayout;
-    private MaterialProgressBar mProgressBar;
+    private MaterialProgressBar mProgressBarDeterminate;
+    private MaterialProgressBar mProgressBarIndeterminate;
     private boolean mIsPaused;
     private ConversationsEventObserver mConversationsEventObserver;
     private SyncerListenerObserver mSyncerListenerObserver;
@@ -161,11 +162,16 @@ public class ConversationsFragment extends Fragment {
 
         if (SessionConnector.get().isSyncing()) {
             mSwipeLayout.setEnabled(false);
-            mSwipeLayout.setRefreshing(true);
+            mSwipeLayout.setRefreshing(false);
+
+            mProgressBarIndeterminate.setVisibility(View.VISIBLE);
+            mProgressBarDeterminate.setVisibility(View.GONE);
         } else {
             mSwipeLayout.setEnabled(true);
             mSwipeLayout.setRefreshing(false);
-            mProgressBar.setVisibility(View.GONE);
+
+            mProgressBarIndeterminate.setVisibility(View.GONE);
+            mProgressBarDeterminate.setVisibility(View.GONE);
         }
 
         reloadConversationsList();
@@ -181,8 +187,6 @@ public class ConversationsFragment extends Fragment {
         // handle item selection, if it doesn't land here, the activity might have snatched it
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                mSwipeLayout.setEnabled(false);
-                mSwipeLayout.setRefreshing(true);
                 SessionConnector.get().syncKullo();
                 return true;
             default:
@@ -191,13 +195,15 @@ public class ConversationsFragment extends Fragment {
     }
 
     private void setupSwipeRefreshLayout() {
-        mProgressBar = (MaterialProgressBar) mRootView.findViewById(R.id.horizontal_progress_toolbar);
+        // Switching between indeterminate and determinate is entirely broken in
+        // me.zhanghai.android.materialprogressbar.MaterialProgressBar. So use two views.
+        mProgressBarDeterminate = (MaterialProgressBar) mRootView.findViewById(R.id.progressbar_determinate);
+        mProgressBarIndeterminate = (MaterialProgressBar) mRootView.findViewById(R.id.progressbar_indeterminate);
 
         mSwipeLayout = (SwipeRefreshLayout) mRootView.findViewById(R.id.swipe_refresh_layout);
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mSwipeLayout.setEnabled(false); // Lock it
                 SessionConnector.get().syncKullo();
             }
         });
@@ -206,6 +212,20 @@ public class ConversationsFragment extends Fragment {
     private void registerSyncListenerObserver() {
         // avoid any unnecessary work when fragment's activity is paused (mIsPaused == true)
         mSyncerListenerObserver = new SyncerListenerObserver() {
+            @Override
+            public void started() {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mSwipeLayout.setEnabled(false);
+                        mSwipeLayout.setRefreshing(false);
+
+                        mProgressBarDeterminate.setVisibility(View.GONE);
+                        mProgressBarIndeterminate.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
+
             @Override
             public void draftAttachmentsTooBig(long convId) {
                 getActivity().runOnUiThread(new Runnable() {
@@ -226,17 +246,18 @@ public class ConversationsFragment extends Fragment {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        mSwipeLayout.setEnabled(false);
+                        mSwipeLayout.setRefreshing(false);
+
                         if (KulloUtils.showSyncProgressAsBar(progress)) {
                             int percent = Math.round(100 * ((float) progress.getCountProcessed() / progress.getCountTotal()));
 
-                            mSwipeLayout.setEnabled(false);
-                            mSwipeLayout.setRefreshing(false);
-                            mProgressBar.setVisibility(View.VISIBLE);
-
-                            mProgressBar.setProgress(percent);
+                            mProgressBarIndeterminate.setVisibility(View.GONE);
+                            mProgressBarDeterminate.setVisibility(View.VISIBLE);
+                            mProgressBarDeterminate.setProgress(percent);
                         } else {
-                            mSwipeLayout.setEnabled(false);
-                            mSwipeLayout.setRefreshing(true);
+                            mProgressBarIndeterminate.setVisibility(View.VISIBLE);
+                            mProgressBarDeterminate.setVisibility(View.GONE);
                         }
                     }
                 });
@@ -256,7 +277,8 @@ public class ConversationsFragment extends Fragment {
                                 mSwipeLayout.setRefreshing(false);
                             }
 
-                            mProgressBar.setVisibility(View.GONE);
+                            mProgressBarDeterminate.setVisibility(View.GONE);
+                            mProgressBarIndeterminate.setVisibility(View.GONE);
 
                             if (!mIsPaused) reloadConversationsList();
                         }

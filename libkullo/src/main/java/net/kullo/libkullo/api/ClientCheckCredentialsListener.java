@@ -3,8 +3,8 @@
 
 package net.kullo.libkullo.api;
 
-/** Listener used in Client.checkLoginAsync() */
-public abstract class ClientCheckLoginListener {
+/** Listener used in Client.checkCredentialsAsync() */
+public abstract class ClientCheckCredentialsListener {
     public abstract void finished(Address address, MasterKey masterKey, boolean valid);
 
     public abstract void error(Address address, NetworkError error);

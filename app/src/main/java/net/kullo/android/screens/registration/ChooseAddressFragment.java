@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens.registration;
 
 import android.os.Bundle;
@@ -71,7 +71,7 @@ public class ChooseAddressFragment extends Fragment {
             public void onClick(View v) {
                 if (validateInput()) {
                     String address = mAddressEditText.getText().toString() +
-                            getResources().getText(R.string.choose_address_kullo_domain);
+                            getResources().getText(R.string.kullo_domain);
                     startAddressCreation(address);
                 }
             }
@@ -101,7 +101,7 @@ public class ChooseAddressFragment extends Fragment {
             return false;
         }
 
-        String address = text + getResources().getText(R.string.choose_address_kullo_domain);
+        String address = text + getResources().getText(R.string.kullo_domain);
         if (!KulloUtils.isValidKulloAddress(address)) {
             mAddressInputLayout.setError(getResources().getText(R.string.choose_address_address_is_invalid));
             mAddressInputLayout.setErrorEnabled(true);

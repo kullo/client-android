@@ -35,7 +35,7 @@ public abstract class Client {
     public abstract AsyncTask addressExistsAsync(Address address, ClientAddressExistsListener listener);
 
     /** Check whether the master key is valid for the given address. */
-    public abstract AsyncTask checkLoginAsync(Address address, MasterKey masterKey, ClientCheckLoginListener listener);
+    public abstract AsyncTask checkCredentialsAsync(Address address, MasterKey masterKey, ClientCheckCredentialsListener listener);
 
     /** Generate new keys, which is the first step to registering an account. */
     public abstract AsyncTask generateKeysAsync(ClientGenerateKeysListener listener);
@@ -86,12 +86,12 @@ public abstract class Client {
         private native AsyncTask native_addressExistsAsync(long _nativeRef, Address address, ClientAddressExistsListener listener);
 
         @Override
-        public AsyncTask checkLoginAsync(Address address, MasterKey masterKey, ClientCheckLoginListener listener)
+        public AsyncTask checkCredentialsAsync(Address address, MasterKey masterKey, ClientCheckCredentialsListener listener)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_checkLoginAsync(this.nativeRef, address, masterKey, listener);
+            return native_checkCredentialsAsync(this.nativeRef, address, masterKey, listener);
         }
-        private native AsyncTask native_checkLoginAsync(long _nativeRef, Address address, MasterKey masterKey, ClientCheckLoginListener listener);
+        private native AsyncTask native_checkCredentialsAsync(long _nativeRef, Address address, MasterKey masterKey, ClientCheckCredentialsListener listener);
 
         @Override
         public AsyncTask generateKeysAsync(ClientGenerateKeysListener listener)

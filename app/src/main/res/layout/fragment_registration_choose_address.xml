@@ -43,7 +43,7 @@
             android:id="@+id/kullo_domain_label"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:text="@string/choose_address_kullo_domain"
+            android:text="@string/kullo_domain"
             android:textSize="16sp"
             android:textColor="@color/kulloTextPrimaryColor"
             android:layout_alignParentRight="true"

@@ -16,25 +16,43 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
-            <me.zhanghai.android.materialprogressbar.MaterialProgressBar
-                android:id="@+id/horizontal_progress_toolbar"
-                android:visibility="gone"
+            <LinearLayout
+                android:id="@+id/progressbar_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:progress="30"
-                app:mpb_progressStyle="horizontal"
-                app:mpb_useIntrinsicPadding="false"
-                app:mpb_showTrack="false"
-                style="@style/Widget.MaterialProgressBar.ProgressBar.Horizontal.NoPadding" />
+                android:orientation="vertical">
 
-                <android.support.v7.widget.RecyclerView
-                    android:id="@+id/conversations_recycler_view"
-                    android:layout_below="@+id/horizontal_progress_toolbar"
-                    android:layout_alignParentBottom="true"
+                <me.zhanghai.android.materialprogressbar.MaterialProgressBar
+                    android:id="@+id/progressbar_determinate"
+                    android:visibility="gone"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@android:color/transparent"
-                    />
+                    android:layout_height="wrap_content"
+                    android:progress="30"
+                    app:mpb_progressStyle="horizontal"
+                    app:mpb_useIntrinsicPadding="false"
+                    app:mpb_showTrack="false"
+                    style="@style/Widget.MaterialProgressBar.ProgressBar.Horizontal.NoPadding" />
+
+                <me.zhanghai.android.materialprogressbar.MaterialProgressBar
+                    android:id="@+id/progressbar_indeterminate"
+                    android:visibility="gone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:indeterminate="true"
+                    app:mpb_progressStyle="horizontal"
+                    app:mpb_useIntrinsicPadding="false"
+                    app:mpb_showTrack="false"
+                    style="@style/Widget.MaterialProgressBar.ProgressBar.Horizontal.NoPadding" />
+            </LinearLayout>
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/conversations_recycler_view"
+                android:layout_below="@+id/progressbar_container"
+                android:layout_alignParentBottom="true"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                />
         </RelativeLayout>
     </android.support.v4.widget.SwipeRefreshLayout>
 

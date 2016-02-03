@@ -26,11 +26,22 @@ public abstract class Syncer {
     public abstract void requestDownloadingAttachmentsForMessage(long msgId);
 
     /**
-     * Gets an AsyncTask that can be used for cancellation or waiting. It affects
-     * both running and queued jobs. Releasing it will not cancel the job
-     * automatically.
+     * Cancels the running sync and enqueued syncs, but doesn't wait for
+     * termination. Stops all callbacks, even if the task continues to run.
      */
-    public abstract AsyncTask asyncTask();
+    public abstract void cancel();
+
+    /** Returns true iff a sync is currently running. */
+    public abstract boolean isSyncing();
+
+    /** Blocks until the running sync and all enqueued syncs have finished. */
+    public abstract void waitUntilDone();
+
+    /**
+     * Blocks until the sync and all enqueued syncs have finished executing or
+     * until the timeout has expired. Returns false on timeout, true otherwise.
+     */
+    public abstract boolean waitForMs(int timeout);
 
     private static final class CppProxy extends Syncer
     {
@@ -80,11 +91,35 @@ public abstract class Syncer {
         private native void native_requestDownloadingAttachmentsForMessage(long _nativeRef, long msgId);
 
         @Override
-        public AsyncTask asyncTask()
+        public void cancel()
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_asyncTask(this.nativeRef);
+            native_cancel(this.nativeRef);
         }
-        private native AsyncTask native_asyncTask(long _nativeRef);
+        private native void native_cancel(long _nativeRef);
+
+        @Override
+        public boolean isSyncing()
+        {
+            assert !this.destroyed.get() : "trying to use a destroyed object";
+            return native_isSyncing(this.nativeRef);
+        }
+        private native boolean native_isSyncing(long _nativeRef);
+
+        @Override
+        public void waitUntilDone()
+        {
+            assert !this.destroyed.get() : "trying to use a destroyed object";
+            native_waitUntilDone(this.nativeRef);
+        }
+        private native void native_waitUntilDone(long _nativeRef);
+
+        @Override
+        public boolean waitForMs(int timeout)
+        {
+            assert !this.destroyed.get() : "trying to use a destroyed object";
+            return native_waitForMs(this.nativeRef, timeout);
+        }
+        private native boolean native_waitForMs(long _nativeRef, int timeout);
     }
 }

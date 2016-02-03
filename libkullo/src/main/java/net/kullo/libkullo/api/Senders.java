@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class Senders {
     public abstract String name(long msgId);
 
+    /** Returns null if the msgId is invalid */
     public abstract Address address(long msgId);
 
     public abstract String organization(long msgId);

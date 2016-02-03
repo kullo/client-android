@@ -1,6 +1,14 @@
 Kullo for Android
 -----------------
 
+## v26 (2016-02-03)
+
+ * Push notifications
+ * Autocomplete domain when entering a Kullo address
+ * Vibrate when key generation is done
+ * Update libkullo v42
+ * Update Botan 1.11.28
+
 ## v25 (2016-01-26)
 
  * UI: Optimize login/registration layout

@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -24,6 +24,7 @@ import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.MessageAttachmentsDownloadedChangedEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
@@ -87,6 +88,10 @@ public class SingleMessageActivity extends AppCompatActivity {
 
         mDownloadAttachmentsFinishedObserver = new SyncerListenerObserver() {
             @Override
+            public void started() {
+            }
+
+            @Override
             public void draftAttachmentsTooBig(long convId) {
             }
 
@@ -142,6 +147,7 @@ public class SingleMessageActivity extends AppCompatActivity {
         mFooterTextView = (TextView) findViewById(R.id.footer_text);
 
         if (task != null) task.waitUntilDone();
+        GcmConnector.get().fetchToken(this);
     }
 
     @Override

@@ -8,7 +8,7 @@ public enum NetworkError {
     FORBIDDEN,
     /** Client and server protocol incompatible; should check for update */
     PROTOCOL,
-    /** Bad login info (address + master key) */
+    /** Bad credentials (address + master key) */
     UNAUTHORIZED,
     /** Server-side error */
     SERVER,

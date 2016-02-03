@@ -163,4 +163,8 @@ ellipsis (…)
     <string name="organization_opt">Organisation (optional)</string>
     <string name="participant_needed">Mindestens ein Teilnehmer ist nötig</string>
 
+    <!-- notifications -->
+    <string name="notification_title_new_message">Kullo</string>
+    <string name="notification_body_new_message">Du hast eine neue Kullo-Nachricht erhalten</string>
+
 </resources>

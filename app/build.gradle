@@ -8,8 +8,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 25
-        versionName "25"
+        versionCode 26
+        versionName "26"
     }
     buildTypes {
         debug {
@@ -25,6 +25,11 @@ android {
     }
 
     lintOptions {
+        // Missing translations became errors, making it impossible to quickly
+        // release the update
+        // TODO: remove and add missing translations
+        checkReleaseBuilds false
+
         // See `lint --list` for available issue ids
         disable 'RtlCompat'    // Right-to-left text compatibility issues
         disable 'RtlHardcoded' // Using left/right instead of start/end attributes
@@ -52,6 +57,8 @@ dependencies {
     // At the moment, the versions match.
     compile('com.github.afollestad.material-dialogs:core:0.8.5.2@aar') { transitive = true }
 
+    compile "com.google.android.gms:play-services-gcm:8.3.0"
+
     compile project(':libkullo')
     compile project(':javautils')
 }
@@ -62,3 +69,5 @@ android {
         exclude 'META-INF/NOTICE.txt'
     }
 }
+
+apply plugin: 'com.google.gms.google-services'

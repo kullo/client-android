@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.DialogInterface;
@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.content.Intent;
@@ -21,6 +22,8 @@ import net.kullo.android.kulloapi.ClientConnector;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
+import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.screens.startconversation.ParticipantsAdapter;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
@@ -33,7 +36,7 @@ public class StartConversationActivity extends AppCompatActivity {
     private static final String TAG = "StartConversationAct."; // max. 23 chars
 
     private TextInputLayout mNewParticipantTextInputLayout;
-    private EditText mNewParticipantEditText;
+    private AutoCompleteTextView mNewParticipantEditText;
     private RecyclerView mRecyclerView;
     private ParticipantsAdapter mParticipantsAdapter;
     private TextView mParticipantsHeader;
@@ -56,6 +59,7 @@ public class StartConversationActivity extends AppCompatActivity {
         setupLayout();
 
         if (task != null) task.waitUntilDone();
+        GcmConnector.get().fetchToken(this);
     }
 
     @Override
@@ -75,9 +79,10 @@ public class StartConversationActivity extends AppCompatActivity {
     private void setupLayout() {
         // text field
         mNewParticipantTextInputLayout = (TextInputLayout) findViewById(R.id.new_participant_text_input_layout);
-        mNewParticipantEditText = mNewParticipantTextInputLayout.getEditText();
+        mNewParticipantEditText = (AutoCompleteTextView)mNewParticipantTextInputLayout.getEditText();
         RuntimeAssertion.require(mNewParticipantEditText != null);
         mNewParticipantEditText.addTextChangedListener(KulloConstants.KULLO_ADDRESS_AT_THIEF);
+        mNewParticipantEditText.setAdapter(new AddressAutocompleteAdapter(this));
 
         // add button
         findViewById(R.id.button_add_participant).setOnClickListener(new View.OnClickListener() {

@@ -1,4 +1,4 @@
-/* Copyright 2015 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -28,6 +28,7 @@ import net.kullo.android.kulloapi.MessagesComparatorDsc;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.MessageAddedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageStateEventObserver;
@@ -62,7 +63,8 @@ public class MessagesListActivity extends AppCompatActivity {
     private ActionMode mActionMode = null;
     // Views
     private SwipeRefreshLayout mSwipeLayout;
-    private MaterialProgressBar mProgressBar;
+    private MaterialProgressBar mProgressBarDeterminate;
+    private MaterialProgressBar mProgressBarIndeterminate;
     private RecyclerView mMessagesList;
     private MaterialDialog mShowSettingsDialog;
     private TextView mConversationEmptyLabel;
@@ -85,17 +87,19 @@ public class MessagesListActivity extends AppCompatActivity {
 
         setupMessagesList();
 
-        mProgressBar = (MaterialProgressBar) findViewById(R.id.horizontal_progress_toolbar);
+        mProgressBarDeterminate = (MaterialProgressBar) findViewById(R.id.progressbar_determinate);
+        mProgressBarIndeterminate = (MaterialProgressBar) findViewById(R.id.progressbar_indeterminate);
+
         mSwipeLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh_layout);
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                mSwipeLayout.setEnabled(false); // Lock it
                 SessionConnector.get().syncKullo();
             }
         });
 
         if (task != null) task.waitUntilDone();
+        GcmConnector.get().fetchToken(this);
     }
 
     @Override
@@ -264,10 +268,18 @@ public class MessagesListActivity extends AppCompatActivity {
         // Fill adapter with the most recent data
         mMessagesAdapter.updateDataSet();
 
-        if (!SessionConnector.get().isSyncing()) {
+        if (SessionConnector.get().isSyncing()) {
+            mSwipeLayout.setEnabled(false);
+            mSwipeLayout.setRefreshing(false);
+
+            mProgressBarIndeterminate.setVisibility(View.VISIBLE);
+            mProgressBarDeterminate.setVisibility(View.GONE);
+        } else {
             mSwipeLayout.setEnabled(true);
             mSwipeLayout.setRefreshing(false);
-            mProgressBar.setVisibility(View.GONE);
+
+            mProgressBarIndeterminate.setVisibility(View.GONE);
+            mProgressBarDeterminate.setVisibility(View.GONE);
         }
     }
 
@@ -381,13 +393,29 @@ public class MessagesListActivity extends AppCompatActivity {
         // avoid any unnecessary work when fragment's activity is paused (mIsPaused == true)
         mSyncerListenerObserver = new SyncerListenerObserver() {
             @Override
+            public void started() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mSwipeLayout.setEnabled(false);
+                        mSwipeLayout.setRefreshing(false);
+
+                        mProgressBarDeterminate.setVisibility(View.GONE);
+                        mProgressBarIndeterminate.setVisibility(View.VISIBLE);
+                    }
+                });
+            }
+
+            @Override
             public void draftAttachmentsTooBig(long convId) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         mSwipeLayout.setEnabled(true);
                         mSwipeLayout.setRefreshing(false);
-                        mProgressBar.setVisibility(View.GONE);
+
+                        mProgressBarDeterminate.setVisibility(View.GONE);
+                        mProgressBarIndeterminate.setVisibility(View.GONE);
                     }
                 });
             }
@@ -397,17 +425,17 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        mSwipeLayout.setEnabled(false);
+                        mSwipeLayout.setRefreshing(false);
+
                         if (KulloUtils.showSyncProgressAsBar(progress)) {
                             int percent = Math.round(100 * ((float) progress.getCountProcessed() / progress.getCountTotal()));
-
-                            mSwipeLayout.setEnabled(false);
-                            mSwipeLayout.setRefreshing(false);
-                            mProgressBar.setVisibility(View.VISIBLE);
-
-                            mProgressBar.setProgress(percent);
+                            mProgressBarIndeterminate.setVisibility(View.GONE);
+                            mProgressBarDeterminate.setVisibility(View.VISIBLE);
+                            mProgressBarDeterminate.setProgress(percent);
                         } else {
-                            mSwipeLayout.setEnabled(false);
-                            mSwipeLayout.setRefreshing(true);
+                            mProgressBarIndeterminate.setVisibility(View.VISIBLE);
+                            mProgressBarDeterminate.setVisibility(View.GONE);
                         }
                     }
                 });
@@ -420,7 +448,9 @@ public class MessagesListActivity extends AppCompatActivity {
                     public void run() {
                         mSwipeLayout.setEnabled(true);
                         mSwipeLayout.setRefreshing(false);
-                        mProgressBar.setVisibility(View.GONE);
+
+                        mProgressBarDeterminate.setVisibility(View.GONE);
+                        mProgressBarIndeterminate.setVisibility(View.GONE);
                     }
                 });
             }
@@ -432,7 +462,9 @@ public class MessagesListActivity extends AppCompatActivity {
                     public void run() {
                         mSwipeLayout.setEnabled(true);
                         mSwipeLayout.setRefreshing(false);
-                        mProgressBar.setVisibility(View.GONE);
+
+                        mProgressBarDeterminate.setVisibility(View.GONE);
+                        mProgressBarIndeterminate.setVisibility(View.GONE);
 
                         Toast.makeText(MessagesListActivity.this,
                                 DialogMaker.getTextForNetworkError(MessagesListActivity.this, error),

@@ -81,6 +81,8 @@ public class ConversationsFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
+        RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
+
         mConversationsEventObserver = new ConversationsEventObserver() {
             @Override
             public void conversationAdded(long conversationId) {
@@ -136,7 +138,6 @@ public class ConversationsFragment extends Fragment {
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
 
         // set title
         getActivity().setTitle(R.string.menu_conversations);

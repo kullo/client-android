@@ -32,6 +32,7 @@ import net.kullo.android.observers.listenerobservers.RegistrationRegisterAccount
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.LoginActivity;
 import net.kullo.android.screens.LogoutActivity;
+import net.kullo.android.screens.WelcomeActivity;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.javautils.StrictBase64;
 import net.kullo.libkullo.api.Address;
@@ -120,8 +121,8 @@ public class SessionConnector {
         Log.d(TAG, "No session available. Creating session if credential are stored ...");
         UserSettings us = SessionConnector.get().loadStoredUserSettings(callingActivity);
         if (us == null) {
-            Log.d(TAG, "No credential found. Moving to LoginActivity ...");
-            callingActivity.startActivity(new Intent(callingActivity, LogoutActivity.class));
+            Log.d(TAG, "No credentials found. Moving to WelcomeActivity ...");
+            callingActivity.startActivity(new Intent(callingActivity, WelcomeActivity.class));
             callingActivity.finish();
             return null;
         }

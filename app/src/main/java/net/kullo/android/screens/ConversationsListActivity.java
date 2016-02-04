@@ -65,12 +65,6 @@ public class ConversationsListActivity extends AppCompatActivity implements
 
         if (task != null) task.waitUntilDone();
         GcmConnector.get().fetchToken(this);
-
-        String action = getIntent().getAction();
-        if (action != null && action.equals(KulloConstants.ACTION_SYNC)) {
-            SessionConnector.get().syncKullo();
-        }
-
     }
 
     @Override
@@ -78,6 +72,11 @@ public class ConversationsListActivity extends AppCompatActivity implements
         super.onStart();
 
         updateAccountInfoInNavigationHeader();
+
+        String action = getIntent().getAction();
+        if (action != null && action.equals(KulloConstants.ACTION_SYNC)) {
+            SessionConnector.get().syncKullo();
+        }
     }
 
     @Override

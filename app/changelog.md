@@ -1,6 +1,10 @@
 Kullo for Android
 -----------------
 
+## v27 (2016-02-04)
+
+ * Don't show push notifications for outgoing messages
+
 ## v26 (2016-02-03)
 
  * Push notifications

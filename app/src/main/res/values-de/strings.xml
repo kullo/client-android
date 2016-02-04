@@ -165,6 +165,6 @@ ellipsis (…)
 
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>
-    <string name="notification_body_new_message">Du hast eine neue Kullo-Nachricht erhalten</string>
+    <string name="notification_body_new_message">Neue Kullo-Nachricht erhalten</string>
 
 </resources>

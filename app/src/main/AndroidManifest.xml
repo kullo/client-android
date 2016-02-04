@@ -39,7 +39,7 @@
         <activity
             android:name=".screens.RegistrationActivity"
             android:configChanges="orientation|keyboardHidden"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".screens.ConversationsListActivity"
             android:configChanges="orientation|keyboardHidden"
@@ -80,35 +80,34 @@
             android:name=".screens.AboutActivity"
             android:configChanges="orientation|keyboardHidden"
             android:label="@string/menu_about"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".screens.SettingsActivity"
             android:configChanges="orientation|keyboardHidden"
             android:label="@string/menu_settings"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".screens.CropImageActivity"
             android:configChanges="orientation|keyboardHidden"
-            android:label="@string/crop_image"></activity>
+            android:label="@string/crop_image"/>
         <activity
             android:name=".screens.AccountActivity"
             android:configChanges="orientation|keyboardHidden"
             android:label="@string/menu_account"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait"/>
         <activity android:name=".screens.DebugActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
-
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
         <activity
             android:name=".screens.ImpressumActivity"
-            android:label="@string/activity_title_impressum"></activity>
+            android:label="@string/activity_title_impressum"/>
         <activity
             android:name=".screens.LicensesActivity"
-            android:label="@string/activity_title_licenses"></activity>
-        <activity android:name=".screens.LogoutActivity"></activity>
+            android:label="@string/activity_title_licenses"/>
+        <activity android:name=".screens.LogoutActivity"/>
 
         <!-- NOTIFICATIONS -->
         <receiver
@@ -122,7 +121,7 @@
         </receiver>
         <service
             android:name="net.kullo.android.notifications.GcmNotificationListenerService"
-            android:exported="true" >
+            android:exported="false" >
             <intent-filter>
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
             </intent-filter>

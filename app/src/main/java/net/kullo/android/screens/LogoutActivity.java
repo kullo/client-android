@@ -2,7 +2,6 @@
 package net.kullo.android.screens;
 
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
@@ -10,17 +9,20 @@ import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.SessionConnector;
+import net.kullo.libkullo.api.AsyncTask;
 
 public class LogoutActivity extends AppCompatActivity {
     private static final String TAG = "LogoutActivity";
 
     private MaterialDialog mDialogLoggingOut;
-    private AsyncTask<Void, Void, Void> mLogoutTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
         setContentView(R.layout.activity_logout);
+        if (task != null) task.waitUntilDone();
     }
 
     @Override

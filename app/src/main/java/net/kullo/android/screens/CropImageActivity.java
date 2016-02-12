@@ -32,6 +32,7 @@ public class CropImageActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_crop_image);
 
+        Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 

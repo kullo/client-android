@@ -7,24 +7,31 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 import net.kullo.android.R;
+import net.kullo.android.kulloapi.CreateSessionResult;
+import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
-import net.kullo.libkullo.api.AsyncTask;
+import net.kullo.javautils.RuntimeAssertion;
 
 public class AccountActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
+        final CreateSessionResult result = SessionConnector.get().createActivityWithSession(this);
+        if (result.state == CreateSessionState.NO_CREDENTIALS) return;
 
         setContentView(R.layout.activity_account);
 
+        Ui.prepareActivityForTaskManager(this);
         Ui.setColorStatusBarArrangeHeader(this);
         Ui.setupActionbar(this);
 
-        if (task != null) task.waitUntilDone();
+        if (result.state == CreateSessionState.CREATING) {
+            RuntimeAssertion.require(result.task != null);
+            result.task.waitUntilDone();
+        }
 
         GcmConnector.get().fetchToken(this);
     }

@@ -19,6 +19,7 @@ public class AboutActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
 
+        Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 

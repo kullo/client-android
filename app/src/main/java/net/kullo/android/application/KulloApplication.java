@@ -67,11 +67,7 @@ public class KulloApplication extends Application {
         final PackageManager packageManager = getPackageManager();
         List results = packageManager.queryIntentActivities(openFileIntent, 0);
 
-        if (results.isEmpty()) {
-            return false;
-        } else {
-            return true;
-        }
+        return !results.isEmpty();
     }
 
     public String softwareVersions() {

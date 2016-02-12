@@ -23,6 +23,8 @@ import android.widget.Toast;
 import android.content.pm.LabeledIntent;
 
 import net.kullo.android.R;
+import net.kullo.android.kulloapi.CreateSessionResult;
+import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.Ui;
@@ -56,16 +58,22 @@ public class SettingsActivity extends AppCompatActivity {
 
         if (detectClearAvatarIntent()) return;
 
-        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
+        final CreateSessionResult result = SessionConnector.get().createActivityWithSession(this);
+        if (result.state == CreateSessionState.NO_CREDENTIALS) return;
 
         setContentView(R.layout.activity_settings);
 
+        Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 
         setupLayout();
 
-        if (task != null) task.waitUntilDone();
+        if (result.state == CreateSessionState.CREATING) {
+            RuntimeAssertion.require(result.task != null);
+            result.task.waitUntilDone();
+        }
+
         GcmConnector.get().fetchToken(this);
     }
 

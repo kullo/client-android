@@ -31,7 +31,6 @@ import net.kullo.android.observers.listenerobservers.MessageAttachmentsSaveListe
 import net.kullo.android.observers.listenerobservers.RegistrationRegisterAccountListenerObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.LoginActivity;
-import net.kullo.android.screens.LogoutActivity;
 import net.kullo.android.screens.WelcomeActivity;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.javautils.StrictBase64;
@@ -54,6 +53,9 @@ import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.MasterKey;
 import net.kullo.libkullo.api.MessageAttachmentsSaveToListener;
 import net.kullo.libkullo.api.NetworkError;
+import net.kullo.libkullo.api.PushToken;
+import net.kullo.libkullo.api.PushTokenEnvironment;
+import net.kullo.libkullo.api.PushTokenType;
 import net.kullo.libkullo.api.Registration;
 import net.kullo.libkullo.api.RegistrationRegisterAccountListener;
 import net.kullo.libkullo.api.Session;
@@ -64,6 +66,7 @@ import net.kullo.libkullo.api.SyncerListener;
 import net.kullo.libkullo.api.UserSettings;
 
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.Seconds;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -77,6 +80,7 @@ import java.util.Map;
 
 public class SessionConnector {
     private static final String TAG = "SessionConnector";
+    private static final int SECONDS_BETWEEN_SYNCS = 5 * 60;
 
     private static final SessionConnector SINGLETON = new SessionConnector();
     @NonNull public static SessionConnector get() {
@@ -85,7 +89,7 @@ public class SessionConnector {
 
     private AsyncTasksHolder mTaskHolder = new AsyncTasksHolder();
     private Session mSession = null;
-    private String mRegistrationToken = null;
+    private PushToken mPushToken = null;
     private Registration mRegistration;
 
     private Map<Class, LinkedList<ListenerObserver>> mListenerObservers;
@@ -114,9 +118,9 @@ public class SessionConnector {
 
     //LOGIN LOGOUT
 
-    @Nullable
-    public AsyncTask createActivityWithSession(Activity callingActivity) {
-        if (sessionAvailable()) return null;
+    @NonNull
+    public CreateSessionResult createActivityWithSession(Activity callingActivity) {
+        if (sessionAvailable()) return new CreateSessionResult(CreateSessionState.EXISTS);
 
         Log.d(TAG, "No session available. Creating session if credential are stored ...");
         UserSettings us = SessionConnector.get().loadStoredUserSettings(callingActivity);
@@ -124,10 +128,12 @@ public class SessionConnector {
             Log.d(TAG, "No credentials found. Moving to WelcomeActivity ...");
             callingActivity.startActivity(new Intent(callingActivity, WelcomeActivity.class));
             callingActivity.finish();
-            return null;
+            return new CreateSessionResult(CreateSessionState.NO_CREDENTIALS);
         }
 
-        return SessionConnector.get().createSession(callingActivity, us);
+        return new CreateSessionResult(CreateSessionState.CREATING,
+                SessionConnector.get().createSession(callingActivity, us)
+        );
     }
 
     public void checkLoginAndCreateSession(final LoginActivity callingActivity, final Address address, final MasterKey masterKey) {
@@ -487,6 +493,20 @@ public class SessionConnector {
         mSession.syncer().requestSync(SyncMode.WITHOUTATTACHMENTS);
     }
 
+    public void syncIfNecessary() {
+        RuntimeAssertion.require(mSession != null);
+        DateTime lastFullSync = mSession.syncer().lastFullSync();
+        if (lastFullSync == null) {
+            syncKullo();
+        } else {
+            org.joda.time.DateTime last = KulloUtils.convertToJodaTime(lastFullSync);
+            org.joda.time.DateTime now = org.joda.time.DateTime.now();
+            if (Seconds.secondsBetween(last, now).getSeconds() > SECONDS_BETWEEN_SYNCS) {
+                syncKullo();
+            }
+        }
+    }
+
     public void sendMessages() {
         RuntimeAssertion.require(mSession != null);
         mSession.syncer().requestSync(SyncMode.SENDONLY);
@@ -667,9 +687,12 @@ public class SessionConnector {
     }
 
     // ATTACHMENTS
-
+    @NonNull
     public AsyncTask addAttachmentToDraft(long conversationId, String filePath, String mimeType) {
         RuntimeAssertion.require(mSession != null);
+        RuntimeAssertion.require(filePath != null);
+        RuntimeAssertion.require(mimeType != null);
+
         return mSession.draftAttachments().addAsync(conversationId, filePath, mimeType, new DraftAttachmentsAddListener() {
             @Override
             public void finished(long convId, long attId, String path) {
@@ -1056,13 +1079,15 @@ public class SessionConnector {
         RuntimeAssertion.require(mSession != null);
 
         // Token changed? unregister old one
-        if (mRegistrationToken != null) {
+        if (mPushToken != null) {
             unregisterPushToken();
         }
 
         // store token within session instance
-        mRegistrationToken = registrationToken;
-        AsyncTask registerTask = mSession.registerPushToken(registrationToken);
+        mPushToken = new PushToken(
+                PushTokenType.GCM, registrationToken, PushTokenEnvironment.ANDROID);
+
+        AsyncTask registerTask = mSession.registerPushToken(mPushToken);
         if (registerTask != null) {
             registerTask.waitUntilDone();
         }
@@ -1071,19 +1096,19 @@ public class SessionConnector {
     public void unregisterPushToken() {
         RuntimeAssertion.require(mSession != null);
 
-        if (mRegistrationToken != null) {
-            AsyncTask unregisterTask = mSession.unregisterPushToken(mRegistrationToken);
+        if (mPushToken != null) {
+            AsyncTask unregisterTask = mSession.unregisterPushToken(mPushToken);
             if (unregisterTask != null) {
                 unregisterTask.waitUntilDone();
             }
-            mRegistrationToken = null;
+            mPushToken = null;
         }
     }
 
     public boolean hasPushToken() {
         RuntimeAssertion.require(mSession != null);
 
-        return mRegistrationToken != null;
+        return mPushToken != null;
     }
 
     // Observers

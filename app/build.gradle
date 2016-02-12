@@ -8,8 +8,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 27
-        versionName "27"
+        versionCode 28
+        versionName "28"
     }
     buildTypes {
         debug {
@@ -55,9 +55,9 @@ dependencies {
 
     // MaterialDialogs pulls in MaterialProgressBar as a dependency
     // At the moment, the versions match.
-    compile('com.github.afollestad.material-dialogs:core:0.8.5.2@aar') { transitive = true }
+    compile('com.github.afollestad.material-dialogs:core:0.8.5.4@aar') { transitive = true }
 
-    compile "com.google.android.gms:play-services-gcm:8.3.0"
+    compile "com.google.android.gms:play-services-gcm:8.4.0"
 
     compile project(':libkullo')
     compile project(':javautils')

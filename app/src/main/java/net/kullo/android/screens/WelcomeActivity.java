@@ -45,6 +45,8 @@ public class WelcomeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
 
+        Ui.prepareActivityForTaskManager(this);
+
         mLayoutContent = (RelativeLayout) findViewById(R.id.content);
 
         // Check google play

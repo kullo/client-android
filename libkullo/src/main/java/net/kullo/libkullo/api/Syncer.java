@@ -19,6 +19,13 @@ public abstract class Syncer {
     /** Set or replace the SyncerListener which should receive sync events. */
     public abstract void setListener(SyncerListener listener);
 
+    /**
+     * Get the finishing time of the last successful full sync.
+     * A full sync is one with "WithoutAttachments" or "Everything" sync mode.
+     * Returns null if there hasn't been a sync yet.
+     */
+    public abstract DateTime lastFullSync();
+
     /** Request that the data specified in mode is synced. */
     public abstract void requestSync(SyncMode mode);
 
@@ -73,6 +80,14 @@ public abstract class Syncer {
             native_setListener(this.nativeRef, listener);
         }
         private native void native_setListener(long _nativeRef, SyncerListener listener);
+
+        @Override
+        public DateTime lastFullSync()
+        {
+            assert !this.destroyed.get() : "trying to use a destroyed object";
+            return native_lastFullSync(this.nativeRef);
+        }
+        private native DateTime native_lastFullSync(long _nativeRef);
 
         @Override
         public void requestSync(SyncMode mode)

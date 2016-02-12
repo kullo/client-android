@@ -25,9 +25,9 @@ public abstract class Session {
 
     public abstract AsyncTask accountInfoAsync(SessionAccountInfoListener listener);
 
-    public abstract AsyncTask registerPushToken(String registrationToken);
+    public abstract AsyncTask registerPushToken(PushToken token);
 
-    public abstract AsyncTask unregisterPushToken(String registrationToken);
+    public abstract AsyncTask unregisterPushToken(PushToken token);
 
     /** Notify the session of events. Only call this from the UI thread! */
     public abstract ArrayList<Event> notify(InternalEvent internalEvent);
@@ -128,20 +128,20 @@ public abstract class Session {
         private native AsyncTask native_accountInfoAsync(long _nativeRef, SessionAccountInfoListener listener);
 
         @Override
-        public AsyncTask registerPushToken(String registrationToken)
+        public AsyncTask registerPushToken(PushToken token)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_registerPushToken(this.nativeRef, registrationToken);
+            return native_registerPushToken(this.nativeRef, token);
         }
-        private native AsyncTask native_registerPushToken(long _nativeRef, String registrationToken);
+        private native AsyncTask native_registerPushToken(long _nativeRef, PushToken token);
 
         @Override
-        public AsyncTask unregisterPushToken(String registrationToken)
+        public AsyncTask unregisterPushToken(PushToken token)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_unregisterPushToken(this.nativeRef, registrationToken);
+            return native_unregisterPushToken(this.nativeRef, token);
         }
-        private native AsyncTask native_unregisterPushToken(long _nativeRef, String registrationToken);
+        private native AsyncTask native_unregisterPushToken(long _nativeRef, PushToken token);
 
         @Override
         public ArrayList<Event> notify(InternalEvent internalEvent)

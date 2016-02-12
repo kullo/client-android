@@ -1,6 +1,16 @@
 Kullo for Android
 -----------------
 
+## v28 (2016-02-12)
+
+ * Automatically sync when app is started or last sync more than 5 minutes ago
+ * Notifications: use defaults for sound, light and vibration
+ * Notifications: don't show multiple notifications at the same time
+ * Notifications: always translate notification text
+ * UI: Update system task switcher style
+ * Fix crash when attachment is added via file mode (e.g. from ES file browser)
+ * Update libkullo v43
+
 ## v27 (2016-02-04)
 
  * Don't show push notifications for outgoing messages

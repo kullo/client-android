@@ -18,6 +18,7 @@ public class LicensesActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_licenses);
 
+        Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 

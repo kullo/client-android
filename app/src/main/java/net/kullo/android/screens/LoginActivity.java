@@ -63,6 +63,8 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "Creating a login activity");
         setContentView(R.layout.activity_login);
+
+        Ui.prepareActivityForTaskManager(this);
         setupLayout();
 
         // Activity started for user to type in MasterKey

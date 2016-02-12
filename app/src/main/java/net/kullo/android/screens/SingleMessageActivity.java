@@ -19,7 +19,10 @@ import android.widget.Toast;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
+import net.kullo.android.application.CommonDialogs;
 import net.kullo.android.application.KulloApplication;
+import net.kullo.android.kulloapi.CreateSessionResult;
+import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
@@ -31,13 +34,11 @@ import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
 import net.kullo.android.screens.messageslist.AttachmentsAdapter;
 import net.kullo.android.screens.messageslist.MessageAttachmentsOpener;
 import net.kullo.javautils.RuntimeAssertion;
-import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -67,13 +68,12 @@ public class SingleMessageActivity extends AppCompatActivity {
     protected Button mFooterButton;
     protected TextView mFooterTextView;
 
-    private MaterialDialog mShowSettingsDialog;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
+        final CreateSessionResult result = SessionConnector.get().createActivityWithSession(this);
+        if (result.state == CreateSessionState.NO_CREDENTIALS) return;
 
         setContentView(R.layout.activity_single_message);
 
@@ -81,6 +81,7 @@ public class SingleMessageActivity extends AppCompatActivity {
         mMessageId = intent.getLongExtra(KulloConstants.MESSAGE_ID, -1);
         RuntimeAssertion.require(mMessageId != -1);
 
+        Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 
@@ -146,7 +147,11 @@ public class SingleMessageActivity extends AppCompatActivity {
         mFooterButton = (Button) findViewById(R.id.footer_button);
         mFooterTextView = (TextView) findViewById(R.id.footer_text);
 
-        if (task != null) task.waitUntilDone();
+        if (result.state == CreateSessionState.CREATING) {
+            RuntimeAssertion.require(result.task != null);
+            result.task.waitUntilDone();
+        }
+
         GcmConnector.get().fetchToken(this);
     }
 
@@ -212,7 +217,6 @@ public class SingleMessageActivity extends AppCompatActivity {
     public void populateMessageFields() {
         final DateTime dateReceived = SessionConnector.get().getMessageDateReceived(mMessageId);
         final String messageText = SessionConnector.get().getMessageText(mMessageId);
-        final String messageTextCompressed = messageText.replaceAll("\\s+", " ");
         final String messageFooter = SessionConnector.get().getMessageFooter(mMessageId);
         final Bitmap senderAvatar = SessionConnector.get().getSenderAvatar(this, mMessageId);
         final String senderName = SessionConnector.get().getSenderName(mMessageId);
@@ -225,7 +229,9 @@ public class SingleMessageActivity extends AppCompatActivity {
 
         setTitle(senderName);
 
-        setMessageText(messageText, messageTextCompressed);
+        mMessageContentTextView.setMaxLines(Integer.MAX_VALUE);
+        mMessageContentTextView.setAutoLinkMask(Linkify.WEB_URLS);
+        mMessageContentTextView.setText(messageText);
 
         showAttachmentsListIfAvailable();
 
@@ -238,23 +244,8 @@ public class SingleMessageActivity extends AppCompatActivity {
     }
 
     private void showDialogToShowUserSettingsForCompletion() {
-        mShowSettingsDialog = new MaterialDialog.Builder(this)
-                .title(R.string.new_message_settings_incomplete_dialog_title)
-                .content(R.string.new_message_settings_incomplete_dialog_content)
-                .positiveText(R.string.ok)
-                .negativeText(R.string.cancel)
-                .callback(new MaterialDialog.ButtonCallback() {
-                    @Override
-                    public void onPositive(MaterialDialog dialog) {
-                        startActivity(new Intent(SingleMessageActivity.this, SettingsActivity.class));
-                    }
-
-                    @Override
-                    public void onNegative(MaterialDialog dialog) {
-                        mShowSettingsDialog.dismiss();
-                    }
-                })
-                .show();
+        final MaterialDialog showSettingsDialog = CommonDialogs.buildShowSettingsDialog(this);
+        showSettingsDialog.show();
     }
 
     private void showAttachmentsListIfAvailable() {
@@ -310,12 +301,6 @@ public class SingleMessageActivity extends AppCompatActivity {
         LocalDateTime localDateReceived = new LocalDateTime(dateReceived, LOCAL_TIME_ZONE);
 
         return localDateReceived.toString(mFormatterDate);
-    }
-
-    private void setMessageText(String messageText, String messageTextCompressed) {
-        mMessageContentTextView.setMaxLines(Integer.MAX_VALUE);
-        mMessageContentTextView.setAutoLinkMask(Linkify.WEB_URLS);
-        mMessageContentTextView.setText(messageText);
     }
 
     private void showFooterContainer(Boolean showFooter) {

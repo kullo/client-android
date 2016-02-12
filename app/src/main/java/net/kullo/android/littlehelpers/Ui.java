@@ -2,6 +2,8 @@
 package net.kullo.android.littlehelpers;
 
 import android.app.Activity;
+import android.app.ActivityManager.TaskDescription;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
@@ -36,5 +38,15 @@ public class Ui {
         }
 
         return toolbar;
+    }
+
+    public static void prepareActivityForTaskManager(@NonNull AppCompatActivity activity) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            TaskDescription td = new TaskDescription(
+                    activity.getResources().getString(R.string.app_name),
+                    BitmapFactory.decodeResource(activity.getResources(), R.drawable.kullo_app_switcher),
+                    activity.getResources().getColor(R.color.kulloPrimaryDarkColor));
+            activity.setTaskDescription(td);
+        }
     }
 }

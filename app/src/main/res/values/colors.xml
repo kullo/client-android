@@ -13,7 +13,12 @@
     <color name="kulloOrange">#E88D03</color>
 
     <color name="kulloPrimaryColor">@color/kulloOrange</color>
-    <color name="kulloPrimaryDarkColor">#BB7200</color><!-- only use this for status bar background -->
+    <!--
+    Used for status bar background and app switcher.
+    That is 91 % of the brightness of the main orange and has a contrast to white
+    of more than 3 (3.0619729)
+     -->
+    <color name="kulloPrimaryDarkColor">#D38002</color>
     <color name="kulloAccentColor">@color/kulloTurquoise</color>
     <color name="kulloDrawerBackground">@color/kulloBackgroundLight</color>
     <color name="kulloWindowBackground">@color/kulloBackgroundLight</color>

@@ -3,8 +3,13 @@ package net.kullo.android.kulloapi;
 
 import junit.framework.TestCase;
 
+import net.kullo.libkullo.LibKullo;
+
 // Junit3 test frame created by Android Studio
 public class SessionConnectorTest extends TestCase {
+    protected void setUp() {
+        LibKullo.init();
+    }
 
     public void testIsValidKulloAddress() {
         // hashes

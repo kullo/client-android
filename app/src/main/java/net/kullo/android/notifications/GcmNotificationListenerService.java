@@ -22,48 +22,29 @@ import net.kullo.android.littlehelpers.KulloConstants;
 public class GcmNotificationListenerService extends GcmListenerService {
     private static final String TAG = "GcmListenerService";
 
-    private String getStringFromNotificationPayload(Bundle data, String key) {
-        String localizationKey = data.getString(key + "_loc_key");
-        if (localizationKey != null) {
-            int stringId = getResources().getIdentifier(localizationKey, "string", "net.kullo.android");
-            if (stringId != 0) return getString(stringId);
-        }
-        return data.getString(key);
-    }
-
-    private int getIconIdFromNotificationPayload(Bundle data) {
-        String iconKey = data.getString("icon");
-        int result = getResources().getIdentifier(iconKey, "drawable", "net.kullo.android");
-        if (result == 0) result = R.drawable.kullo_notification;
-        return result;
-    }
-
     @Override
     public void onMessageReceived(String from, Bundle data) {
         Log.i(TAG, "Push notification received:" + data.toString());
 
-        Bundle notificationPayload = data.getBundle("notification");
+        String action = data.getString("action");
 
-        if (notificationPayload != null) {
+        if (action != null && action.equals("new_message")) {
             Intent intent = new Intent(this, ConversationsListActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             intent.setAction(KulloConstants.ACTION_SYNC);
             PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                    PendingIntent.FLAG_ONE_SHOT);
-
-            Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                    PendingIntent.FLAG_CANCEL_CURRENT);
 
             NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
-                    .setSmallIcon(getIconIdFromNotificationPayload(notificationPayload))
-                    .setContentTitle(getStringFromNotificationPayload(notificationPayload, "title"))
-                    .setContentText(getStringFromNotificationPayload(notificationPayload, "body"))
+                    .setDefaults(NotificationCompat.DEFAULT_ALL)
+                    .setSmallIcon(R.drawable.kullo_notification)
+                    .setContentTitle(getString(R.string.notification_title_new_message))
+                    .setContentText(getString(R.string.notification_body_new_message))
                     .setAutoCancel(true)
-                    .setSound(defaultSoundUri)
                     .setContentIntent(pendingIntent);
 
             NotificationManager notificationManager =
                     (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
             notificationManager.notify(0, notificationBuilder.build());
 
         } else {

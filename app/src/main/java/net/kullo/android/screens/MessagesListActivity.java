@@ -22,6 +22,9 @@ import android.widget.Toast;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
+import net.kullo.android.application.CommonDialogs;
+import net.kullo.android.kulloapi.CreateSessionResult;
+import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.kulloapi.MessagesComparatorDsc;
@@ -38,7 +41,6 @@ import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
 import net.kullo.android.screens.messageslist.MessageAttachmentsOpener;
 import net.kullo.android.screens.messageslist.MessagesAdapter;
 import net.kullo.javautils.RuntimeAssertion;
-import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
@@ -66,7 +68,6 @@ public class MessagesListActivity extends AppCompatActivity {
     private MaterialProgressBar mProgressBarDeterminate;
     private MaterialProgressBar mProgressBarIndeterminate;
     private RecyclerView mMessagesList;
-    private MaterialDialog mShowSettingsDialog;
     private TextView mConversationEmptyLabel;
 
     private LinearLayout mAvatarsRow;
@@ -75,13 +76,15 @@ public class MessagesListActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
+        final CreateSessionResult result = SessionConnector.get().createActivityWithSession(this);
+        if (result.state == CreateSessionState.NO_CREDENTIALS) return;
 
         setContentView(R.layout.activity_messages_list);
 
         Intent intent = getIntent();
         mConversationId = intent.getLongExtra(CONVERSATION_ID, -1);
 
+        Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 
@@ -98,7 +101,11 @@ public class MessagesListActivity extends AppCompatActivity {
             }
         });
 
-        if (task != null) task.waitUntilDone();
+        if (result.state == CreateSessionState.CREATING) {
+            RuntimeAssertion.require(result.task != null);
+            result.task.waitUntilDone();
+        }
+
         GcmConnector.get().fetchToken(this);
     }
 
@@ -167,6 +174,7 @@ public class MessagesListActivity extends AppCompatActivity {
 
 
         registerSyncFinishedListenerObserver();
+        SessionConnector.get().syncIfNecessary();
     }
 
     @Override
@@ -370,23 +378,8 @@ public class MessagesListActivity extends AppCompatActivity {
     }
 
     private void showDialogToShowUserSettingsForCompletion() {
-        mShowSettingsDialog = new MaterialDialog.Builder(this)
-                .title(R.string.new_message_settings_incomplete_dialog_title)
-                .content(R.string.new_message_settings_incomplete_dialog_content)
-                .positiveText(R.string.ok)
-                .negativeText(R.string.cancel)
-                .callback(new MaterialDialog.ButtonCallback() {
-                    @Override
-                    public void onPositive(MaterialDialog dialog) {
-                        startActivity(new Intent(MessagesListActivity.this, SettingsActivity.class));
-                    }
-
-                    @Override
-                    public void onNegative(MaterialDialog dialog) {
-                        mShowSettingsDialog.dismiss();
-                    }
-                })
-                .show();
+        final MaterialDialog showSettingsDialog = CommonDialogs.buildShowSettingsDialog(this);
+        showSettingsDialog.show();
     }
 
     private void registerSyncFinishedListenerObserver() {
@@ -408,16 +401,6 @@ public class MessagesListActivity extends AppCompatActivity {
 
             @Override
             public void draftAttachmentsTooBig(long convId) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mSwipeLayout.setEnabled(true);
-                        mSwipeLayout.setRefreshing(false);
-
-                        mProgressBarDeterminate.setVisibility(View.GONE);
-                        mProgressBarIndeterminate.setVisibility(View.GONE);
-                    }
-                });
             }
 
             @Override

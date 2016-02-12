@@ -27,9 +27,11 @@ import android.widget.Toast;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
+import net.kullo.android.kulloapi.CreateSessionResult;
+import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
-import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloUtils;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Debug;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
@@ -50,6 +52,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLConnection;
 
 public class ComposeActivity extends AppCompatActivity {
     private static final String TAG = "ComposeActivity";
@@ -71,9 +74,12 @@ public class ComposeActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
+        final CreateSessionResult result = SessionConnector.get().createActivityWithSession(this);
+        if (result.state == CreateSessionState.NO_CREDENTIALS) return;
 
         setContentView(R.layout.activity_compose);
+
+        Ui.prepareActivityForTaskManager(this);
 
         Intent intent = getIntent();
         if (intent.hasExtra(KulloConstants.CONVERSATION_ID)) {
@@ -134,7 +140,11 @@ public class ComposeActivity extends AppCompatActivity {
 
         registerSyncFinishedListenerObserver();
 
-        if (task != null) task.waitUntilDone();
+        if (result.state == CreateSessionState.CREATING) {
+            RuntimeAssertion.require(result.task != null);
+            result.task.waitUntilDone();
+        }
+
         GcmConnector.get().fetchToken(this);
     }
 
@@ -307,9 +317,6 @@ public class ComposeActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         //TODO error message draftAttachmentsTooBig
-                        if (mProgressSync != null) {
-                            mProgressSync.dismiss();
-                        }
                     }
                 });
             }
@@ -378,98 +385,35 @@ public class ComposeActivity extends AppCompatActivity {
         // Open file for attachment
         final Intent fileIntent = new Intent();
         fileIntent.setType("*/*");
+        fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
         fileIntent.setAction(Intent.ACTION_GET_CONTENT);
         startActivityForResult(fileIntent, FILE_REQUEST_CODE);
     }
 
-     @Override
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             if (requestCode == FILE_REQUEST_CODE) {
                 final Uri selectedFileUri = data == null ? null : data.getData();
                 if (selectedFileUri == null) {
-                    Toast.makeText(this.getApplicationContext(),
-                    R.string.select_file_failed, Toast.LENGTH_SHORT)
-                    .show();
+                    Toast.makeText(this.getApplicationContext(), R.string.select_file_failed,
+                            Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                final String mimeType = getContentResolver().getType(selectedFileUri);
-
-                final Context context = this;
-                new Thread(new Runnable() {
-                    public void run() {
-                        // copy file in known location for uploading
-                        String fileName = "tmp.tmp"; // default filename if original can't be retrieved
-
-                        // Get filename from stream
-                        Cursor fileInfoCursor = getContentResolver().query(selectedFileUri, null, null, null, null);
-                        if (fileInfoCursor != null) {
-                            fileInfoCursor.moveToFirst();
-                            int nameIndex = fileInfoCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                            if (nameIndex != -1) {
-                                fileName = fileInfoCursor.getString(nameIndex);
-                            }
-                            fileInfoCursor.close();
-                        }
-
-                        File tmpDir = getCacheDir();
-                        if (tmpDir == null) {
-                            tmpDir = getExternalCacheDir();
-                            if (tmpDir == null) {
-                                tmpDir = android.os.Environment.getExternalStorageDirectory();
-                                if (tmpDir == null) {
-                                    Log.e(TAG, "Could not open any tmp directory for writing");
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            Toast.makeText(context.getApplicationContext(),
-                                                R.string.no_tmp_dir_found, Toast.LENGTH_SHORT)
-                                                .show();
-                                        }
-                                    });
-                                    return;
-                                }
-                            }
-                        }
-
-                        String destPath = tmpDir.getPath() + File.separatorChar + fileName;
-
-                        InputStream inputFile = null;
-                        BufferedOutputStream outputFile = null;
-
-                        try {
-                            inputFile = getContentResolver().openInputStream(selectedFileUri);
-                            RuntimeAssertion.require(inputFile != null);
-                            outputFile = new BufferedOutputStream(new FileOutputStream(destPath, false));
-                            byte[] buffer = new byte[1024];
-
-                            int bytesRead;
-                            while ((bytesRead = inputFile.read(buffer)) != -1) {
-                                outputFile.write(buffer, 0, bytesRead);
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } finally {
-                            try {
-                                if (inputFile != null) inputFile.close();
-                                if (outputFile != null) outputFile.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-
-                        AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, destPath, mimeType);
-                        if (task != null) task.waitUntilDone();
-
-                        // remove temporary file now that it's been uploaded
-                        if (!(new File(destPath)).delete()) {
-                            Log.e(TAG, "File could not be deleted: '" + destPath + "'");
-                        }
-                    }
-                }).start();
+                Log.d(TAG, "Attachment source: " + selectedFileUri);
+                final String scheme = selectedFileUri.getScheme();
+                switch (scheme) {
+                    case "file":
+                        handleAttachmentFromFileUri(selectedFileUri);
+                        break;
+                    case "content":
+                        handleAttachmentFromContentUri(selectedFileUri);
+                        break;
+                    default:
+                        throw new AssertionError("Unrecognized scheme: " + scheme);
+                }
             }
-
         } else if (resultCode == Activity.RESULT_CANCELED){
             Toast.makeText(this.getApplicationContext(),
                     R.string.select_file_canceled, Toast.LENGTH_SHORT)
@@ -479,5 +423,100 @@ public class ComposeActivity extends AppCompatActivity {
                     R.string.select_file_failed, Toast.LENGTH_SHORT)
                     .show();
         }
+    }
+
+    private void handleAttachmentFromFileUri(final Uri selectedFileUri) {
+        String guessedMimeType = URLConnection.guessContentTypeFromName(selectedFileUri.toString());
+        final String mimeType;
+        if (guessedMimeType == null) {
+            // default
+            mimeType = "application/octet-stream";
+        } else {
+            mimeType = guessedMimeType;
+        }
+
+        new Thread(new Runnable() {
+            public void run() {
+                // running in a thread because we can't garbage-collect task before it's done
+                AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, selectedFileUri.getPath(), mimeType);
+                task.waitUntilDone();
+            }
+        }).start();
+    }
+
+    private void handleAttachmentFromContentUri(final Uri selectedFileUri) {
+        final Context context = this;
+        final String mimeType = getContentResolver().getType(selectedFileUri);
+        new Thread(new Runnable() {
+            public void run() {
+                // copy file in known location for uploading
+                String fileName = "tmp.tmp"; // default filename if original can't be retrieved
+
+                // Get filename from stream
+                Cursor fileInfoCursor = getContentResolver().query(selectedFileUri, null, null, null, null);
+                if (fileInfoCursor != null) {
+                    fileInfoCursor.moveToFirst();
+                    int nameIndex = fileInfoCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                    if (nameIndex != -1) {
+                        fileName = fileInfoCursor.getString(nameIndex);
+                    }
+                    fileInfoCursor.close();
+                }
+
+                File tmpDir = getCacheDir();
+                if (tmpDir == null) {
+                    tmpDir = getExternalCacheDir();
+                    if (tmpDir == null) {
+                        tmpDir = android.os.Environment.getExternalStorageDirectory();
+                        if (tmpDir == null) {
+                            Log.e(TAG, "Could not open any tmp directory for writing");
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(context.getApplicationContext(),
+                                            R.string.no_tmp_dir_found, Toast.LENGTH_SHORT)
+                                        .show();
+                                }
+                            });
+                            return;
+                        }
+                    }
+                }
+
+                String destPath = tmpDir.getPath() + File.separatorChar + fileName;
+
+                InputStream inputFile = null;
+                BufferedOutputStream outputFile = null;
+
+                try {
+                    inputFile = getContentResolver().openInputStream(selectedFileUri);
+                    RuntimeAssertion.require(inputFile != null);
+                    outputFile = new BufferedOutputStream(new FileOutputStream(destPath, false));
+                    byte[] buffer = new byte[1024];
+
+                    int bytesRead;
+                    while ((bytesRead = inputFile.read(buffer)) != -1) {
+                        outputFile.write(buffer, 0, bytesRead);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    try {
+                        if (inputFile != null) inputFile.close();
+                        if (outputFile != null) outputFile.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, destPath, mimeType);
+                task.waitUntilDone();
+
+                // remove temporary file now that it's been uploaded
+                if (!(new File(destPath)).delete()) {
+                    Log.e(TAG, "File could not be deleted: '" + destPath + "'");
+                }
+            }
+        }).start();
     }
 }

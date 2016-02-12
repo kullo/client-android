@@ -2,6 +2,7 @@
 package net.kullo.android.screens;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -11,18 +12,18 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
-import android.widget.EditText;
 import android.widget.TextView;
-import android.content.Intent;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.ClientConnector;
+import net.kullo.android.kulloapi.CreateSessionResult;
+import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
+import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
-import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.screens.startconversation.ParticipantsAdapter;
 import net.kullo.javautils.RuntimeAssertion;
@@ -48,17 +49,23 @@ public class StartConversationActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        AsyncTask task = SessionConnector.get().createActivityWithSession(this);
+        final CreateSessionResult result = SessionConnector.get().createActivityWithSession(this);
+        if (result.state == CreateSessionState.NO_CREDENTIALS) return;
 
         setContentView(R.layout.activity_start_conversation);
 
+        Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
         setTitle(getResources().getString(R.string.new_conversation));
 
         setupLayout();
 
-        if (task != null) task.waitUntilDone();
+        if (result.state == CreateSessionState.CREATING) {
+            RuntimeAssertion.require(result.task != null);
+            result.task.waitUntilDone();
+        }
+
         GcmConnector.get().fetchToken(this);
     }
 

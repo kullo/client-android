@@ -10,6 +10,7 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import android.app.Activity;
 
 import net.kullo.android.kulloapi.SessionConnector;
+import net.kullo.javautils.RuntimeAssertion;
 
 public class GcmConnector {
     private static final String TAG = "GcmConnector";
@@ -40,14 +41,10 @@ public class GcmConnector {
 
     // if conditions are right, launch service that will retrieve a new token
     public void fetchToken(Context context) {
+        RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
+
         if (!mHasGooglePlay) {
             Log.i(TAG, "Device does not have Google Play Services. Skipping Push notifications.");
-            return;
-        }
-
-        // make sure that session is created
-        if (!SessionConnector.get().sessionAvailable()) {
-            Log.e(TAG, "Trying to retrieve new token without a valid session");
             return;
         }
 

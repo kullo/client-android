@@ -1,13 +1,15 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.notifications;
 
+import android.app.Activity;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.util.Log;
+
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import android.app.Activity;
 
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.javautils.RuntimeAssertion;
@@ -16,13 +18,14 @@ public class GcmConnector {
     private static final String TAG = "GcmConnector";
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
+    /* singleton setup */
     private static final GcmConnector SINGLETON = new GcmConnector();
-    @NonNull
-    public static GcmConnector get() {
+    @NonNull public static GcmConnector get() {
         return SINGLETON;
     }
 
-    private static boolean mHasGooglePlay = false;
+    /* members */
+    private boolean mHasGooglePlay = false;
 
     // check gplay at app start, prompt user if not there
     public void checkGooglePlayAndPrompt(Activity activity) {
@@ -40,7 +43,7 @@ public class GcmConnector {
     }
 
     // if conditions are right, launch service that will retrieve a new token
-    public void fetchToken(Context context) {
+    public void fetchAndRegisterToken(Context context) {
         RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
 
         if (!mHasGooglePlay) {
@@ -57,5 +60,9 @@ public class GcmConnector {
         // launch token service
         Intent intent = new Intent(context, GcmRegistrationIntentService.class);
         context.startService(intent);
+    }
+
+    public void removeAllNotifications(Context context) {
+        ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
     }
 }

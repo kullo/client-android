@@ -91,7 +91,7 @@ http://stackoverflow.com/a/8639921
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/draft_attachments_list"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:layout_gravity="bottom"

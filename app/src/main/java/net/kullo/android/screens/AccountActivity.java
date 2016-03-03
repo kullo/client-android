@@ -33,12 +33,14 @@ public class AccountActivity extends AppCompatActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchToken(this);
+        GcmConnector.get().fetchAndRegisterToken(this);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        GcmConnector.get().removeAllNotifications(this);
 
         // the fields are populated each time we restore because the user could have
         // logged in with a different account since the last time the activity had been created

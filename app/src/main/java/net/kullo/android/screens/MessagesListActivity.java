@@ -63,14 +63,14 @@ public class MessagesListActivity extends AppCompatActivity {
 
     private SyncerListenerObserver mSyncerListenerObserver;
     private ActionMode mActionMode = null;
+
     // Views
+    private boolean mIsAtTopScrollPosition = true;
     private SwipeRefreshLayout mSwipeLayout;
     private MaterialProgressBar mProgressBarDeterminate;
     private MaterialProgressBar mProgressBarIndeterminate;
     private RecyclerView mMessagesList;
     private TextView mConversationEmptyLabel;
-
-    private LinearLayout mAvatarsRow;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -106,7 +106,7 @@ public class MessagesListActivity extends AppCompatActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchToken(this);
+        GcmConnector.get().fetchAndRegisterToken(this);
     }
 
     @Override
@@ -193,11 +193,22 @@ public class MessagesListActivity extends AppCompatActivity {
         unregisterSyncFinishedListenerObserver();
     }
 
+    private void updateSwipeLayoutEnabled() {
+        mSwipeLayout.setEnabled(mIsAtTopScrollPosition && !SessionConnector.get().isSyncing());
+    }
+
     private void setupMessagesList() {
         mMessagesList = (RecyclerView) findViewById(R.id.messagesList);
-        LinearLayoutManager llm = new LinearLayoutManager(this);
+        final LinearLayoutManager llm = new LinearLayoutManager(this);
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         mMessagesList.setLayoutManager(llm);
+        mMessagesList.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                mIsAtTopScrollPosition = llm.findFirstCompletelyVisibleItemPosition() == 0;
+                updateSwipeLayoutEnabled();
+            }
+        });
 
         // Add decoration for dividers between list items
         int dividerLeftMargin = getResources().getDimensionPixelSize(R.dimen.md_additions_list_divider_margin_left);
@@ -222,25 +233,26 @@ public class MessagesListActivity extends AppCompatActivity {
 
         // Add touch listener
         mMessagesList.addOnItemTouchListener(new RecyclerItemClickListener(MessagesListActivity.this, mMessagesList,
-            new RecyclerItemClickListener.OnItemClickListener() {
-            @Override
-            public void onItemClick(View view, int position) {
-                Long messageId = mMessagesAdapter.getItem(position);
+                new RecyclerItemClickListener.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(View view, int position) {
+                        long messageId = mMessagesAdapter.getItem(position);
 
-                if (mMessagesAdapter.isSelectionActive()) {
-                    selectMessage(view, messageId);
-                } else {
-                    Intent intent = new Intent(MessagesListActivity.this, SingleMessageActivity.class);
-                    intent.putExtra(KulloConstants.MESSAGE_ID, messageId);
-                    startActivity(intent);
-                }
-            }
-            @Override
-            public void onItemLongPress(View view, int position) {
-                long messageId = mMessagesAdapter.getItem(position);
-                selectMessage(view, messageId);
-            }
-        }));
+                        if (mMessagesAdapter.isSelectionActive()) {
+                            selectMessage(messageId);
+                        } else {
+                            Intent intent = new Intent(MessagesListActivity.this, SingleMessageActivity.class);
+                            intent.putExtra(KulloConstants.MESSAGE_ID, messageId);
+                            startActivity(intent);
+                        }
+                    }
+
+                    @Override
+                    public void onItemLongPress(View view, int position) {
+                        long messageId = mMessagesAdapter.getItem(position);
+                        selectMessage(messageId);
+                    }
+                }));
 
         mConversationEmptyLabel = (TextView) findViewById(R.id.empty_list_label);
         updateEmptyLabel();
@@ -258,32 +270,24 @@ public class MessagesListActivity extends AppCompatActivity {
         }
     }
 
-    // Called before onResume()
-    // http://stackoverflow.com/questions/4253118/is-onresume-called-before-onactivityresult
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == KulloConstants.REQUEST_CODE_NEW_MESSAGE && resultCode == RESULT_OK) {
-            // Avoid refreshing list here because that is done in onResume() anyways -simon
-        }
-    }
-
     @Override
     public void onResume() {
         super.onResume();
+        GcmConnector.get().removeAllNotifications(this);
+
         RuntimeAssertion.require(mMessagesAdapter != null);
 
         // Fill adapter with the most recent data
         mMessagesAdapter.updateDataSet();
 
         if (SessionConnector.get().isSyncing()) {
-            mSwipeLayout.setEnabled(false);
+            updateSwipeLayoutEnabled();
             mSwipeLayout.setRefreshing(false);
 
             mProgressBarIndeterminate.setVisibility(View.VISIBLE);
             mProgressBarDeterminate.setVisibility(View.GONE);
         } else {
-            mSwipeLayout.setEnabled(true);
+            updateSwipeLayoutEnabled();
             mSwipeLayout.setRefreshing(false);
 
             mProgressBarIndeterminate.setVisibility(View.GONE);
@@ -291,18 +295,13 @@ public class MessagesListActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-    }
-
     private void updateSenderAvatarViewsInHeader() {
-        mAvatarsRow = (LinearLayout) findViewById(R.id.avatars_row);
+        LinearLayout avatarsRow = (LinearLayout) findViewById(R.id.avatars_row);
         if (SHOW_AVATAR_ROW) {
-            mAvatarsRow.setVisibility(View.VISIBLE);
+            avatarsRow.setVisibility(View.VISIBLE);
 
-            if (mAvatarsRow.getChildCount() > 0) {
-                mAvatarsRow.removeAllViews();
+            if (avatarsRow.getChildCount() > 0) {
+                avatarsRow.removeAllViews();
             }
 
             final int dp40 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40, getResources().getDisplayMetrics());
@@ -320,7 +319,7 @@ public class MessagesListActivity extends AppCompatActivity {
             }
             */
         } else {
-            mAvatarsRow.setVisibility(View.GONE);
+            avatarsRow.setVisibility(View.GONE);
         }
     }
 
@@ -337,8 +336,6 @@ public class MessagesListActivity extends AppCompatActivity {
                 finish();
                 return true;
             case R.id.action_refresh:
-                mSwipeLayout.setEnabled(false);
-                mSwipeLayout.setRefreshing(true);
                 SessionConnector.get().syncKullo();
                 return true;
             case R.id.action_toggle_message_size:
@@ -390,7 +387,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mSwipeLayout.setEnabled(false);
+                        updateSwipeLayoutEnabled();
                         mSwipeLayout.setRefreshing(false);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
@@ -408,7 +405,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mSwipeLayout.setEnabled(false);
+                        updateSwipeLayoutEnabled();
                         mSwipeLayout.setRefreshing(false);
 
                         if (KulloUtils.showSyncProgressAsBar(progress)) {
@@ -429,7 +426,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mSwipeLayout.setEnabled(true);
+                        updateSwipeLayoutEnabled();
                         mSwipeLayout.setRefreshing(false);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
@@ -443,7 +440,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mSwipeLayout.setEnabled(true);
+                        updateSwipeLayoutEnabled();
                         mSwipeLayout.setRefreshing(false);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
@@ -468,7 +465,7 @@ public class MessagesListActivity extends AppCompatActivity {
     }
 
     // CONTEXT MENU
-    private void selectMessage(View view, final Long messageId) {
+    private void selectMessage(final Long messageId) {
         mMessagesAdapter.toggleSelectedItem(messageId);
         if (!mMessagesAdapter.isSelectionActive()) {
             mActionMode.finish();
@@ -517,12 +514,5 @@ public class MessagesListActivity extends AppCompatActivity {
                 getResources().getString(R.string.title_n_selected),
                 mMessagesAdapter.getSelectedItemsCount());
         mActionMode.setTitle(title);
-    }
-
-    public void clearSelection() {
-        if (mActionMode != null) {
-            mMessagesAdapter.clearSelectedItems();
-            mActionMode.finish();
-        }
     }
 }

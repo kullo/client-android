@@ -66,12 +66,14 @@ public class StartConversationActivity extends AppCompatActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchToken(this);
+        GcmConnector.get().fetchAndRegisterToken(this);
     }
 
     @Override
     public void onResume(){
         super.onResume();
+
+        GcmConnector.get().removeAllNotifications(this);
 
         mReadyToLeave = false;
     }
@@ -107,7 +109,7 @@ public class StartConversationActivity extends AppCompatActivity {
         mParticipantsAdapter = new ParticipantsAdapter();
 
         mRecyclerView = (RecyclerView) findViewById(R.id.participantsList);
-        LinearLayoutManager llm = new org.solovyev.android.views.llm.LinearLayoutManager(this);
+        LinearLayoutManager llm = new LinearLayoutManager(this);
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         mRecyclerView.setLayoutManager(llm);
         mRecyclerView.setAdapter(mParticipantsAdapter);

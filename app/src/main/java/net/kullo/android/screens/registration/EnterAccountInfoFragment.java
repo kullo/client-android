@@ -50,11 +50,11 @@ public class EnterAccountInfoFragment extends Fragment {
         SharedPreferences sharedPref = getActivity().getApplicationContext().getSharedPreferences(
             KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
 
-        String address = sharedPref.getString(KulloConstants.KULLO_ADDRESS, "");
+        String address = sharedPref.getString(KulloConstants.ACTIVE_USER, "");
         if (!address.isEmpty()) {
             SharedPreferences.Editor editor = sharedPref.edit();
-            final String KEY_NAME = "user_name_" + address;
-            final String KEY_ORGANIZATION     = "user_organization_" + address;
+            final String KEY_NAME         = "user_name"         + KulloConstants.SEPARATOR + address;
+            final String KEY_ORGANIZATION = "user_organization" + KulloConstants.SEPARATOR + address;
 
             if (!nameString.isEmpty()) editor.putString(KEY_NAME, nameString);
             if (!organizationString.isEmpty()) editor.putString(KEY_ORGANIZATION, organizationString);

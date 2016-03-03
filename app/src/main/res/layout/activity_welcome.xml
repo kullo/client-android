@@ -19,13 +19,55 @@
             android:src="@drawable/kullo_account_switcher_bg" />
 
         <LinearLayout
-            android:id="@+id/content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="24dp"
             android:layout_below="@id/header_background"
             android:orientation="vertical"
             >
+
+            <LinearLayout
+                android:id="@+id/open_inbox_controls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="12dp"
+                >
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/welcome_open_inbox"
+                    android:textSize="16sp"
+                    android:textColor="@color/kulloTextPrimaryColor"
+                    />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    >
+
+                    <Spinner
+                        android:id="@+id/spinner_open_inbox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_toLeftOf="@+id/button_open_inbox"
+                        android:layout_gravity="center_vertical"
+                        android:gravity="center_vertical"
+                        />
+
+                    <Button
+                        android:id="@+id/button_open_inbox"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/welcome_action_open"
+                        android:theme="@style/Button.Tinted"
+                        android:layout_alignParentRight="true"
+                        />
+                </RelativeLayout>
+
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
@@ -35,28 +77,44 @@
                 android:textColor="@color/kulloTextPrimaryColor"
                 />
 
-            <Button
-                android:id="@+id/button_login"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/login"
-                android:theme="@style/Button.Tinted"/>
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    >
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/welcome_need_address"
-                android:textSize="16sp"
-                android:textColor="@color/kulloTextPrimaryColor"
-                android:layout_marginTop="12dp"
-                />
+                    <Button
+                        android:id="@+id/button_login"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/login"
+                        android:theme="@style/Button.Tinted"
+                        android:layout_alignParentRight="true" />
 
-            <Button
-                android:id="@+id/button_register"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/register"
-                android:theme="@style/Button.Tinted"/>
+                </RelativeLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/welcome_need_address"
+                    android:textSize="16sp"
+                    android:textColor="@color/kulloTextPrimaryColor"
+                    android:layout_marginTop="12dp"
+                    />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    >
+
+                    <Button
+                        android:id="@+id/button_register"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/register"
+                        android:theme="@style/Button.Tinted"
+                        android:layout_alignParentRight="true" />
+
+                </RelativeLayout>
 
         </LinearLayout>
 

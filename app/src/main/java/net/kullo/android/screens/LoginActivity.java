@@ -80,7 +80,7 @@ public class LoginActivity extends AppCompatActivity {
         super.onResume();
 
         SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        String storedAddress = preferences.getString(KulloConstants.KULLO_ADDRESS, "");
+        String storedAddress = preferences.getString(KulloConstants.ACTIVE_USER, "");
         if (!storedAddress.isEmpty()) {
             mKulloAddressEditText.setText(storedAddress);
         }
@@ -100,7 +100,7 @@ public class LoginActivity extends AppCompatActivity {
         SharedPreferences.Editor preferencesEditor = getPreferences(MODE_PRIVATE).edit();
 
         if (mPreserveStatus) {
-            preferencesEditor.putString(KulloConstants.KULLO_ADDRESS, mKulloAddressEditText.getText().toString());
+            preferencesEditor.putString(KulloConstants.ACTIVE_USER, mKulloAddressEditText.getText().toString());
 
             for (int i = 0 ; i < mMasterKeyBlocksEditText.size() ; i++) {
                 preferencesEditor.putString("block_" + i, mMasterKeyBlocksEditText.get(i).getText().toString());

@@ -39,6 +39,8 @@ ellipsis (…)
     <string name="network_error_unknown">Unbekannter Fehler.</string>
 
     <!-- welcome -->
+    <string name="welcome_open_inbox">Posteingang öffnen</string>
+    <string name="welcome_action_open">Öffnen</string>
     <string name="welcome_already_address">Du hast bereits eine Kullo-Adresse?</string>
     <string name="welcome_need_address">Du benötigst eine neue Kullo-Adresse?</string>
 
@@ -52,7 +54,9 @@ ellipsis (…)
     <string name="error_login_failed_description">Ungültige Kombination aus Kullo-Adresse und MasterKey.</string>
 
     <!-- logout -->
-    <string name="logging_out">Ausloggen …</string>
+    <string name="leaving_inbox_title">Verlasse Posteingang …</string>
+    <string name="leaving_inbox_description">Es wird zum Willkommens-Bildschirm gewechselt</string>
+    <string name="logging_out_title">Ausloggen …</string>
     <string name="logging_out_description">Lokale Nachrichten und Benutzerinformationen werden gelöscht</string>
 
     <!-- registration -->
@@ -75,13 +79,9 @@ ellipsis (…)
     <string name="menu_feedback">Feedback</string>
     <string name="menu_account">Konto</string>
     <string name="menu_about">Über</string>
-    <string name="menu_logout">Logout</string>
+    <string name="menu_leave_inbox">Posteingang verlassen</string>
     <string name="open_drawer">Menü öffnen</string>
     <string name="close_drawer">Menü schließen</string>
-    <string name="logout_warning_header">Wirklich ausloggen?</string>
-    <string name="logout_warning">Nach dem Logout musst du MasterKey und Absender-Informationen erneut eingeben.</string>
-    <string name="logout_warning_button_positive">Logout</string>
-    <string name="logout_warning_button_negative">Abbrechen</string>
 
     <!-- conversations list -->
     <string name="footer">Impressum</string>
@@ -105,6 +105,9 @@ ellipsis (…)
     <string name="exporting_to_downloads_folder">Exportiere Datei in den Downloads Ordner</string>
     <string name="export_successful_header">Export erfolgreich</string>
     <string name="export_successful_confirm_file_opening">Möchtest du die Datei jetzt öffnen?</string>
+    <string name="action_open_with">Öffnen mit</string>
+    <string name="action_save_as">Speichern unter</string>
+    <string name="action_share">Teilen</string>
 
     <!-- single message -->
     <string name="action_write">Schreiben</string>

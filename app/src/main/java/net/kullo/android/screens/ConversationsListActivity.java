@@ -3,7 +3,6 @@ package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
@@ -23,8 +22,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.timehop.stickyheadersrecyclerview.StickyRecyclerHeadersDecoration;
 
 import net.kullo.android.R;
@@ -56,12 +53,10 @@ public class ConversationsListActivity extends AppCompatActivity implements
     private static final String TAG = "ConversationsListAct."; // max. 23 chars
     private Toolbar mToolbar;
     private NavigationView mNavigationView;
-    private View mNavigationHeaderView;
     private CircleImageView mNavigationHeaderAvatarView;
     private TextView mNavigationHeaderNameView;
     private TextView mNavigationHeaderAddressView;
     private DrawerLayout mDrawerLayout;
-    private MaterialDialog mConfirmLogoutDialog;
     private MenuItem mPreviousMenuItemNavigationView;
     protected RecyclerView mRecyclerView;
     private ConversationsAdapter mAdapter;
@@ -72,6 +67,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
     private ConversationsEventObserver mConversationsEventObserver;
     private SyncerListenerObserver mSyncerListenerObserver;
     private ActionMode mActionMode = null;
+    private boolean mIsAtTopScrollPosition = true;
 
 
     //LIFECYCLE
@@ -96,7 +92,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchToken(this);
+        GcmConnector.get().fetchAndRegisterToken(this);
     }
 
     @Override
@@ -122,18 +118,20 @@ public class ConversationsListActivity extends AppCompatActivity implements
     protected void onResume() {
         super.onResume();
 
+        GcmConnector.get().removeAllNotifications(this);
+
         handleSyncFromIntent();
 
         mIsPaused = false;
 
         if (SessionConnector.get().isSyncing()) {
-            mSwipeLayout.setEnabled(false);
+            updateSwipeLayoutEnabled();
             mSwipeLayout.setRefreshing(false);
 
             mProgressBarIndeterminate.setVisibility(View.VISIBLE);
             mProgressBarDeterminate.setVisibility(View.GONE);
         } else {
-            mSwipeLayout.setEnabled(true);
+            updateSwipeLayoutEnabled();
             mSwipeLayout.setRefreshing(false);
 
             mProgressBarIndeterminate.setVisibility(View.GONE);
@@ -163,6 +161,10 @@ public class ConversationsListActivity extends AppCompatActivity implements
         unregisterConversationsEventObserver();
     }
 
+    private void updateSwipeLayoutEnabled() {
+        mSwipeLayout.setEnabled(mIsAtTopScrollPosition && !SessionConnector.get().isSyncing());
+    }
+
     private void handleSyncFromIntent() {
         String action = getIntent().getAction();
         if (action != null && action.equals(KulloConstants.ACTION_SYNC)) {
@@ -178,12 +180,12 @@ public class ConversationsListActivity extends AppCompatActivity implements
         RuntimeAssertion.require(mNavigationView != null);
         mNavigationView.setNavigationItemSelectedListener(this);
 
-        mNavigationHeaderView = mNavigationView.inflateHeaderView(R.layout.navigation_view_header);
-        RuntimeAssertion.require(mNavigationHeaderView != null);
+        View navigationHeaderView = mNavigationView.inflateHeaderView(R.layout.navigation_view_header);
+        RuntimeAssertion.require(navigationHeaderView != null);
 
-        mNavigationHeaderAvatarView = (CircleImageView) mNavigationHeaderView.findViewById(R.id.avatar);
-        mNavigationHeaderNameView = (TextView) mNavigationHeaderView.findViewById(R.id.username);
-        mNavigationHeaderAddressView = (TextView) mNavigationHeaderView.findViewById(R.id.address);
+        mNavigationHeaderAvatarView = (CircleImageView) navigationHeaderView.findViewById(R.id.avatar);
+        mNavigationHeaderNameView = (TextView) navigationHeaderView.findViewById(R.id.username);
+        mNavigationHeaderAddressView = (TextView) navigationHeaderView.findViewById(R.id.address);
         RuntimeAssertion.require(mNavigationHeaderAvatarView != null);
         RuntimeAssertion.require(mNavigationHeaderNameView != null);
         RuntimeAssertion.require(mNavigationHeaderAddressView != null);
@@ -219,7 +221,15 @@ public class ConversationsListActivity extends AppCompatActivity implements
 
         //set up recycler view
         mRecyclerView = (RecyclerView) findViewById(R.id.conversations_recycler_view);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        final LinearLayoutManager llm = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(llm);
+        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                mIsAtTopScrollPosition = llm.findFirstCompletelyVisibleItemPosition() == 0;
+                updateSwipeLayoutEnabled();
+            }
+        });
 
         mAdapter = new ConversationsAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
@@ -310,7 +320,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mSwipeLayout.setEnabled(false);
+                        updateSwipeLayoutEnabled();
                         mSwipeLayout.setRefreshing(false);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
@@ -328,7 +338,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mSwipeLayout.setEnabled(false);
+                        updateSwipeLayoutEnabled();
                         mSwipeLayout.setRefreshing(false);
 
                         if (KulloUtils.showSyncProgressAsBar(progress)) {
@@ -353,7 +363,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                         @Override
                         public void run() {
                             if (mSwipeLayout != null) {
-                                mSwipeLayout.setEnabled(true);
+                                updateSwipeLayoutEnabled();
                                 mSwipeLayout.setRefreshing(false);
                             }
 
@@ -372,7 +382,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                     @Override
                     public void run() {
                         if (mSwipeLayout != null) {
-                            mSwipeLayout.setEnabled(true);
+                            updateSwipeLayoutEnabled();
                             mSwipeLayout.setRefreshing(false);
                         }
 
@@ -440,24 +450,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 startActivity(intentAbout);
                 break;
             case R.id.menuitem_logout:
-                mConfirmLogoutDialog = new MaterialDialog.Builder(this)
-                        .title(R.string.logout_warning_header)
-                        .content(R.string.logout_warning)
-                        .positiveText(R.string.logout_warning_button_positive)
-                        .negativeText(R.string.logout_warning_button_negative)
-                        .onPositive(new MaterialDialog.SingleButtonCallback() {
-                            @Override
-                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction dialogAction) {
-                                forceLogout();
-                            }
-                        })
-                        .onNegative(new MaterialDialog.SingleButtonCallback() {
-                            @Override
-                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction dialogAction) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .show();
+                closeInbox();
                 return true;
             default:
                 RuntimeAssertion.require(false);
@@ -490,8 +483,6 @@ public class ConversationsListActivity extends AppCompatActivity implements
         // handle item selection, if it doesn't land here, the activity might have snatched it
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                mSwipeLayout.setEnabled(false);
-                mSwipeLayout.setRefreshing(true);
                 SessionConnector.get().syncKullo();
                 return true;
             default:
@@ -499,8 +490,8 @@ public class ConversationsListActivity extends AppCompatActivity implements
         }
     }
 
-    public void forceLogout() {
-        startActivity(new Intent(this, LogoutActivity.class));
+    public void closeInbox() {
+        startActivity(new Intent(this, LeaveInboxActivity.class));
         finish();
     }
 

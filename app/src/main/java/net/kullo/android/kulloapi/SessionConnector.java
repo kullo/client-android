@@ -314,31 +314,21 @@ public class SessionConnector {
 				KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
 
-        editor.putString(KulloConstants.KULLO_ADDRESS, us.address().toString());
+        final String addressString = us.address().toString();
+        editor.putString(KulloConstants.ACTIVE_USER, addressString);
+        editor.putString(KulloConstants.LAST_ACTIVE_USER, addressString);
 
         ArrayList<String> blockList = us.masterKey().dataBlocks();
-        editor.putString(KulloConstants.BLOCK_A, blockList.get(0));
-        editor.putString(KulloConstants.BLOCK_B, blockList.get(1));
-        editor.putString(KulloConstants.BLOCK_C, blockList.get(2));
-        editor.putString(KulloConstants.BLOCK_D, blockList.get(3));
-        editor.putString(KulloConstants.BLOCK_E, blockList.get(4));
-        editor.putString(KulloConstants.BLOCK_F, blockList.get(5));
-        editor.putString(KulloConstants.BLOCK_G, blockList.get(6));
-        editor.putString(KulloConstants.BLOCK_H, blockList.get(7));
-        editor.putString(KulloConstants.BLOCK_I, blockList.get(8));
-        editor.putString(KulloConstants.BLOCK_J, blockList.get(9));
-        editor.putString(KulloConstants.BLOCK_K, blockList.get(10));
-        editor.putString(KulloConstants.BLOCK_L, blockList.get(11));
-        editor.putString(KulloConstants.BLOCK_M, blockList.get(12));
-        editor.putString(KulloConstants.BLOCK_N, blockList.get(13));
-        editor.putString(KulloConstants.BLOCK_O, blockList.get(14));
-        editor.putString(KulloConstants.BLOCK_P, blockList.get(15));
+        RuntimeAssertion.require(blockList.size() == KulloConstants.BLOCK_KEYS_AS_LIST.size());
+        for (int index = 0; index < blockList.size(); index++) {
+            editor.putString(addressString + KulloConstants.SEPARATOR + KulloConstants.BLOCK_KEYS_AS_LIST.get(index), blockList.get(index));
+        }
 
-        final String KEY_NAME             = "user_name_" + us.address().toString();
-        final String KEY_ORGANIZATION     = "user_organization_" + us.address().toString();
-        final String KEY_FOOTER           = "user_footer_" + us.address().toString();
-        final String KEY_AVATAR           = "user_avatar_" + us.address().toString();
-        final String KEY_AVATAR_MIME_TYPE = "user_avatar_mime_type_" + us.address().toString();
+        final String KEY_NAME             = "user_name"             + KulloConstants.SEPARATOR + addressString;
+        final String KEY_ORGANIZATION     = "user_organization"     + KulloConstants.SEPARATOR + addressString;
+        final String KEY_FOOTER           = "user_footer"           + KulloConstants.SEPARATOR + addressString;
+        final String KEY_AVATAR           = "user_avatar"           + KulloConstants.SEPARATOR + addressString;
+        final String KEY_AVATAR_MIME_TYPE = "user_avatar_mime_type" + KulloConstants.SEPARATOR + addressString;
 
         editor.putString(KEY_NAME, us.name());
         editor.putString(KEY_ORGANIZATION, us.organization());
@@ -353,26 +343,12 @@ public class SessionConnector {
     public UserSettings loadStoredUserSettings(Context context) {
         SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences(
 				KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
-        String addressString = sharedPref.getString(KulloConstants.KULLO_ADDRESS, "");
+        String addressString = sharedPref.getString(KulloConstants.ACTIVE_USER, "");
 
-        ArrayList<String> blockList = new ArrayList<>(Arrays.asList(
-                sharedPref.getString(KulloConstants.BLOCK_A, ""),
-                sharedPref.getString(KulloConstants.BLOCK_B, ""),
-                sharedPref.getString(KulloConstants.BLOCK_C, ""),
-                sharedPref.getString(KulloConstants.BLOCK_D, ""),
-                sharedPref.getString(KulloConstants.BLOCK_E, ""),
-                sharedPref.getString(KulloConstants.BLOCK_F, ""),
-                sharedPref.getString(KulloConstants.BLOCK_G, ""),
-                sharedPref.getString(KulloConstants.BLOCK_H, ""),
-                sharedPref.getString(KulloConstants.BLOCK_I, ""),
-                sharedPref.getString(KulloConstants.BLOCK_J, ""),
-                sharedPref.getString(KulloConstants.BLOCK_K, ""),
-                sharedPref.getString(KulloConstants.BLOCK_L, ""),
-                sharedPref.getString(KulloConstants.BLOCK_M, ""),
-                sharedPref.getString(KulloConstants.BLOCK_N, ""),
-                sharedPref.getString(KulloConstants.BLOCK_O, ""),
-                sharedPref.getString(KulloConstants.BLOCK_P, "")
-        ));
+        ArrayList<String> blockList = new ArrayList<>();
+        for (String key : KulloConstants.BLOCK_KEYS_AS_LIST) {
+            blockList.add(sharedPref.getString(addressString + KulloConstants.SEPARATOR + key, ""));
+        }
 
         // Check validity of loaded login data
         Address address = Address.create(addressString);
@@ -381,11 +357,11 @@ public class SessionConnector {
             return null;
         }
 
-        final String KEY_NAME             = "user_name_" + address.toString();
-        final String KEY_ORGANIZATION     = "user_organization_" + address.toString();
-        final String KEY_FOOTER           = "user_footer_" + address.toString();
-        final String KEY_AVATAR           = "user_avatar_" + address.toString();
-        final String KEY_AVATAR_MIME_TYPE = "user_avatar_mime_type_" + address.toString();
+        final String KEY_NAME             = "user_name"             + KulloConstants.SEPARATOR + address.toString();
+        final String KEY_ORGANIZATION     = "user_organization"     + KulloConstants.SEPARATOR + address.toString();
+        final String KEY_FOOTER           = "user_footer"           + KulloConstants.SEPARATOR + address.toString();
+        final String KEY_AVATAR           = "user_avatar"           + KulloConstants.SEPARATOR + address.toString();
+        final String KEY_AVATAR_MIME_TYPE = "user_avatar_mime_type" + KulloConstants.SEPARATOR + address.toString();
 
         UserSettings out = UserSettings.create(address, masterKey);
         out.setName(sharedPref.getString(KEY_NAME, ""));
@@ -438,32 +414,13 @@ public class SessionConnector {
                     // of the session.
                     mSession = null;
 
-                    // SystemClock.sleep(2000);
+                    // this would delete the account data.  Commented out by now
+                    // forgetUser(callingActivity, address);
 
-                    // Remove database files
-                    String dbFileBase = KulloUtils.getDatabasePathBase(callingActivity.getApplication(), address);
-                    ArrayList<String> filesToDelete = new ArrayList<>(Arrays.asList(
-                            dbFileBase,
-                            dbFileBase + "-shm",
-                            dbFileBase + "-wal"
-                    ));
-                    Log.d(TAG, "Trying to delete " + filesToDelete + " ...");
-
-                    for (String filePath : filesToDelete) {
-                        File myFile = new File(filePath);
-                        if (myFile.exists()) {
-                            if (!myFile.delete()) {
-                                Log.e(TAG, "Error deleting database file: " + filePath);
-                            }
-                        } else {
-                            Log.d(TAG, "Skipping non-existing database file: " + filePath);
-                        }
-                    }
-
-                    // delete credentials from shared preferences
+                    // remove active user address from shared preferences
                     SharedPreferences sharedPref = callingActivity.getApplicationContext().getSharedPreferences(
-                            KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
-                    sharedPref.edit().clear().apply();
+                        KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
+                    sharedPref.edit().remove(KulloConstants.ACTIVE_USER).apply();
 
                     return null;
                 }
@@ -476,6 +433,33 @@ public class SessionConnector {
         } else {
             callback.run();
         }
+    }
+
+    private void forgetUser(final Activity callingActivity, final Address address) {
+        // Remove database files
+        String dbFileBase = KulloUtils.getDatabasePathBase(callingActivity.getApplication(), address);
+        ArrayList<String> filesToDelete = new ArrayList<>(Arrays.asList(
+            dbFileBase,
+            dbFileBase + "-shm",
+            dbFileBase + "-wal"
+            ));
+        Log.d(TAG, "Trying to delete " + filesToDelete + " ...");
+
+        for (String filePath : filesToDelete) {
+            File myFile = new File(filePath);
+            if (myFile.exists()) {
+                if (!myFile.delete()) {
+                    Log.e(TAG, "Error deleting database file: " + filePath);
+                }
+            } else {
+                Log.d(TAG, "Skipping non-existing database file: " + filePath);
+            }
+        }
+
+        // delete credentials from shared preferences
+        SharedPreferences sharedPref = callingActivity.getApplicationContext().getSharedPreferences(
+            KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
+        sharedPref.edit().clear().apply();
     }
 
     public boolean sessionAvailable() {
@@ -1080,7 +1064,12 @@ public class SessionConnector {
 
         // Token changed? unregister old one
         if (mPushToken != null) {
-            unregisterPushToken();
+            tryUnregisterPushToken(new UnregisterPushTokenCallback() {
+                @Override
+                public void run(boolean success) {
+                    if (!success) Log.w(TAG, "Could not unregister old push token.");
+                }
+            });
         }
 
         // store token within session instance
@@ -1093,16 +1082,36 @@ public class SessionConnector {
         }
     }
 
-    public void unregisterPushToken() {
+    // Runs callback on UI thread
+    public void tryUnregisterPushToken(final UnregisterPushTokenCallback callback) {
         RuntimeAssertion.require(mSession != null);
 
-        if (mPushToken != null) {
-            AsyncTask unregisterTask = mSession.unregisterPushToken(mPushToken);
-            if (unregisterTask != null) {
-                unregisterTask.waitUntilDone();
-            }
-            mPushToken = null;
+        if (mPushToken == null) {
+            callback.run(true);
+            return;
         }
+
+        new android.os.AsyncTask<Void, Void, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Void... params) {
+                AsyncTask unregisterTask = mSession.unregisterPushToken(mPushToken);
+                unregisterTask.waitForMs(5000);
+
+                if (unregisterTask.isDone()) {
+                    mPushToken = null;
+                    return true;
+                } else {
+                    unregisterTask.cancel(); // give up
+                    mPushToken = null;
+                    return false;
+                }
+            }
+
+            @Override
+            protected void onPostExecute(Boolean success) {
+                callback.run(success);
+            }
+        }.execute();
     }
 
     public boolean hasPushToken() {

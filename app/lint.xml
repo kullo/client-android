@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<lint>
+    <!--
+    Make missing translations not stop building a release APK.
+    This is done to avoid disabling `checkReleaseBuilds`, which is suggested by users
+    when running into fails in the `:app:lintVitalRelease` build step because this
+    already cought real errors.
+    -->
+    <issue id="MissingTranslation" severity="warning" />
+</lint>

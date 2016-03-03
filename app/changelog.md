@@ -1,6 +1,14 @@
 Kullo for Android
 -----------------
 
+## v29 (2016-03-03)
+
+ * Allow OPEN WITH, SAVE AS and SHARE for attachments
+ * Clear notifications when app comes to foreground
+ * Let user switch between multiple accounts
+ * Allow landscape orientation in most screens
+ * Update libkullo v44
+
 ## v28 (2016-02-12)
 
  * Automatically sync when app is started or last sync more than 5 minutes ago

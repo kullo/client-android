@@ -1,19 +1,24 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.RelativeLayout;
+import android.widget.Spinner;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
+import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
@@ -21,6 +26,8 @@ import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.UserSettings;
+
+import java.util.ArrayList;
 
 /**
  * Launching activity.
@@ -106,6 +113,46 @@ public class WelcomeActivity extends AppCompatActivity {
                 finish();
             }
         });
+
+        // Find stored addresses
+        ArrayList<String> storedAddresses = new ArrayList<>();
+        final SharedPreferences sharedPrefs = getSharedPreferences(KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
+        for (String key : sharedPrefs.getAll().keySet()) {
+            if (key.endsWith(KulloConstants.BLOCK_A)) {
+                // extract address: -1 to account for the separator character
+                storedAddresses.add(key.substring(0, key.length() - 1 - KulloConstants.BLOCK_A.length()));
+            }
+        }
+
+        if (storedAddresses.isEmpty()) {
+            findViewById(R.id.open_inbox_controls).setVisibility(View.GONE);
+        } else {
+            // populate the dropdown
+            final Spinner spinnerOpenInbox = (Spinner)findViewById(R.id.spinner_open_inbox);
+            ArrayAdapter<String> addressAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, storedAddresses);
+            spinnerOpenInbox.setAdapter(addressAdapter);
+
+            // select the one stored in last_address by default
+            String lastActiveUser = sharedPrefs.getString(KulloConstants.LAST_ACTIVE_USER, "");
+            if (!lastActiveUser.isEmpty()) {
+                int position = storedAddresses.indexOf(lastActiveUser);
+                spinnerOpenInbox.setSelection(position);
+            }
+
+            // let the button jump to login while having set this as active... it should log in automatically... or even call myself?
+            findViewById(R.id.button_open_inbox).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    String selectedAddress = spinnerOpenInbox.getSelectedItem().toString();
+                    sharedPrefs.edit().putString(KulloConstants.ACTIVE_USER, selectedAddress).apply();
+                    if (checkForStoredCredentialsAndCreateSession()) {
+                        sharedPrefs.edit().putString(KulloConstants.LAST_ACTIVE_USER, selectedAddress).apply();
+                        mLayoutContent.setVisibility(View.GONE);
+                    }
+                }
+            });
+        }
+
     }
 
     //API

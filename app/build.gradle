@@ -8,8 +8,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 28
-        versionName "28"
+        versionCode 29
+        versionName "29"
     }
     buildTypes {
         debug {
@@ -25,11 +25,6 @@ android {
     }
 
     lintOptions {
-        // Missing translations became errors, making it impossible to quickly
-        // release the update
-        // TODO: remove and add missing translations
-        checkReleaseBuilds false
-
         // See `lint --list` for available issue ids
         disable 'RtlCompat'    // Right-to-left text compatibility issues
         disable 'RtlHardcoded' // Using left/right instead of start/end attributes
@@ -40,22 +35,21 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'org.apache.commons:commons-lang3:3.4'
 
-    compile 'com.android.support:appcompat-v7:23.1.1'
-    compile 'com.android.support:cardview-v7:23.1.1'
-    compile 'com.android.support:recyclerview-v7:23.1.1'
-    compile 'com.android.support:design:23.1.1'
-    compile 'com.android.support:support-v4:23.1.1'
+    compile 'com.android.support:appcompat-v7:23.2.0'
+    compile 'com.android.support:cardview-v7:23.2.0'
+    compile 'com.android.support:recyclerview-v7:23.2.0'
+    compile 'com.android.support:design:23.2.0'
+    compile 'com.android.support:support-v4:23.2.0'
 
     compile 'com.timehop.stickyheadersrecyclerview:library:0.4.2@aar'
     compile 'de.hdodenhof:circleimageview:2.0.0'
-    compile 'org.solovyev.android.views:linear-layout-manager:0.5@aar'
-    compile 'com.isseiaoki:simplecropview:1.0.10'
-    compile 'me.zhanghai.android.materialprogressbar:library:1.1.4'
-    compile 'net.danlew:android.joda:2.9.1'
+    compile 'com.isseiaoki:simplecropview:1.0.16'
+    compile 'me.zhanghai.android.materialprogressbar:library:1.1.5'
+    compile 'net.danlew:android.joda:2.9.2'
 
     // MaterialDialogs pulls in MaterialProgressBar as a dependency
     // At the moment, the versions match.
-    compile('com.github.afollestad.material-dialogs:core:0.8.5.4@aar') { transitive = true }
+    compile('com.github.afollestad.material-dialogs:core:0.8.5.6@aar') { transitive = true }
 
     compile "com.google.android.gms:play-services-gcm:8.4.0"
 

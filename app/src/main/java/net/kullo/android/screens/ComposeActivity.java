@@ -108,7 +108,7 @@ public class ComposeActivity extends AppCompatActivity {
         mNewMessageReceivers = (TextView) findViewById(R.id.new_message_receivers);
 
         mDraftAttachmentsList = (RecyclerView) findViewById(R.id.draft_attachments_list);
-        LinearLayoutManager layoutManager = new org.solovyev.android.views.llm.LinearLayoutManager(this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         mDraftAttachmentsList.setLayoutManager(layoutManager);
 
@@ -145,7 +145,13 @@ public class ComposeActivity extends AppCompatActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchToken(this);
+        GcmConnector.get().fetchAndRegisterToken(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        GcmConnector.get().removeAllNotifications(this);
     }
 
     @Override
@@ -366,7 +372,7 @@ public class ComposeActivity extends AppCompatActivity {
     }
 
     private void rememberSelection() {
-        mStoredSelection = new Pair<Integer, Integer>(mNewMessageText.getSelectionStart(), mNewMessageText.getSelectionEnd());
+        mStoredSelection = new Pair<>(mNewMessageText.getSelectionStart(), mNewMessageText.getSelectionEnd());
     }
 
     private void restoreSelection() {

@@ -3,13 +3,16 @@ package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.util.Linkify;
+import android.view.ActionMode;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -55,6 +58,10 @@ public class SingleMessageActivity extends AppCompatActivity {
 
     public static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
     protected DateTimeFormatter mFormatterDate;
+
+    private AttachmentsAdapter mAttachmentsAdapter = null;
+    private RecyclerItemClickListener mAttachmentsClickListener = null;
+    private ActionMode mActionMode = null;
 
     // Views
     protected CircleImageView mCircleImageView;
@@ -152,7 +159,7 @@ public class SingleMessageActivity extends AppCompatActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchToken(this);
+        GcmConnector.get().fetchAndRegisterToken(this);
     }
 
     @Override
@@ -164,12 +171,14 @@ public class SingleMessageActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
+        clearSelection();
         super.onStop();
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        GcmConnector.get().removeAllNotifications(this);
         populateMessageFields();
     }
 
@@ -259,26 +268,36 @@ public class SingleMessageActivity extends AppCompatActivity {
 
         setAttachmentsListVisibility(View.VISIBLE);
 
-        LinearLayoutManager layoutManager = new org.solovyev.android.views.llm.LinearLayoutManager(this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         mAttachmentsList.setLayoutManager(layoutManager);
 
-        final AttachmentsAdapter attachmentsAdapter = new AttachmentsAdapter(SingleMessageActivity.this, mMessageId, attachmentsDownloaded);
-        mAttachmentsList.setAdapter(attachmentsAdapter);
+        mAttachmentsAdapter = new AttachmentsAdapter(SingleMessageActivity.this, mMessageId, attachmentsDownloaded);
+        mAttachmentsList.setAdapter(mAttachmentsAdapter);
 
         if (attachmentsDownloaded) {
             mAttachmentsList.setEnabled(true);
             mDownloadButton.setVisibility(View.GONE);
-            mAttachmentsList.addOnItemTouchListener(new RecyclerItemClickListener(SingleMessageActivity.this, mAttachmentsList,
-                new RecyclerItemClickListener.OnItemClickListener() {
-                @Override
-                public void onItemClick(View view, int position) {
-                    long attachmentId = attachmentsAdapter.getItem(position);
-                    mMessageAttachmentsOpener.saveAndOpenAttachment(mMessageId, attachmentId);
-                }
-                @Override
-                public void onItemLongPress(View view, int position) {}
-            }));
+            if (mAttachmentsClickListener == null) {
+                mAttachmentsClickListener = new RecyclerItemClickListener(SingleMessageActivity.this, mAttachmentsList,
+                    new RecyclerItemClickListener.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(View view, int position) {
+                        long attachmentId = mAttachmentsAdapter.getItem(position);
+                        if (mAttachmentsAdapter.isSelectionActive()) {
+                            selectAttachment(attachmentId);
+                        } else {
+                            mMessageAttachmentsOpener.saveAndOpenAttachment(mMessageId, attachmentId);
+                        }
+                    }
+                    @Override
+                    public void onItemLongPress(View view, int position) {
+                        long attachmentId = mAttachmentsAdapter.getItem(position);
+                        selectAttachment(attachmentId);
+                    }
+                });
+                mAttachmentsList.addOnItemTouchListener(mAttachmentsClickListener);
+            }
         } else {
             mAttachmentsList.setEnabled(false);
             mDownloadButton.setVisibility(View.VISIBLE);
@@ -334,6 +353,73 @@ public class SingleMessageActivity extends AppCompatActivity {
         mFooterDivider.setVisibility(View.GONE);
         mFooterTextView.setVisibility(View.GONE);
         mFooterButton.setVisibility(View.GONE);
+    }
+
+    // CONTEXT MENU
+    private void selectAttachment(final Long attachmentId) {
+        mAttachmentsAdapter.toggleSelectedItem(attachmentId);
+        if (!mAttachmentsAdapter.isSelectionActive()) {
+            mActionMode.finish();
+            return;
+        }
+        if (mActionMode == null) {
+            mActionMode = startActionMode(new ActionMode.Callback() {
+                @Override
+                public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                    MenuInflater inflater = mode.getMenuInflater();
+                    inflater.inflate(R.menu.appbar_menu_attachment_actions, menu);
+                    return true;
+                }
+
+                @Override
+                public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                    return false;
+                }
+
+                @Override
+                public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                    switch (item.getItemId()) {
+                         case R.id.action_save_as:
+                             mMessageAttachmentsOpener.saveAndDownloadAttachment(mMessageId, mAttachmentsAdapter.getSelectedItems().get(0));
+                             mode.finish();
+                             return true;
+                        case R.id.action_open_with:
+                            mMessageAttachmentsOpener.saveAndOpenWithAttachment(mMessageId, mAttachmentsAdapter.getSelectedItems().get(0));
+                            mode.finish();
+                            return true;
+                        case R.id.action_share:
+                            mMessageAttachmentsOpener.saveAndShareAttachments(mMessageId, mAttachmentsAdapter.getSelectedItems());
+                            mode.finish();
+                            return true;
+                        default:
+                            return false;
+                    }
+                }
+                @Override
+                public void onDestroyActionMode(ActionMode mode) {
+                    mAttachmentsAdapter.clearSelectedItems();
+                    mActionMode = null;
+                }
+            });
+        }
+
+        // update action bar title
+        final String title = String.format(
+                getResources().getString(R.string.title_n_selected),
+                mAttachmentsAdapter.getSelectedItemsCount());
+        mActionMode.setTitle(title);
+        boolean singleItemActions = mAttachmentsAdapter.getSelectedItemsCount() == 1;
+        mActionMode.getMenu().findItem(R.id.action_open_with)
+                .setVisible(singleItemActions);
+        mActionMode.getMenu().findItem(R.id.action_save_as)
+                .setVisible(singleItemActions && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT);
+    }
+
+    public void clearSelection() {
+        if (mAttachmentsAdapter != null && mActionMode != null) {
+            mAttachmentsAdapter.clearSelectedItems();
+            mActionMode.finish();
+        }
     }
 
 }

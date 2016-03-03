@@ -6,6 +6,7 @@ import android.support.annotation.UiThread;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.graphics.Color;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.KulloIdsAdapter;
@@ -48,6 +49,13 @@ public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
             textColor = mContext.getResources().getColor(R.color.kulloDisabledTextColor);
         }
         attachmentsViewHolder.mAttachmentName.setTextColor(textColor);
+
+        // draw background if item is selected
+        if (isSelected(attachmentId)) {
+            attachmentsViewHolder.itemView.setBackgroundColor(mContext.getResources().getColor(R.color.kulloSelectionColor));
+        } else {
+            attachmentsViewHolder.itemView.setBackgroundColor(Color.TRANSPARENT);
+        }
     }
 
     @UiThread

@@ -39,6 +39,6 @@
             android:id="@+id/menuitem_logout"
             android:checked="false"
             android:icon="@drawable/ic_exit_to_app_black_24dp"
-            android:title="@string/menu_logout" />
+            android:title="@string/menu_leave_inbox" />
     </group>
 </menu>

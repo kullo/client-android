@@ -30,7 +30,6 @@ import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.javautils.RuntimeAssertion;
-import net.kullo.libkullo.api.AsyncTask;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -74,7 +73,7 @@ public class SettingsActivity extends AppCompatActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchToken(this);
+        GcmConnector.get().fetchAndRegisterToken(this);
     }
 
     @Override
@@ -84,6 +83,12 @@ public class SettingsActivity extends AppCompatActivity {
         updateTextInputViewsFromSession();
         updateAvatarViewFromSession();
         showErrorUsernameIfEmpty();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        GcmConnector.get().removeAllNotifications(this);
     }
 
     @Override

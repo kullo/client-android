@@ -324,11 +324,11 @@ public class SessionConnector {
             editor.putString(addressString + KulloConstants.SEPARATOR + KulloConstants.BLOCK_KEYS_AS_LIST.get(index), blockList.get(index));
         }
 
-        final String KEY_NAME             = "user_name"             + KulloConstants.SEPARATOR + addressString;
-        final String KEY_ORGANIZATION     = "user_organization"     + KulloConstants.SEPARATOR + addressString;
-        final String KEY_FOOTER           = "user_footer"           + KulloConstants.SEPARATOR + addressString;
-        final String KEY_AVATAR           = "user_avatar"           + KulloConstants.SEPARATOR + addressString;
-        final String KEY_AVATAR_MIME_TYPE = "user_avatar_mime_type" + KulloConstants.SEPARATOR + addressString;
+        final String KEY_NAME             = addressString + KulloConstants.SEPARATOR + "user_name";
+        final String KEY_ORGANIZATION     = addressString + KulloConstants.SEPARATOR + "user_organization";
+        final String KEY_FOOTER           = addressString + KulloConstants.SEPARATOR + "user_footer";
+        final String KEY_AVATAR           = addressString + KulloConstants.SEPARATOR + "user_avatar";
+        final String KEY_AVATAR_MIME_TYPE = addressString + KulloConstants.SEPARATOR + "user_avatar_mime_type";
 
         editor.putString(KEY_NAME, us.name());
         editor.putString(KEY_ORGANIZATION, us.organization());
@@ -357,11 +357,11 @@ public class SessionConnector {
             return null;
         }
 
-        final String KEY_NAME             = "user_name"             + KulloConstants.SEPARATOR + address.toString();
-        final String KEY_ORGANIZATION     = "user_organization"     + KulloConstants.SEPARATOR + address.toString();
-        final String KEY_FOOTER           = "user_footer"           + KulloConstants.SEPARATOR + address.toString();
-        final String KEY_AVATAR           = "user_avatar"           + KulloConstants.SEPARATOR + address.toString();
-        final String KEY_AVATAR_MIME_TYPE = "user_avatar_mime_type" + KulloConstants.SEPARATOR + address.toString();
+        final String KEY_NAME             = address.toString() + KulloConstants.SEPARATOR + "user_name";
+        final String KEY_ORGANIZATION     = address.toString() + KulloConstants.SEPARATOR + "user_organization";
+        final String KEY_FOOTER           = address.toString() + KulloConstants.SEPARATOR + "user_footer";
+        final String KEY_AVATAR           = address.toString() + KulloConstants.SEPARATOR + "user_avatar";
+        final String KEY_AVATAR_MIME_TYPE = address.toString() + KulloConstants.SEPARATOR + "user_avatar_mime_type";
 
         UserSettings out = UserSettings.create(address, masterKey);
         out.setName(sharedPref.getString(KEY_NAME, ""));
@@ -1064,12 +1064,10 @@ public class SessionConnector {
 
         // Token changed? unregister old one
         if (mPushToken != null) {
-            tryUnregisterPushToken(new UnregisterPushTokenCallback() {
-                @Override
-                public void run(boolean success) {
-                    if (!success) Log.w(TAG, "Could not unregister old push token.");
-                }
-            });
+            if (!tryUnregisterPushToken(3000))
+            {
+                Log.w(TAG, "Could not unregister old push token.");
+            }
         }
 
         // store token within session instance
@@ -1083,35 +1081,26 @@ public class SessionConnector {
     }
 
     // Runs callback on UI thread
-    public void tryUnregisterPushToken(final UnregisterPushTokenCallback callback) {
+    // Blocks UI thread up to `timeoutMs` milliseconds. This is intentional to ensure
+    // all API calls are run on the UI thread.
+    public boolean tryUnregisterPushToken(int timeoutMs) {
         RuntimeAssertion.require(mSession != null);
 
         if (mPushToken == null) {
-            callback.run(true);
-            return;
+            return true;
         }
 
-        new android.os.AsyncTask<Void, Void, Boolean>() {
-            @Override
-            protected Boolean doInBackground(Void... params) {
-                AsyncTask unregisterTask = mSession.unregisterPushToken(mPushToken);
-                unregisterTask.waitForMs(5000);
+        AsyncTask unregisterTask = mSession.unregisterPushToken(mPushToken);
+        unregisterTask.waitForMs(timeoutMs);
 
-                if (unregisterTask.isDone()) {
-                    mPushToken = null;
-                    return true;
-                } else {
-                    unregisterTask.cancel(); // give up
-                    mPushToken = null;
-                    return false;
-                }
-            }
-
-            @Override
-            protected void onPostExecute(Boolean success) {
-                callback.run(success);
-            }
-        }.execute();
+        if (unregisterTask.isDone()) {
+            mPushToken = null;
+            return true;
+        } else {
+            unregisterTask.cancel(); // give up
+            mPushToken = null;
+            return false;
+        }
     }
 
     public boolean hasPushToken() {

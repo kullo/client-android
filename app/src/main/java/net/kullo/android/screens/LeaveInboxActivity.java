@@ -12,7 +12,6 @@ import net.kullo.android.R;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
-import net.kullo.android.kulloapi.UnregisterPushTokenCallback;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.javautils.RuntimeAssertion;
 
@@ -49,18 +48,15 @@ public class LeaveInboxActivity extends AppCompatActivity {
                 .cancelable(false)
                 .show();
 
-        SessionConnector.get().tryUnregisterPushToken(new UnregisterPushTokenCallback() {
-            @Override
-            public void run(boolean success) {
-                if (!success) Log.w(TAG, "Push token could not be unregistered.");
+        if (!SessionConnector.get().tryUnregisterPushToken(3000)) {
+            Log.w(TAG, "Push token could not be unregistered.");
+        }
 
-                SessionConnector.get().logout(LeaveInboxActivity.this, new Runnable() {
-                    @Override
-                    public void run() {
-                        mDialogLeavingInbox.dismiss();
-                        goToNextScreen();
-                    }
-                });
+        SessionConnector.get().logout(LeaveInboxActivity.this, new Runnable() {
+            @Override
+            public void run() {
+                mDialogLeavingInbox.dismiss();
+                goToNextScreen();
             }
         });
     }

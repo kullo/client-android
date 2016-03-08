@@ -8,7 +8,7 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 15
         targetSdkVersion 22
-        versionCode 29
+        versionCode 2902
         versionName "29"
     }
     buildTypes {

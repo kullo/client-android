@@ -4,6 +4,7 @@ package net.kullo.android.screens;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.LabeledIntent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
@@ -20,7 +21,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
-import android.content.pm.LabeledIntent;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.CreateSessionResult;
@@ -257,7 +257,7 @@ public class SettingsActivity extends AppCompatActivity {
                         cropIntent.putExtra(CropImageActivity.INPUT_METHOD, CropImageActivity.CAMERA_INPUT);
                         cropIntent.putExtra(CropImageActivity.BITMAP_INPUT_URI, mOutputFileUri.toString());
                     } else {
-                        Uri selectedImageUri = data == null ? null : data.getData();
+                        Uri selectedImageUri = data.getData();
                         cropIntent.putExtra(CropImageActivity.INPUT_METHOD, CropImageActivity.FILE_INPUT);
                         cropIntent.putExtra(CropImageActivity.BITMAP_INPUT_URI, selectedImageUri.toString());
                     }

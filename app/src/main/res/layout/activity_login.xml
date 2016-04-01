@@ -46,6 +46,7 @@
                     android:layout_height="wrap_content"
                     android:inputType="textEmailAddress"
                     android:maxLines="1"
+                    android:imeOptions="actionNext"
                     android:nextFocusDown="@+id/edit_block_a_text"/>
 
             </android.support.design.widget.TextInputLayout>
@@ -383,7 +384,8 @@
                         android:inputType="number"
                         android:maxLines="1"
                         android:textSize="@dimen/login_edit_fields_textsize"
-                        android:maxLength="6" />
+                        android:maxLength="6"
+                        android:imeOptions="actionGo" />
 
                 </android.support.design.widget.TextInputLayout>
 

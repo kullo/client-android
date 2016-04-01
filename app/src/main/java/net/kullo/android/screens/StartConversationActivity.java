@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,6 +22,7 @@ import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.littlehelpers.NonScrollingLinearLayoutManager;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.screens.startconversation.ParticipantsAdapter;
@@ -32,13 +32,11 @@ import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.ClientAddressExistsListener;
 import net.kullo.libkullo.api.NetworkError;
 
-
 public class StartConversationActivity extends AppCompatActivity {
-    private static final String TAG = "StartConversationAct."; // max. 23 chars
+    @SuppressWarnings("unused") private static final String TAG = "StartConversationAct."; // max. 23 chars
 
     private TextInputLayout mNewParticipantTextInputLayout;
     private AutoCompleteTextView mNewParticipantEditText;
-    private RecyclerView mRecyclerView;
     private ParticipantsAdapter mParticipantsAdapter;
     private TextView mParticipantsHeader;
     private MaterialDialog mWaitingDialog;
@@ -88,13 +86,16 @@ public class StartConversationActivity extends AppCompatActivity {
     private void setupLayout() {
         // text field
         mNewParticipantTextInputLayout = (TextInputLayout) findViewById(R.id.new_participant_text_input_layout);
-        mNewParticipantEditText = (AutoCompleteTextView)mNewParticipantTextInputLayout.getEditText();
+        RuntimeAssertion.require(mNewParticipantTextInputLayout != null);
+        mNewParticipantEditText = (AutoCompleteTextView) mNewParticipantTextInputLayout.getEditText();
         RuntimeAssertion.require(mNewParticipantEditText != null);
         mNewParticipantEditText.addTextChangedListener(KulloConstants.KULLO_ADDRESS_AT_THIEF);
         mNewParticipantEditText.setAdapter(new AddressAutocompleteAdapter(this));
 
         // add button
-        findViewById(R.id.button_add_participant).setOnClickListener(new View.OnClickListener() {
+        View buttonAdd = findViewById(R.id.button_add_participant);
+        RuntimeAssertion.require(buttonAdd != null);
+        buttonAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 addParticipant();
@@ -103,16 +104,16 @@ public class StartConversationActivity extends AppCompatActivity {
 
         // list header
         mParticipantsHeader = (TextView) findViewById(R.id.participantsHeader);
+        RuntimeAssertion.require(mParticipantsHeader != null);
         mParticipantsHeader.setVisibility(View.INVISIBLE);
 
         // participants list
         mParticipantsAdapter = new ParticipantsAdapter();
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.participantsList);
-        LinearLayoutManager llm = new LinearLayoutManager(this);
-        llm.setOrientation(LinearLayoutManager.VERTICAL);
-        mRecyclerView.setLayoutManager(llm);
-        mRecyclerView.setAdapter(mParticipantsAdapter);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.participantsList);
+        RuntimeAssertion.require(recyclerView != null);
+        recyclerView.setLayoutManager(new NonScrollingLinearLayoutManager(this));
+        recyclerView.setAdapter(mParticipantsAdapter);
     }
 
     @Override
@@ -122,7 +123,7 @@ public class StartConversationActivity extends AppCompatActivity {
                 finish();
                 return true;
             case R.id.action_new_conversation:
-                String newParticipantAddress = mNewParticipantTextInputLayout.getEditText().getText().toString();
+                String newParticipantAddress = mNewParticipantEditText.getText().toString();
                 if (newParticipantAddress.isEmpty()) {
                     proceedLeave();
                 } else {
@@ -163,7 +164,7 @@ public class StartConversationActivity extends AppCompatActivity {
     }
 
     private void addParticipant() {
-        String newParticipantAddress = mNewParticipantTextInputLayout.getEditText().getText().toString();
+        String newParticipantAddress = mNewParticipantEditText.getText().toString();
 
         // validation
         mNewParticipantTextInputLayout.setError(null);
@@ -204,7 +205,7 @@ public class StartConversationActivity extends AppCompatActivity {
                                     if (exists) {
                                         mParticipantsAdapter.add(address);
                                         mParticipantsAdapter.notifyDataSetChanged();
-                                        mNewParticipantTextInputLayout.getEditText().setText("");
+                                        mNewParticipantEditText.setText("");
                                         mParticipantsHeader.setVisibility(View.VISIBLE);
                                         if (mReadyToLeave) {
                                             proceedLeave();

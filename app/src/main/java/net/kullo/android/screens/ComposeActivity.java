@@ -34,6 +34,7 @@ import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Debug;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.littlehelpers.NonScrollingLinearLayoutManager;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.DraftAttachmentAddedEventObserver;
@@ -108,9 +109,7 @@ public class ComposeActivity extends AppCompatActivity {
         mNewMessageReceivers = (TextView) findViewById(R.id.new_message_receivers);
 
         mDraftAttachmentsList = (RecyclerView) findViewById(R.id.draft_attachments_list);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        mDraftAttachmentsList.setLayoutManager(layoutManager);
+        mDraftAttachmentsList.setLayoutManager(new NonScrollingLinearLayoutManager(this));
 
         mDraftAttachmentOpener = new DraftAttachmentOpener(this);
         mDraftAttachmentOpener.registerSaveFinishedListenerObserver();

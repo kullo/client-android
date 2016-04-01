@@ -10,20 +10,23 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.DialogMaker;
-import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloUtils;
+import net.kullo.android.kulloapi.SessionConnector;
+import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
-import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
@@ -212,6 +215,17 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 loginClicked(v);
+            }
+        });
+        ((EditText) findViewById(R.id.edit_block_p_text)).setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_GO) {
+                    loginClicked(v);
+                    return true;
+                } else {
+                    return false;
+                }
             }
         });
     }

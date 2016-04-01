@@ -15,7 +15,6 @@ HEAD = {
   'register':            { 'de': 'Handelsregister',  'en': 'Commercial register' },
   'vatin':               { 'de': 'Umsatzsteuer-Identifikationsnummer',
                            'en': 'VAT identification number' },
-  'berlin_office':       { 'de': 'Standort Berlin',  'en': 'Berlin office' },
   'content_responsible': { 'de': 'Verantwortlich für den Inhalt',
                            'en': 'Responsible for the contect' },
 
@@ -41,9 +40,6 @@ for lang in ['en', 'de']:
     print('', file=out)
     print(HEAD['vatin'][lang], file=out)
     print(impressum['vatin'], file=out)
-    print('', file=out)
-    print(HEAD['berlin_office'][lang], file=out)
-    print(impressum['berlin_office'], file=out)
 
     content[lang] = out.getvalue().strip()
     print("############## Preview " + lang)

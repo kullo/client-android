@@ -1,6 +1,12 @@
 Kullo for Android
 -----------------
 
+## v30 (2016-04-01)
+
+ * Allow sending attachments of 100 MiB per message
+ * Sort messages by server time
+ * Update libkullo v45
+
 ## v29 (2016-03-03)
 
  * Allow OPEN WITH, SAVE AS and SHARE for attachments

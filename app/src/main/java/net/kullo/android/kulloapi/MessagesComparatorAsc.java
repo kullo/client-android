@@ -5,7 +5,7 @@ import net.kullo.libkullo.api.DateTime;
 import net.kullo.libkullo.api.Session;
 
 /**
- * Comparator for ascending sorting of messages based on dateSent
+ * Comparator for ascending sorting of messages based on dateReceived
  * Uses libkullo's DateTime compare functions directly. No Joda conversion needed.
  */
 public class MessagesComparatorAsc extends KulloComparator {
@@ -17,8 +17,8 @@ public class MessagesComparatorAsc extends KulloComparator {
     public int compare(Long lhsMessageId, Long rhsMessageId) {
         count();
 
-        DateTime lhsDate = mSession.messages().dateSent(lhsMessageId);
-        DateTime rhsDate = mSession.messages().dateSent(rhsMessageId);
+        DateTime lhsDate = mSession.messages().dateReceived(lhsMessageId);
+        DateTime rhsDate = mSession.messages().dateReceived(rhsMessageId);
 
         return lhsDate.compareTo(rhsDate);
     }

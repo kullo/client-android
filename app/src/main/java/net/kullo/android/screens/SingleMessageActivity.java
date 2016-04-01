@@ -29,6 +29,7 @@ import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.littlehelpers.NonScrollingLinearLayoutManager;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.MessageAttachmentsDownloadedChangedEventObserver;
@@ -268,10 +269,7 @@ public class SingleMessageActivity extends AppCompatActivity {
 
         setAttachmentsListVisibility(View.VISIBLE);
 
-        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
-        layoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        mAttachmentsList.setLayoutManager(layoutManager);
-
+        mAttachmentsList.setLayoutManager(new NonScrollingLinearLayoutManager(this));
         mAttachmentsAdapter = new AttachmentsAdapter(SingleMessageActivity.this, mMessageId, attachmentsDownloaded);
         mAttachmentsList.setAdapter(mAttachmentsAdapter);
 

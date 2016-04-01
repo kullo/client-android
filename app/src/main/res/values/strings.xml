@@ -148,7 +148,7 @@ ellipsis (…)
 
     <!-- impressum -->
     <string name="activity_title_impressum">Impressum</string>
-    <string name="impressum_content_full">Provider\nKullo GmbH\nKranzplatz 5–6\n65183 Wiesbaden\n\nRepresentation\nVertretungsberechtigte Geschäftsführer:\nSimon Warta, Daniel Seither\n\nContact\n0175 1930541\nsimon@kullo.net\nsimon#kullo.net\n\nCommercial register\nRegistergericht: Amtsgericht Wiesbaden\nRegisternummer: HRB 27626\n\nVAT identification number\nDE294537976\n\nBerlin office\nKullo GmbH\nc/o xit GmbH\nBülowstraße 66\n10783 Berlin</string>
+    <string name="impressum_content_full">Provider\nKullo GmbH\nKranzplatz 5–6\n65183 Wiesbaden\n\nRepresentation\nVertretungsberechtigte Geschäftsführer:\nSimon Warta, Daniel Seither\n\nContact\n0175 1930541\nsimon@kullo.net\nsimon#kullo.net\n\nCommercial register\nRegistergericht: Amtsgericht Wiesbaden\nRegisternummer: HRB 27626\n\nVAT identification number\nDE294537976</string>
 
     <!-- start conversation -->
     <string name="new_conversation">New Conversation</string>

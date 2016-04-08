@@ -8,9 +8,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Created by simon on 14.09.15.
- */
 public class KulloSortTest extends TestCase {
     final Comparator<Integer> INT_COMPARATOR = new Comparator<Integer>() {
         @Override

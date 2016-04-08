@@ -102,7 +102,7 @@ ellipsis (…)
     <!-- message attachments -->
     <string name="attachments_unknown_mimetype_title">Unbekannter Dateityp</string>
     <string name="attachments_unknown_mimetype_text">Es wurde keine App gefunden, mit der dieser Dateityp geöffnet werden kann.</string>
-    <string name="exporting_to_downloads_folder">Exportiere Datei in den Downloads Ordner</string>
+    <string name="exporting_to_downloads_folder">Exportiere Datei in den Downloads-Ordner</string>
     <string name="export_successful_header">Export erfolgreich</string>
     <string name="export_successful_confirm_file_opening">Möchtest du die Datei jetzt öffnen?</string>
     <string name="action_open_with">Öffnen mit</string>

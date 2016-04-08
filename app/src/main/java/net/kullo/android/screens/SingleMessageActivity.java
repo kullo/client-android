@@ -7,7 +7,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.util.Linkify;
 import android.view.ActionMode;
@@ -133,7 +132,7 @@ public class SingleMessageActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        showAttachmentsListIfAvailable();
+                        reloadAttachmentsList();
                     }
                 });
             }
@@ -243,7 +242,7 @@ public class SingleMessageActivity extends AppCompatActivity {
         mMessageContentTextView.setAutoLinkMask(Linkify.WEB_URLS);
         mMessageContentTextView.setText(messageText);
 
-        showAttachmentsListIfAvailable();
+        reloadAttachmentsList();
 
         if (messageFooter.isEmpty()) {
             hideFooterContainer();
@@ -258,11 +257,11 @@ public class SingleMessageActivity extends AppCompatActivity {
         showSettingsDialog.show();
     }
 
-    private void showAttachmentsListIfAvailable() {
-        final ArrayList<Long> attachmentIDs = SessionConnector.get().getMessageAttachmentsIds(mMessageId);
+    private void reloadAttachmentsList() {
+        final ArrayList<Long> attachmentIds = SessionConnector.get().getMessageAttachmentsIds(mMessageId);
         final boolean attachmentsDownloaded = SessionConnector.get().getMessageAttachmentsDownloaded(mMessageId);
 
-        if (attachmentIDs == null || attachmentIDs.size() == 0) {
+        if (attachmentIds == null || attachmentIds.size() == 0) {
             setAttachmentsListVisibility(View.GONE);
             return;
         }
@@ -277,8 +276,7 @@ public class SingleMessageActivity extends AppCompatActivity {
             mAttachmentsList.setEnabled(true);
             mDownloadButton.setVisibility(View.GONE);
             if (mAttachmentsClickListener == null) {
-                mAttachmentsClickListener = new RecyclerItemClickListener(SingleMessageActivity.this, mAttachmentsList,
-                    new RecyclerItemClickListener.OnItemClickListener() {
+                mAttachmentsClickListener = new RecyclerItemClickListener(SingleMessageActivity.this, mAttachmentsList, new RecyclerItemClickListener.OnItemClickListener() {
                     @Override
                     public void onItemClick(View view, int position) {
                         long attachmentId = mAttachmentsAdapter.getItem(position);

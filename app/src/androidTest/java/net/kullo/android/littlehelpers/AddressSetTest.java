@@ -8,10 +8,6 @@ import net.kullo.libkullo.api.Address;
 
 import java.util.List;
 
-
-/**
- * Created by simon on 01.09.15.
- */
 public class AddressSetTest extends AndroidTestCase {
 
     public void setUp() throws Exception {

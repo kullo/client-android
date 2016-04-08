@@ -1,6 +1,12 @@
 Kullo for Android
 -----------------
 
+## v31 (2016-04-06)
+
+ * Fix timeout bug (occurred when sending large attachments)
+ * Minor UI updates: initials generation, sync animation
+ * Update libkullo v46
+
 ## v30 (2016-04-01)
 
  * Allow sending attachments of 100 MiB per message

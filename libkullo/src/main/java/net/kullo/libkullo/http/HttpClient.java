@@ -8,9 +8,9 @@ public abstract class HttpClient {
      * Synchronously send the given request.
      * Not thread-safe! Use a separate HttpClient instance per thread.
      *
-     * * timeout is measured in milliseconds
+     * * timeout in milliseconds or 0 for no timeout
      * * requestListener must be non-null if method is PATCH, POST or PUT
      * * responseListener may be null
      */
-    public abstract Response sendRequest(Request request, long timeout, RequestListener requestListener, ResponseListener responseListener);
+    public abstract Response sendRequest(Request request, int timeoutMs, RequestListener requestListener, ResponseListener responseListener);
 }

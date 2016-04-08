@@ -28,21 +28,24 @@ import java.util.concurrent.TimeUnit;
 import okio.BufferedSink;
 
 public class HttpClientImpl extends HttpClient {
-    private static final int BUFFER_SIZE = 64 * 1024;
+    private static final String TAG = "HttpClientImpl";
+    private static final int BUFFER_SIZE = 64 * 1024; // bytes
 
-    private final OkHttpClient client = new OkHttpClient();
+    private final OkHttpClient mClient = new OkHttpClient();
 
     @Override
-    public Response sendRequest(Request request, long timeout, final RequestListener requestListener, ResponseListener responseListener) {
+    public Response sendRequest(Request request, int timeoutMs, final RequestListener requestListener, ResponseListener responseListener) {
+        if (timeoutMs < 0) throw new IllegalArgumentException("timeout must be >= 0");
+
         com.squareup.okhttp.Request.Builder requestBuilder = new com.squareup.okhttp.Request.Builder();
 
         // make a (shallow) clone of the client instance to customize client settings per request
-        OkHttpClient configuredClient = client.clone();
+        final OkHttpClient configuredClient = mClient.clone();
 
         // set timeouts
-        client.setConnectTimeout(timeout, TimeUnit.MILLISECONDS);
-        client.setReadTimeout(timeout, TimeUnit.MILLISECONDS);
-        client.setWriteTimeout(timeout, TimeUnit.MILLISECONDS);
+        configuredClient.setConnectTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+        configuredClient.setReadTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+        configuredClient.setWriteTimeout(timeoutMs, TimeUnit.MILLISECONDS);
 
         // prepare progress reporting
         final Progress progress = new Progress(responseListener);
@@ -114,16 +117,15 @@ public class HttpClientImpl extends HttpClient {
                 responseListener.dataReceived(data);
                 progress.addToRx(bytesReceived);
             }
-
         } catch (RequestCanceled e) {
+            Log.d(TAG, "RequestCanceled details: " + e.getMessage());
             return new Response(ResponseError.CANCELED, 0, responseHeaders);
-
         } catch (SocketTimeoutException e) {
+            Log.d(TAG, "SocketTimeoutException details: " + e.getMessage());
             return new Response(ResponseError.TIMEOUT, 0, responseHeaders);
-
         } catch (IOException e) {
+            Log.d(TAG, "IOException details: " + e.getMessage());
             return new Response(ResponseError.NETWORKERROR, 0, responseHeaders);
-
         } finally {
             try {
                 if (responseBody != null) responseBody.close();
@@ -154,14 +156,13 @@ public class HttpClientImpl extends HttpClient {
                 result = "DELETE";
                 break;
             default:
-                Log.e("HttpClientImpl", "unknown request method: " + method);
+                Log.e(TAG, "unknown request method: " + method);
         }
         return result;
     }
 
     private void logException(String message, Throwable throwable) {
-        Log.e("HttpClientImpl",
-                message + ": " + throwable.getClass().getName() + ": " + throwable.getMessage(),
+        Log.e(TAG, message + ": " + throwable.getClass().getName() + ": " + throwable.getMessage(),
                 throwable);
     }
 

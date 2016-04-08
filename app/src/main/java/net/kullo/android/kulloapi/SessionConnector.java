@@ -594,7 +594,7 @@ public class SessionConnector {
                 participantAvatar = AvatarUtils.avatarToBitmap(mSession.senders().avatar(latestMessageId));
             }
             if (participantAvatar == null) {
-                String initials = KulloUtils.generateInitialsForAddressAndName(address, participantName);
+                String initials = KulloUtils.generateInitialsForAddressAndName(participantName);
                 participantAvatar = AvatarUtils.getSenderThumbnailFromInitials(context, initials);
             }
             out.mParticipantsAvatars.add(participantAvatar);
@@ -978,7 +978,7 @@ public class SessionConnector {
         Address senderAddress = mSession.senders().address(messageId);
         if (senderAddress != null) {
             String senderName = mSession.senders().name(messageId);
-            String initials = KulloUtils.generateInitialsForAddressAndName(senderAddress, senderName);
+            String initials = KulloUtils.generateInitialsForAddressAndName(senderName);
             return AvatarUtils.getSenderThumbnailFromInitials(context, initials);
         }
 

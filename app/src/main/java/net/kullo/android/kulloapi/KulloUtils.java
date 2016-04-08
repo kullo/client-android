@@ -12,25 +12,46 @@ import net.kullo.libkullo.api.DateTime;
 import net.kullo.libkullo.api.MasterKey;
 import net.kullo.libkullo.api.SyncProgress;
 
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.LinkedList;
+import java.util.List;
+import java.util.regex.Pattern;
+
 public class KulloUtils {
-    public static String generateInitialsForAddressAndName(@NonNull Address address, @Nullable String name) {
-        String out = "";
+    private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
+    private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[_\\W]");
+
+    public static String generateInitialsForAddressAndName(@Nullable String name) {
+        List<String> out = new LinkedList<>();
 
         if (name != null && !name.isEmpty()) {
-            String[] nameParts = name.split(" ");
-            if (nameParts.length == 1) {
-                out = name.substring(0, 1);
-            } else if (nameParts.length >= 2) {
-                out = nameParts[0].substring(0, 1) + nameParts[nameParts.length - 1].substring(0, 1);
+            String[] nameParts = WHITESPACE.split(name);
+
+            for (String namePart : nameParts) {
+                namePart = NON_ALPHANUMERIC.matcher(namePart).replaceAll("");
+
+                if (!namePart.isEmpty()) {
+                    out.add(getFirstUnicodeCharacter(namePart));
+
+                    if (out.size() == 2) break;
+                }
             }
-        } else {
-            String addressLocalPart = address.localPart();
-            out = addressLocalPart.length() <= 2
-                    ? addressLocalPart
-                    : addressLocalPart.substring(0, 2);
         }
 
-        return out.toUpperCase();
+        return StringUtils.join(out, "");
+    }
+
+    @NonNull
+    private static String getFirstUnicodeCharacter(String namePart) {
+        if (namePart.length() >= 2) {
+            if (Character.isSurrogatePair(namePart.charAt(0), namePart.charAt(1)))
+            {
+                return namePart.substring(0, 2);
+            }
+        }
+
+        return namePart.substring(0, 1);
     }
 
     public static boolean showSyncProgressAsBar(final SyncProgress progress) {

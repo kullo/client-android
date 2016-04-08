@@ -360,20 +360,17 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 Log.d(TAG, "Update conversations view after sync ...");
 
                 runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (mSwipeLayout != null) {
-                                updateSwipeLayoutEnabled();
-                                mSwipeLayout.setRefreshing(false);
-                            }
+                    @Override
+                    public void run() {
+                        updateSwipeLayoutEnabled();
+                        mSwipeLayout.setRefreshing(false);
 
-                            mProgressBarDeterminate.setVisibility(View.GONE);
-                            mProgressBarIndeterminate.setVisibility(View.GONE);
+                        mProgressBarDeterminate.setVisibility(View.GONE);
+                        mProgressBarIndeterminate.setVisibility(View.GONE);
 
-                            if (!mIsPaused) reloadConversationsList();
-                        }
-                    });
-
+                        if (!mIsPaused) reloadConversationsList();
+                    }
+                });
             }
 
             @Override
@@ -381,10 +378,11 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (mSwipeLayout != null) {
-                            updateSwipeLayoutEnabled();
-                            mSwipeLayout.setRefreshing(false);
-                        }
+                        updateSwipeLayoutEnabled();
+                        mSwipeLayout.setRefreshing(false);
+
+                        mProgressBarDeterminate.setVisibility(View.GONE);
+                        mProgressBarIndeterminate.setVisibility(View.GONE);
 
                         Toast.makeText(ConversationsListActivity.this,
                                 DialogMaker.getTextForNetworkError(ConversationsListActivity.this, error),

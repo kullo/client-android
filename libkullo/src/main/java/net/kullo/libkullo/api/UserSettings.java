@@ -40,21 +40,13 @@ public abstract class UserSettings {
 
     public abstract void setAvatar(byte[] avatar);
 
-    /** Whether the masterKey has been backed up by the user. Defaults to false. */
-    public abstract boolean keyBackupConfirmed();
-
-    /** Sets keyBackupConfirmed to true and nulls keyBackupDontRemindBefore. */
-    public abstract void setKeyBackupConfirmed();
-
     /**
      * When to show the next backup reminder. Returns null if no reminder date
      * is set. Defaults to a date in the past.
      */
-    public abstract DateTime keyBackupDontRemindBefore();
+    public abstract DateTime nextMasterKeyBackupReminder();
 
-    public abstract void setKeyBackupDontRemindBefore(DateTime dontRemindBefore);
-
-    public static native UserSettings create(Address address, MasterKey masterKey);
+    public abstract void setNextMasterKeyBackupReminder(DateTime reminderDate);
 
     private static final class CppProxy extends UserSettings
     {
@@ -176,35 +168,19 @@ public abstract class UserSettings {
         private native void native_setAvatar(long _nativeRef, byte[] avatar);
 
         @Override
-        public boolean keyBackupConfirmed()
+        public DateTime nextMasterKeyBackupReminder()
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_keyBackupConfirmed(this.nativeRef);
+            return native_nextMasterKeyBackupReminder(this.nativeRef);
         }
-        private native boolean native_keyBackupConfirmed(long _nativeRef);
+        private native DateTime native_nextMasterKeyBackupReminder(long _nativeRef);
 
         @Override
-        public void setKeyBackupConfirmed()
+        public void setNextMasterKeyBackupReminder(DateTime reminderDate)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            native_setKeyBackupConfirmed(this.nativeRef);
+            native_setNextMasterKeyBackupReminder(this.nativeRef, reminderDate);
         }
-        private native void native_setKeyBackupConfirmed(long _nativeRef);
-
-        @Override
-        public DateTime keyBackupDontRemindBefore()
-        {
-            assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_keyBackupDontRemindBefore(this.nativeRef);
-        }
-        private native DateTime native_keyBackupDontRemindBefore(long _nativeRef);
-
-        @Override
-        public void setKeyBackupDontRemindBefore(DateTime dontRemindBefore)
-        {
-            assert !this.destroyed.get() : "trying to use a destroyed object";
-            native_setKeyBackupDontRemindBefore(this.nativeRef, dontRemindBefore);
-        }
-        private native void native_setKeyBackupDontRemindBefore(long _nativeRef, DateTime dontRemindBefore);
+        private native void native_setNextMasterKeyBackupReminder(long _nativeRef, DateTime reminderDate);
     }
 }

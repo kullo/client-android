@@ -106,7 +106,9 @@ public class SettingsActivity extends AppCompatActivity {
         SessionConnector.get().setClientName(mNameEditText.getText().toString().trim());
         SessionConnector.get().setClientOrganization(mOrganizationEditText.getText().toString().trim());
         SessionConnector.get().setClientFooter(mFooterEditText.getText().toString().trim());
-        SessionConnector.get().storeSessionUserSettingsInSharedPreferences(this);
+
+        // Upload potential changes to UserSettings
+        SessionConnector.get().syncKullo();
     }
 
     @Override

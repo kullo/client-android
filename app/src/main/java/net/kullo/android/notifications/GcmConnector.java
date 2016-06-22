@@ -28,7 +28,7 @@ public class GcmConnector {
     private boolean mHasGooglePlay = false;
 
     // check gplay at app start, prompt user if not there
-    public void checkGooglePlayAndPrompt(Activity activity) {
+    public void checkGooglePlayAvailabilityAndPrompt(Activity activity) {
         GoogleApiAvailability playAPI = GoogleApiAvailability.getInstance();
         int result = playAPI.isGooglePlayServicesAvailable(activity);
         if (result != ConnectionResult.SUCCESS) {

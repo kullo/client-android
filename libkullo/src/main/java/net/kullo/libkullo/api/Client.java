@@ -29,7 +29,7 @@ public abstract class Client {
      *
      * Attention: Don't ever re-use the same DB file for multiple accounts!
      */
-    public abstract AsyncTask createSessionAsync(UserSettings settings, String dbFilePath, SessionListener sessionListener, ClientCreateSessionListener listener);
+    public abstract AsyncTask createSessionAsync(Address address, MasterKey masterKey, String dbFilePath, SessionListener sessionListener, ClientCreateSessionListener listener);
 
     /** Check whether an address exists. */
     public abstract AsyncTask addressExistsAsync(Address address, ClientAddressExistsListener listener);
@@ -70,12 +70,12 @@ public abstract class Client {
         }
 
         @Override
-        public AsyncTask createSessionAsync(UserSettings settings, String dbFilePath, SessionListener sessionListener, ClientCreateSessionListener listener)
+        public AsyncTask createSessionAsync(Address address, MasterKey masterKey, String dbFilePath, SessionListener sessionListener, ClientCreateSessionListener listener)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_createSessionAsync(this.nativeRef, settings, dbFilePath, sessionListener, listener);
+            return native_createSessionAsync(this.nativeRef, address, masterKey, dbFilePath, sessionListener, listener);
         }
-        private native AsyncTask native_createSessionAsync(long _nativeRef, UserSettings settings, String dbFilePath, SessionListener sessionListener, ClientCreateSessionListener listener);
+        private native AsyncTask native_createSessionAsync(long _nativeRef, Address address, MasterKey masterKey, String dbFilePath, SessionListener sessionListener, ClientCreateSessionListener listener);
 
         @Override
         public AsyncTask addressExistsAsync(Address address, ClientAddressExistsListener listener)

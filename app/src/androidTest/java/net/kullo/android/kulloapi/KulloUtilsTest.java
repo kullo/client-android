@@ -3,15 +3,10 @@ package net.kullo.android.kulloapi;
 
 import android.test.AndroidTestCase;
 
-import net.kullo.android.littlehelpers.AddressSet;
-
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class KulloUtilsTest extends AndroidTestCase {
-
     private static final List<String> DATA = Arrays.asList(
             // empty
             "", "",

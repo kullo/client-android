@@ -122,9 +122,9 @@ public class SessionConnector {
     public CreateSessionResult createActivityWithSession(Activity callingActivity) {
         if (sessionAvailable()) return new CreateSessionResult(CreateSessionState.EXISTS);
 
-        Log.d(TAG, "No session available. Creating session if credential are stored ...");
-        UserSettings us = SessionConnector.get().loadStoredUserSettings(callingActivity);
-        if (us == null) {
+        Log.d(TAG, "No session available. Creating session if credentials are stored ...");
+        Credentials credentials = SessionConnector.get().loadStoredCredentials(callingActivity);
+        if (credentials == null) {
             Log.d(TAG, "No credentials found. Moving to WelcomeActivity ...");
             callingActivity.startActivity(new Intent(callingActivity, WelcomeActivity.class));
             callingActivity.finish();
@@ -132,7 +132,7 @@ public class SessionConnector {
         }
 
         return new CreateSessionResult(CreateSessionState.CREATING,
-                SessionConnector.get().createSession(callingActivity, us)
+                SessionConnector.get().createSession(callingActivity, credentials)
         );
     }
 
@@ -146,9 +146,9 @@ public class SessionConnector {
             @Override
             public void finished(Address address, MasterKey masterKey, boolean valid) {
                 if (valid) {
-                    UserSettings us = UserSettings.create(address, masterKey);
-                    storeLoginCredentialsInSharedPreferences(callingActivity, us);
-                    createSession(callingActivity, us);
+                    Credentials credentials = new Credentials(address, masterKey);
+                    storeCredentials(callingActivity, credentials);
+                    createSession(callingActivity, credentials);
                 } else {
                     synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
                         for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
@@ -169,17 +169,17 @@ public class SessionConnector {
         }));
     }
 
-    public AsyncTask createSession(final Activity callingActivity, UserSettings us) {
-        RuntimeAssertion.require(us != null);
+    public AsyncTask createSession(final Activity callingActivity, Credentials credentials) {
+        RuntimeAssertion.require(credentials != null);
 
-        String dbFilePath = KulloUtils.getDatabasePathBase(callingActivity.getApplication(), us.address());
+        String dbFilePath = KulloUtils.getDatabasePathBase(callingActivity.getApplication(), credentials.getAddress());
         Log.d(TAG, "dbFilePath = " + dbFilePath);
 
         Client client = ClientConnector.get().getClient();
 
         // Store task in local member to ensure it is not destroyed. Pass task as return
         // value to caller to enable it to block using AsyncTask#waitUntilDone()
-        AsyncTask task = client.createSessionAsync(us, dbFilePath, new SessionListener() {
+        AsyncTask task = client.createSessionAsync(credentials.getAddress(), credentials.getMasterKey(), dbFilePath, new SessionListener() {
             @Override
             public void internalEvent(final InternalEvent event) {
                 callingActivity.runOnUiThread(new Runnable() {
@@ -270,6 +270,7 @@ public class SessionConnector {
                 Log.d(TAG, "createSession finished :)");
                 mSession = session;
                 mSession.syncer().setListener(new ConnectorSyncerListener());
+                migrateUserSettings(callingActivity);
 
                 synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
                     for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
@@ -295,54 +296,28 @@ public class SessionConnector {
         return task;
     }
 
-    public void storeSessionUserSettingsInSharedPreferences(final Context context) {
-        UserSettings us = mSession.userSettings();
-        storeLoginCredentialsInSharedPreferences(context, us);
-    }
-
-    public void storeAddressAndMasterkeyInSharedPreferences(final Context context, String addressString, String masterKeyAsPem) {
-        MasterKey masterKey = MasterKey.createFromPem(masterKeyAsPem);
-        RuntimeAssertion.require(masterKey != null);
-        Address address = Address.create(addressString);
-        RuntimeAssertion.require(address != null);
-        UserSettings us = UserSettings.create(address, masterKey);
-        storeLoginCredentialsInSharedPreferences(context, us);
-    }
-
-    public void storeLoginCredentialsInSharedPreferences(final Context context, UserSettings us) {
+    public void storeCredentials(final Context context, Credentials credentials) {
         SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences(
-				KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
+                KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
 
-        final String addressString = us.address().toString();
+        String addressString = credentials.getAddress().toString();
         editor.putString(KulloConstants.ACTIVE_USER, addressString);
         editor.putString(KulloConstants.LAST_ACTIVE_USER, addressString);
 
-        ArrayList<String> blockList = us.masterKey().dataBlocks();
+        ArrayList<String> blockList = credentials.getMasterKey().dataBlocks();
         RuntimeAssertion.require(blockList.size() == KulloConstants.BLOCK_KEYS_AS_LIST.size());
         for (int index = 0; index < blockList.size(); index++) {
             editor.putString(addressString + KulloConstants.SEPARATOR + KulloConstants.BLOCK_KEYS_AS_LIST.get(index), blockList.get(index));
         }
 
-        final String KEY_NAME             = addressString + KulloConstants.SEPARATOR + "user_name";
-        final String KEY_ORGANIZATION     = addressString + KulloConstants.SEPARATOR + "user_organization";
-        final String KEY_FOOTER           = addressString + KulloConstants.SEPARATOR + "user_footer";
-        final String KEY_AVATAR           = addressString + KulloConstants.SEPARATOR + "user_avatar";
-        final String KEY_AVATAR_MIME_TYPE = addressString + KulloConstants.SEPARATOR + "user_avatar_mime_type";
-
-        editor.putString(KEY_NAME, us.name());
-        editor.putString(KEY_ORGANIZATION, us.organization());
-        editor.putString(KEY_FOOTER, us.footer());
-        editor.putString(KEY_AVATAR, StrictBase64.encode(us.avatar()));
-        editor.putString(KEY_AVATAR_MIME_TYPE, us.avatarMimeType());
-
         editor.commit();
     }
 
     @Nullable
-    public UserSettings loadStoredUserSettings(Context context) {
+    public Credentials loadStoredCredentials(Context context) {
         SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences(
-				KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
+                KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
         String addressString = sharedPref.getString(KulloConstants.ACTIVE_USER, "");
 
         ArrayList<String> blockList = new ArrayList<>();
@@ -357,30 +332,57 @@ public class SessionConnector {
             return null;
         }
 
-        final String KEY_NAME             = address.toString() + KulloConstants.SEPARATOR + "user_name";
-        final String KEY_ORGANIZATION     = address.toString() + KulloConstants.SEPARATOR + "user_organization";
-        final String KEY_FOOTER           = address.toString() + KulloConstants.SEPARATOR + "user_footer";
-        final String KEY_AVATAR           = address.toString() + KulloConstants.SEPARATOR + "user_avatar";
-        final String KEY_AVATAR_MIME_TYPE = address.toString() + KulloConstants.SEPARATOR + "user_avatar_mime_type";
+        return new Credentials(address, masterKey);
+    }
 
-        UserSettings out = UserSettings.create(address, masterKey);
-        out.setName(sharedPref.getString(KEY_NAME, ""));
-        out.setOrganization(sharedPref.getString(KEY_ORGANIZATION, ""));
-        out.setFooter(sharedPref.getString(KEY_FOOTER, ""));
-        try {
-            out.setAvatar(StrictBase64.decode(sharedPref.getString(KEY_AVATAR, "")));
-        } catch (StrictBase64.DecodingException e) {
-            out.setAvatar(new byte[0]);
+    @Nullable
+    public void migrateUserSettings(Context context) {
+        SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences(
+                KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
+
+        UserSettings userSettings = mSession.userSettings();
+        String addressString = userSettings.address().toString();
+        final String KEY_NAME             = addressString + KulloConstants.SEPARATOR + "user_name";
+        final String KEY_ORGANIZATION     = addressString + KulloConstants.SEPARATOR + "user_organization";
+        final String KEY_FOOTER           = addressString + KulloConstants.SEPARATOR + "user_footer";
+        final String KEY_AVATAR           = addressString + KulloConstants.SEPARATOR + "user_avatar";
+        final String KEY_AVATAR_MIME_TYPE = addressString + KulloConstants.SEPARATOR + "user_avatar_mime_type";
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        String value;
+
+        if ((value = sharedPref.getString(KEY_NAME, null)) != null) {
+            userSettings.setName(value);
+            editor.remove(KEY_NAME);
         }
-        out.setAvatarMimeType(sharedPref.getString(KEY_AVATAR_MIME_TYPE, ""));
+        if ((value = sharedPref.getString(KEY_ORGANIZATION, null)) != null) {
+            userSettings.setOrganization(value);
+            editor.remove(KEY_ORGANIZATION);
+        }
+        if ((value = sharedPref.getString(KEY_FOOTER, null)) != null) {
+            userSettings.setFooter(value);
+            editor.remove(KEY_FOOTER);
+        }
+        if ((value = sharedPref.getString(KEY_AVATAR, null)) != null) {
+            try {
+                userSettings.setAvatar(StrictBase64.decode(value));
+            } catch (StrictBase64.DecodingException e) {
+                // do nothing
+            }
+            editor.remove(KEY_AVATAR);
+        }
+        if ((value = sharedPref.getString(KEY_AVATAR_MIME_TYPE, null)) != null) {
+            userSettings.setAvatarMimeType(value);
+            editor.remove(KEY_AVATAR_MIME_TYPE);
+        }
 
         // Avoid avatar-avatarMimeType inconsistency
-        if (out.avatarMimeType().isEmpty() || out.avatar().length == 0) {
-            out.setAvatar(new byte[0]);
-            out.setAvatarMimeType("");
+        if (userSettings.avatarMimeType().isEmpty() || userSettings.avatar().length == 0) {
+            userSettings.setAvatar(new byte[0]);
+            userSettings.setAvatarMimeType("");
         }
 
-        return out;
+        editor.commit();
     }
 
     public boolean userSettingsAreValidForSync() {
@@ -1041,7 +1043,7 @@ public class SessionConnector {
             public void finished(Address address, MasterKey masterKey) {
                 synchronized (mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
                     for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                        ((RegistrationRegisterAccountListenerObserver) observer).finished(addressString, masterKey.pem());
+                        ((RegistrationRegisterAccountListenerObserver) observer).finished(address, masterKey);
                     }
                 }
             }

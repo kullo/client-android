@@ -1,6 +1,11 @@
 Kullo for Android
 -----------------
 
+## v32 (2016-06-05)
+
+ * Synchronize sender information
+ * Update libkullo v49
+
 ## v31 (2016-04-06)
 
  * Fix timeout bug (occurred when sending large attachments)

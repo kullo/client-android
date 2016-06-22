@@ -16,6 +16,7 @@ import android.widget.Spinner;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
+import net.kullo.android.kulloapi.Credentials;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
@@ -25,7 +26,6 @@ import net.kullo.android.observers.listenerobservers.ClientCreateSessionListener
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.NetworkError;
-import net.kullo.libkullo.api.UserSettings;
 
 import java.util.ArrayList;
 
@@ -56,9 +56,6 @@ public class WelcomeActivity extends AppCompatActivity {
 
         mLayoutContent = (RelativeLayout) findViewById(R.id.content);
 
-        // Check google play
-        GcmConnector.get().checkGooglePlayAndPrompt(this);
-
         // call registerCreateSessionListenerObserver before checkForStoredCredentialsAndCreateSession
         // to ensure existing login information cause an activity switch to ConversationsListActivity
         registerCreateSessionListenerObserver();
@@ -70,6 +67,7 @@ public class WelcomeActivity extends AppCompatActivity {
             // Activity started for user to choose login or register
             Ui.setColorStatusBarArrangeHeader(this);
             connectButtons();
+            GcmConnector.get().checkGooglePlayAvailabilityAndPrompt(this);
         }
     }
 
@@ -93,7 +91,7 @@ public class WelcomeActivity extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        Log.d(TAG, "Destroying a login activity");
+        Log.d(TAG, "Destroying a welcome activity");
         unregisterCreateSessionListenerObserver();
     }
 
@@ -239,14 +237,14 @@ public class WelcomeActivity extends AppCompatActivity {
     //HELPERS
 
     private boolean checkForStoredCredentialsAndCreateSession() {
-        UserSettings us = SessionConnector.get().loadStoredUserSettings(this);
+        Credentials credentials = SessionConnector.get().loadStoredCredentials(this);
 
-        if (us == null) {
+        if (credentials == null) {
             Log.d(TAG, "No stored Kullo user settings found");
             return false;
         }
 
-        Log.d(TAG, "Stored Kullo address: " + us.address().toString());
+        Log.d(TAG, "Stored Kullo address: " + credentials.getAddress().toString());
 
         //show waiting dialog
         mCreatingSessionDialog = new MaterialDialog.Builder(this)
@@ -256,7 +254,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 .cancelable(false)
                 .show();
 
-        SessionConnector.get().createSession(this, us);
+        SessionConnector.get().createSession(this, credentials);
         return true;
     }
 }

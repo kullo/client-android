@@ -16,6 +16,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import net.kullo.android.R;
+import net.kullo.android.kulloapi.Credentials;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloUtils;
@@ -25,6 +26,7 @@ import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.AddressNotAvailableReason;
 import net.kullo.libkullo.api.Challenge;
+import net.kullo.libkullo.api.MasterKey;
 import net.kullo.libkullo.api.NetworkError;
 
 public class ChooseAddressFragment extends Fragment {
@@ -154,11 +156,11 @@ public class ChooseAddressFragment extends Fragment {
             }
 
             @Override
-            public void finished(final String address, final String masterKeyAsPem) {
+            public void finished(final Address address, final MasterKey masterKey) {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        SessionConnector.get().storeAddressAndMasterkeyInSharedPreferences(getActivity(), address, masterKeyAsPem);
+                        SessionConnector.get().storeCredentials(getActivity(), new Credentials(address, masterKey));
                         openNextView();
                     }
                 });

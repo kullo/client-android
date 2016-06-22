@@ -1,6 +1,16 @@
 Kullo for Android
 -----------------
 
+## v33 (2016-06-20)
+
+ * Fixing a compatibility issue with message encryption
+
+### Components
+
+ * Update libkullo to v51
+ * Update Botan to 1.11.30
+ * Update SmartSqlite to v11
+
 ## v32 (2016-06-05)
 
  * Synchronize sender information

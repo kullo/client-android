@@ -8,8 +8,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 15
         targetSdkVersion 23
-        versionCode 3200
-        versionName "32"
+        versionCode 3300
+        versionName "33"
     }
     buildTypes {
         debug {

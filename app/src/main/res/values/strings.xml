@@ -67,7 +67,7 @@ ellipsis (…)
     <string name="register">Register</string>
     <string name="generate_keys_title">Generating keys%1$s</string>
     <string name="generate_keys_description_short">This may take a few minutes. Please be patient.</string>
-    <string name="generate_keys_description_long">What we are doing right now is generating strong cryptographic keys for you so that you can communicate securely. Finding secure keys takes some time because we need to make sure they are as secure as advertised. We do it on your device so that nobody else (including us) learns about them.</string>
+    <string name="generate_keys_description_long">Right now, Kullo is generating strong cryptographic keys that you\'re going use to communicate securely. Finding secure keys takes some time because Kullo needs to make sure they are as secure as advertised. Kullo generates those keys on your device such that nobody else learns about them – including us.</string>
     <string name="choose_address_title">Choose your Kullo address</string>
     <string name="choose_address_username_placeholder">Username</string>
     <string name="choose_address_valid_address_instructions">You can use letters and numbers. You can use more than one word, separated by . - or _.</string>

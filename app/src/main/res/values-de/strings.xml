@@ -62,7 +62,7 @@ ellipsis (…)
     <!-- registration -->
     <string name="generate_keys_title">Erzeuge Schlüssel %1$s</string>
     <string name="generate_keys_description_short">Das kann einige Minuten dauern. Bitte habe Geduld.</string>
-    <string name="generate_keys_description_long">Wir erzeugen gerade starke kryptographische Schlüssel, damit du sicher kommunizieren kannst. Schlüssel zu suchen dauert ein wenig, denn wir müssen dafür sorgen, dass sie wirklich sicher sind. Wir erzeugen sie auf deinem Gerät, damit sie niemand anderes (uns eingeschlossen) einsehen kann.</string>
+    <string name="generate_keys_description_long">Kullo erzeugt gerade starke kryptographische Schlüssel, mit denen du sicher kommunizieren kannst. Das dauert ein wenig, denn Kullo muss dafür sorgen, dass diese wirklich sicher sind. Kullo erzeugt die Schlüssel auf deinem Gerät, damit sie niemand anderes einsehen kann – uns eingeschlossen.</string>
     <string name="choose_address_title">Wähle deine Kullo-Adresse</string>
     <string name="choose_address_username_placeholder">Benutzername</string>
     <string name="choose_address_valid_address_instructions">Du kannst Buchstaben und Ziffern benutzen. Außerdem kannst du . oder - oder _ benutzen, um deine Adresse zu unterteilen.</string>

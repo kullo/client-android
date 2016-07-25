@@ -54,8 +54,9 @@ public class CropImageActivity extends AppCompatActivity {
                 setResult(RESULT_OK, getIntent());
                 finish();
                 return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

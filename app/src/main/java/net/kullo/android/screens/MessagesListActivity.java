@@ -38,7 +38,6 @@ import net.kullo.android.observers.eventobservers.MessageStateEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.conversationslist.DividerDecoration;
 import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
-import net.kullo.android.screens.messageslist.MessageAttachmentsOpener;
 import net.kullo.android.screens.messageslist.MessagesAdapter;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
@@ -56,7 +55,6 @@ public class MessagesListActivity extends AppCompatActivity {
     private static final boolean SHOW_AVATAR_ROW = false;
     private MessagesAdapter mMessagesAdapter;
     private Long mConversationId;
-    private MessageAttachmentsOpener mMessageAttachmentsOpener;
     private MessageAddedEventObserver mMessageAddedObserver;
     private MessageRemovedEventObserver mMessageDeletedObserver;
     private MessageStateEventObserver mMessageStateObserver;
@@ -124,9 +122,7 @@ public class MessagesListActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            MessagesComparatorDsc comparator = new MessagesComparatorDsc(SessionConnector.get().getSession());
-                            mMessagesAdapter.add(messageId, comparator);
-                            Log.d(TAG, "Message item added (id: " + messageId + "). " + comparator.getStats());
+                            mMessagesAdapter.add(messageId, new MessagesComparatorDsc());
                         }
                     });
                 }
@@ -214,9 +210,7 @@ public class MessagesListActivity extends AppCompatActivity {
         int dividerLeftMargin = getResources().getDimensionPixelSize(R.dimen.md_additions_list_divider_margin_left);
         mMessagesList.addItemDecoration(new DividerDecoration(this, dividerLeftMargin));
 
-        mMessageAttachmentsOpener = new MessageAttachmentsOpener(this);
-        mMessageAttachmentsOpener.registerSaveFinishedListenerObserver();
-        mMessagesAdapter = new MessagesAdapter(this, mConversationId, mMessageAttachmentsOpener);
+        mMessagesAdapter = new MessagesAdapter(this, mConversationId);
         mMessagesAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
             public void onChanged() {
@@ -326,7 +320,6 @@ public class MessagesListActivity extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mMessageAttachmentsOpener.unregisterSaveFinishedListenerObserver();
     }
 
     @Override
@@ -341,8 +334,9 @@ public class MessagesListActivity extends AppCompatActivity {
             case R.id.action_toggle_message_size:
                 toggleMessageSize();
                 return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

@@ -451,7 +451,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 closeInbox();
                 return true;
             default:
-                RuntimeAssertion.require(false);
+                RuntimeAssertion.fail("Unhandled menu item");
         }
 
         // deselect previous menu item

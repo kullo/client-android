@@ -131,8 +131,9 @@ public class StartConversationActivity extends AppCompatActivity {
                     addParticipant();
                 }
                 return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override

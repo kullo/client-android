@@ -35,7 +35,7 @@ import net.kullo.android.observers.eventobservers.MessageAttachmentsDownloadedCh
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
 import net.kullo.android.screens.messageslist.AttachmentsAdapter;
-import net.kullo.android.screens.messageslist.MessageAttachmentsOpener;
+import net.kullo.android.screens.singlemessage.MessageAttachmentsOpener;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
@@ -213,14 +213,23 @@ public class SingleMessageActivity extends AppCompatActivity {
                 } else {
                     showDialogToShowUserSettingsForCompletion();
                 }
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.appbar_menu_single_message, menu);
         return true;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode >= 1000) {
+            mMessageAttachmentsOpener.handleActivityResult(requestCode, resultCode, data);
+        }
     }
 
     public void populateMessageFields() {
@@ -352,7 +361,7 @@ public class SingleMessageActivity extends AppCompatActivity {
     }
 
     // CONTEXT MENU
-    private void selectAttachment(final Long attachmentId) {
+    private void selectAttachment(final long attachmentId) {
         mAttachmentsAdapter.toggleSelectedItem(attachmentId);
         if (!mAttachmentsAdapter.isSelectionActive()) {
             mActionMode.finish();

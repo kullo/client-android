@@ -12,8 +12,8 @@ import android.view.ViewGroup;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
-import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloIdsAdapter;
+import net.kullo.android.kulloapi.SessionConnector;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -22,8 +22,6 @@ import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
-
-// import android.util.Log;
 
 public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
     public static final String TAG = "MessagesAdapter";
@@ -35,7 +33,7 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
     final protected Long mConversationId;
 	private boolean mShowCardsExpanded;
 
-    public MessagesAdapter(final Activity baseActivity, Long conversationId, MessageAttachmentsOpener messageAttachmentsOpener) {
+    public MessagesAdapter(final Activity baseActivity, Long conversationId) {
         super();
         mBaseActivity = baseActivity;
         mConversationId = conversationId;

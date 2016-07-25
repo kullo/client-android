@@ -3,6 +3,7 @@ package net.kullo.android.littlehelpers;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 
 public class Debug {
     public static String getUriDetails(Uri uri) {
@@ -26,6 +27,8 @@ public class Debug {
     }
 
     public static String getIntentDetails(Intent intent) {
+        Uri data = intent.getData();
+        Bundle extras = intent.getExtras();
         return String.format("Intent: %s\n" +
                 "  Data: %s\n" +
                 "    scheme: %s\n" +
@@ -35,13 +38,13 @@ public class Debug {
                 "    fragment encoded: %s\n" +
                 "  Extras: %s",
                 intent,
-                intent.getData().toString(),
-                intent.getData().getScheme(),
-                intent.getData().getSchemeSpecificPart(),
-                intent.getData().getEncodedSchemeSpecificPart(),
-                intent.getData().getFragment(),
-                intent.getData().getEncodedFragment(),
-                (intent.getExtras() != null ? intent.getExtras().toString() : "null")
+                data != null ? data.toString() : "null",
+                data != null ? data.getScheme() : "",
+                data != null ? data.getSchemeSpecificPart() : "",
+                data != null ? data.getEncodedSchemeSpecificPart() : "",
+                data != null ? data.getFragment() : "",
+                data != null ? data.getEncodedFragment() : "",
+                extras != null ? extras.toString() : "null"
         );
     }
 }

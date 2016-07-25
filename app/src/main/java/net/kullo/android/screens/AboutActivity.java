@@ -40,8 +40,9 @@ public class AboutActivity extends AppCompatActivity {
             case android.R.id.home: // back button
                 finish();
                 return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     public void openImpressumClicked(View view) {

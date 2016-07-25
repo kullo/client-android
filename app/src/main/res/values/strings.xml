@@ -107,6 +107,8 @@ ellipsis (…)
 
     <!-- single message -->
     <string name="action_write">Write</string>
+    <string name="singlemessage_file_save_to_canceled">Save action canceled</string>
+    <string name="singlemessage_file_save_failed">Save action failed</string>
 
     <!-- message attachments -->
     <string name="attachments_cannot_open_externaldir_title">Cannot open external storage</string>
@@ -118,7 +120,7 @@ ellipsis (…)
     <string name="export_successful_confirm_file_opening">Do you want to open the file now?</string>
     <string name="action_open_with">Open with</string>
     <string name="action_share">Share</string>
-    <string name="action_save_as">Save As</string>
+    <string name="action_save_as">Save as</string>
 
     <!-- settings -->
     <string name="settings_remove_avatar">Clear avatar</string>
@@ -129,7 +131,6 @@ ellipsis (…)
     <string name="organization_opt">Organization (optional)</string>
     <string name="select_image_source">Select image source</string>
     <string name="capture_image_canceled">Image capture canceled</string>
-    <string name="capture_image_failed">Image capture failed</string>
     <string name="action_rotate_image">Rotate</string>
     <string name="crop_image">Crop image</string>
 
@@ -144,7 +145,7 @@ ellipsis (…)
 
     <!-- licenses -->
     <string name="activity_title_licenses">Licenses</string>
-    <string name="licenses_text_kudos">Kullo is proudly based on open source software.Kudos to %1$s.</string>
+    <string name="licenses_text_kudos">Kullo is proudly based on open source software. Kudos to %1$s.</string>
 
     <!-- impressum -->
     <string name="activity_title_impressum">Impressum</string>
@@ -174,8 +175,8 @@ ellipsis (…)
     <string name="new_message_input_placeholder">Message</string>
     <string name="new_message_receivers_label">To</string>
     <string name="select_file_canceled">Select file canceled</string>
-    <string name="select_file_failed">Select file failed</string>
     <string name="no_tmp_dir_found">Cannot find temporary directory</string>
+    <string name="compose_error_loading_file">Error loading selected file</string>
 
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>

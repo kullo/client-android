@@ -111,6 +111,8 @@ ellipsis (…)
 
     <!-- single message -->
     <string name="action_write">Schreiben</string>
+    <string name="singlemessage_file_save_to_canceled">Speichern abgebrochen</string>
+    <string name="singlemessage_file_save_failed">Speichern fehlgeschlagen</string>
 
     <!-- settings -->
     <string name="settings_remove_avatar">Avatar löschen</string>
@@ -120,7 +122,6 @@ ellipsis (…)
     <string name="organization">Organisation</string>
     <string name="select_image_source">Bildquelle auswählen</string>
     <string name="capture_image_canceled">Bildauswahl abgebrochen</string>
-    <string name="capture_image_failed">Bildauswahl fehlgeschlagen</string>
     <string name="action_rotate_image">Drehen</string>
     <string name="crop_image">Zuschneiden</string>
 
@@ -160,11 +161,11 @@ ellipsis (…)
     <string name="new_message_settings_incomplete_dialog_content">Deine Absender-Einstellungen sind unvollständig. Jetzt ergänzen?</string>
     <string name="new_message_input_placeholder">Nachricht</string>
     <string name="new_message_receivers_label">An</string>
-    <string name="select_file_failed">Dateiauswahl fehlgeschlagen</string>
     <string name="select_file_canceled">Dateiauswahl abgebrochen</string>
     <string name="no_tmp_dir_found">Kein temporäres Verzeichnis gefunden</string>
     <string name="organization_opt">Organisation (optional)</string>
     <string name="participant_needed">Mindestens ein Teilnehmer ist nötig</string>
+    <string name="compose_error_loading_file">Ausgewählte Datei konnte nicht geladen werden</string>
 
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>

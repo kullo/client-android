@@ -1,6 +1,18 @@
 Kullo for Android
 -----------------
 
+## v34 (2016-07-22)
+
+ * Fix a timeout issue when sending or receiving large attachments
+ * Fix crash when leaving inbox in landscape mode
+ * Fix bug in "Save to" action for attachments
+ * Other minor stability improvements and dependency updates
+
+### Components
+
+ * Update libkullo to v53
+ * Update SmartSqlite to v12
+
 ## v33 (2016-06-20)
 
  * Fixing a compatibility issue with message encryption

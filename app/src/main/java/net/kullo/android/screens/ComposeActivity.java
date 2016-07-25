@@ -2,7 +2,6 @@
 package net.kullo.android.screens;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.TypedArray;
@@ -12,7 +11,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.Pair;
@@ -35,6 +33,7 @@ import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Debug;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.NonScrollingLinearLayoutManager;
+import net.kullo.android.littlehelpers.StreamCopy;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.DraftAttachmentAddedEventObserver;
@@ -48,15 +47,12 @@ import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URLConnection;
 
 public class ComposeActivity extends AppCompatActivity {
     private static final String TAG = "ComposeActivity";
+    private static final int REQUEST_CODE_ATTACH_FILE = 1;
 
     private long mConversationId;
     private EditText mNewMessageText;
@@ -68,8 +64,10 @@ public class ComposeActivity extends AppCompatActivity {
     private DraftAttachmentsAdapter mDraftAttachmentsAdapter;
     private DraftAttachmentOpener mDraftAttachmentOpener;
 
+    // Android API < 16 hack because View.getMinimumHeight is missing
+    private int currentMessageTextInputMinimumHeight = -1;
+
     private Pair<Integer, Integer> mStoredSelection = null;
-    public static final int FILE_REQUEST_CODE = 1;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -119,7 +117,10 @@ public class ComposeActivity extends AppCompatActivity {
         SessionConnector.get().addEventObserver(DraftAttachmentAddedEventObserver.class, new DraftAttachmentAddedEventObserver() {
             public void draftAttachmentAdded(long conversationId, long attachmentId) {
                 mDraftAttachmentsAdapter.append(attachmentId);
-                resizeMessageTextEdit();
+
+                // call explicitly here because onLayoutChange() is not triggered when
+                // going from 0 to 1 elements
+                adaptLayoutToAttachmentsListSize();
             }
         });
 
@@ -133,7 +134,7 @@ public class ComposeActivity extends AppCompatActivity {
         mDraftAttachmentsList.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                resizeMessageTextEdit();
+                adaptLayoutToAttachmentsListSize();
             }
         });
 
@@ -159,13 +160,14 @@ public class ComposeActivity extends AppCompatActivity {
 
         // onWindowFocusChanged() is called late enough for this
         // http://stackoverflow.com/a/6560726/2013738
-        resizeMessageTextEdit();
+        adaptLayoutToAttachmentsListSize();
     }
 
-    protected void resizeMessageTextEdit() {
+    protected void adaptLayoutToAttachmentsListSize() {
         // Make message input box fill entire available space such that the user can focus it by
         // touching the whole space. This must be done after we set recipients and know the
         // final header size.
+        // Those updates must converge to avoid endless recursion
         int frameHeight = findViewById(R.id.new_message_frame).getHeight();
         int headerHeight = findViewById(R.id.new_message_header).getHeight();
 
@@ -180,17 +182,24 @@ public class ComposeActivity extends AppCompatActivity {
         RuntimeAssertion.require(divider != null);
         int dividerHeight = divider.getIntrinsicHeight();
 
-        // attachments
-        int attachmentListHeight, extraDividerHeight;
+        // Attachments list
         if (mDraftAttachmentsAdapter.getItemCount() == 0) {
-            mDraftAttachmentsList.setVisibility(View.GONE);
-            attachmentListHeight = 0;
-            extraDividerHeight = 0;
+            if (mDraftAttachmentsList.getVisibility() != View.GONE) {
+                mDraftAttachmentsList.setVisibility(View.GONE);
+            }
         } else {
-            mDraftAttachmentsList.setVisibility(View.VISIBLE);
+            if (mDraftAttachmentsList.getVisibility() != View.VISIBLE) {
+                mDraftAttachmentsList.setVisibility(View.VISIBLE);
+            }
+        }
+
+        // Text box
+        int attachmentListHeight = 0;
+        int extraDividerHeight = 0;
+        if (mDraftAttachmentsAdapter.getItemCount() > 0) {
             attachmentListHeight = mDraftAttachmentsList.getHeight()
-                + ((LinearLayout.LayoutParams)mDraftAttachmentsList.getLayoutParams()).topMargin
-                + ((LinearLayout.LayoutParams)mDraftAttachmentsList.getLayoutParams()).bottomMargin;
+                + ((LinearLayout.LayoutParams) mDraftAttachmentsList.getLayoutParams()).topMargin
+                + ((LinearLayout.LayoutParams) mDraftAttachmentsList.getLayoutParams()).bottomMargin;
             extraDividerHeight = dividerHeight;
             if (attachmentListHeight > frameHeight / 2) {
                 // prevent attachment list to take over the whole view (user will have to scroll down past this point)
@@ -198,8 +207,13 @@ public class ComposeActivity extends AppCompatActivity {
             }
         }
 
-        Log.d(TAG, "frame: " + frameHeight + ", header: " + headerHeight + ", divider: " + dividerHeight + ", attachments: " + attachmentListHeight + " + " + extraDividerHeight);
-        mNewMessageText.setMinimumHeight(frameHeight - headerHeight - dividerHeight - attachmentListHeight - extraDividerHeight);
+        //Log.d(TAG, "frame: " + frameHeight + ", header: " + headerHeight + ", divider: " + dividerHeight + ", attachments: " + attachmentListHeight + " + " + extraDividerHeight);
+
+        int newMinimumHeight = frameHeight - headerHeight - dividerHeight - attachmentListHeight - extraDividerHeight;
+        if (currentMessageTextInputMinimumHeight != newMinimumHeight) {
+            mNewMessageText.setMinimumHeight(newMinimumHeight);
+            currentMessageTextInputMinimumHeight = newMinimumHeight;
+        }
     }
 
     @Override
@@ -255,9 +269,9 @@ public class ComposeActivity extends AppCompatActivity {
 
     private void updateDraftTextFromStorage() {
         //set old draft text, if there is any
-        String draft = SessionConnector.get().getDraftText(mConversationId);
-        if (draft != null && !draft.isEmpty()) {
-            mNewMessageText.setText(SessionConnector.get().getDraftText(mConversationId));
+        final String draftText = SessionConnector.get().getDraftText(mConversationId);
+        if (!draftText.isEmpty()) {
+            mNewMessageText.setText(draftText);
         }
     }
 
@@ -274,9 +288,9 @@ public class ComposeActivity extends AppCompatActivity {
             case R.id.action_send:
                 saveDraft(true);
                 return true;
-
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     @Override
@@ -392,21 +406,18 @@ public class ComposeActivity extends AppCompatActivity {
         fileIntent.setType("*/*");
         fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
         fileIntent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(fileIntent, FILE_REQUEST_CODE);
+        startActivityForResult(fileIntent, REQUEST_CODE_ATTACH_FILE);
     }
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == FILE_REQUEST_CODE) {
-                final Uri selectedFileUri = data == null ? null : data.getData();
-                if (selectedFileUri == null) {
-                    Toast.makeText(this.getApplicationContext(), R.string.select_file_failed,
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
+        if (requestCode == REQUEST_CODE_ATTACH_FILE) {
+            if (resultCode == Activity.RESULT_OK) {
+                RuntimeAssertion.require(data != null);
+                final Uri selectedFileUri = data.getData();
+                RuntimeAssertion.require(selectedFileUri != null);
                 Log.d(TAG, "Attachment source: " + selectedFileUri);
+
                 final String scheme = selectedFileUri.getScheme();
                 switch (scheme) {
                     case "file":
@@ -416,112 +427,62 @@ public class ComposeActivity extends AppCompatActivity {
                         handleAttachmentFromContentUri(selectedFileUri);
                         break;
                     default:
-                        throw new AssertionError("Unrecognized scheme: " + scheme);
+                        RuntimeAssertion.fail("Unrecognized scheme: " + scheme);
                 }
+            } else if (resultCode == Activity.RESULT_CANCELED){
+                Toast.makeText(this, R.string.select_file_canceled, Toast.LENGTH_SHORT).show();
+            } else {
+                RuntimeAssertion.fail("Unknown result code");
             }
-        } else if (resultCode == Activity.RESULT_CANCELED){
-            Toast.makeText(this.getApplicationContext(),
-                    R.string.select_file_canceled, Toast.LENGTH_SHORT)
-                    .show();
         } else {
-            Toast.makeText(this.getApplicationContext(),
-                    R.string.select_file_failed, Toast.LENGTH_SHORT)
-                    .show();
+            RuntimeAssertion.fail("Unknown request code: " + requestCode);
         }
     }
 
     private void handleAttachmentFromFileUri(final Uri selectedFileUri) {
-        String guessedMimeType = URLConnection.guessContentTypeFromName(selectedFileUri.toString());
-        final String mimeType;
-        if (guessedMimeType == null) {
-            // default
-            mimeType = "application/octet-stream";
-        } else {
-            mimeType = guessedMimeType;
-        }
+        final String guessedMimeType = URLConnection.guessContentTypeFromName(selectedFileUri.toString());
+        final String mimeType = (guessedMimeType != null)
+                ? guessedMimeType
+                : "application/octet-stream";
 
-        new Thread(new Runnable() {
-            public void run() {
-                // running in a thread because we can't garbage-collect task before it's done
-                AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, selectedFileUri.getPath(), mimeType);
-                task.waitUntilDone();
-            }
-        }).start();
+        AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, selectedFileUri.getPath(), mimeType);
+        task.waitUntilDone();
     }
 
     private void handleAttachmentFromContentUri(final Uri selectedFileUri) {
-        final Context context = this;
         final String mimeType = getContentResolver().getType(selectedFileUri);
-        new Thread(new Runnable() {
-            public void run() {
-                // copy file in known location for uploading
-                String fileName = "tmp.tmp"; // default filename if original can't be retrieved
 
-                // Get filename from stream
-                Cursor fileInfoCursor = getContentResolver().query(selectedFileUri, null, null, null, null);
-                if (fileInfoCursor != null) {
-                    fileInfoCursor.moveToFirst();
-                    int nameIndex = fileInfoCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-                    if (nameIndex != -1) {
-                        fileName = fileInfoCursor.getString(nameIndex);
-                    }
-                    fileInfoCursor.close();
-                }
+        // copy file in known location for uploading
+        String tmpFilename = "tmp.tmp"; // default filename if original can't be retrieved
 
-                File tmpDir = getCacheDir();
-                if (tmpDir == null) {
-                    tmpDir = getExternalCacheDir();
-                    if (tmpDir == null) {
-                        tmpDir = android.os.Environment.getExternalStorageDirectory();
-                        if (tmpDir == null) {
-                            Log.e(TAG, "Could not open any tmp directory for writing");
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(context.getApplicationContext(),
-                                            R.string.no_tmp_dir_found, Toast.LENGTH_SHORT)
-                                        .show();
-                                }
-                            });
-                            return;
-                        }
-                    }
-                }
-
-                String destPath = tmpDir.getPath() + File.separatorChar + fileName;
-
-                InputStream inputFile = null;
-                BufferedOutputStream outputFile = null;
-
-                try {
-                    inputFile = getContentResolver().openInputStream(selectedFileUri);
-                    RuntimeAssertion.require(inputFile != null);
-                    outputFile = new BufferedOutputStream(new FileOutputStream(destPath, false));
-                    byte[] buffer = new byte[1024];
-
-                    int bytesRead;
-                    while ((bytesRead = inputFile.read(buffer)) != -1) {
-                        outputFile.write(buffer, 0, bytesRead);
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        if (inputFile != null) inputFile.close();
-                        if (outputFile != null) outputFile.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-
-                AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, destPath, mimeType);
-                task.waitUntilDone();
-
-                // remove temporary file now that it's been uploaded
-                if (!(new File(destPath)).delete()) {
-                    Log.e(TAG, "File could not be deleted: '" + destPath + "'");
-                }
+        // Get filename from stream
+        Cursor fileInfoCursor = getContentResolver().query(selectedFileUri, null, null, null, null);
+        if (fileInfoCursor != null) {
+            fileInfoCursor.moveToFirst();
+            int nameIndex = fileInfoCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+            if (nameIndex != -1) {
+                tmpFilename = fileInfoCursor.getString(nameIndex);
             }
-        }).start();
+            fileInfoCursor.close();
+        }
+
+        File appCacheDir = getCacheDir();
+        RuntimeAssertion.require(appCacheDir != null);
+
+        final String tmpFilePath = appCacheDir.getPath() + File.separatorChar + tmpFilename;
+        Log.d(TAG, "Tmp file path before adding to DB: " + tmpFilePath);
+
+        if (StreamCopy.copyToPath(this, selectedFileUri, tmpFilePath)) {
+            AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, tmpFilePath, mimeType);
+            task.waitUntilDone();
+
+            // remove temporary file now that it's been uploaded
+            if (!(new File(tmpFilePath)).delete()) {
+                Log.e(TAG, "File could not be deleted: " + tmpFilePath);
+            }
+        } else {
+            Log.e(TAG, "Could not copy " + selectedFileUri + " to " + tmpFilePath);
+            Toast.makeText(this, R.string.compose_error_loading_file, Toast.LENGTH_SHORT).show();
+        }
     }
 }

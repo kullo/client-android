@@ -577,8 +577,10 @@ public class SessionConnector {
         mSession.conversations().remove(conversationId);
     }
 
-    // Get all data at once to avoid unnecessary JNI calls when scolling the list
+    // Get all data at once to avoid unnecessary JNI calls when scrolling the list
     public ConversationData getConversationData(Context context, long conversationId) {
+        RuntimeAssertion.require(mSession != null);
+
         ConversationData out = new ConversationData();
         out.mParticipants = getParticipantAddresses(conversationId);
 
@@ -653,6 +655,7 @@ public class SessionConnector {
         mSession.drafts().clear(conversationId);
     }
 
+    @NonNull
     public String getDraftText(long conversationId) {
         RuntimeAssertion.require(mSession != null);
 
@@ -679,7 +682,7 @@ public class SessionConnector {
         RuntimeAssertion.require(filePath != null);
         RuntimeAssertion.require(mimeType != null);
 
-        return mSession.draftAttachments().addAsync(conversationId, filePath, mimeType, new DraftAttachmentsAddListener() {
+        AsyncTask task = mSession.draftAttachments().addAsync(conversationId, filePath, mimeType, new DraftAttachmentsAddListener() {
             @Override
             public void finished(long convId, long attId, String path) {
                 synchronized (mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
@@ -698,6 +701,9 @@ public class SessionConnector {
                 }
             }
         });
+
+        mTaskHolder.add(task);
+        return task;
     }
 
     public void removeDraftAttachment(long conversationId, long attachmentId) {
@@ -842,17 +848,12 @@ public class SessionConnector {
     }
 
     @NonNull
-    public ArrayList<Long> getAllMessageIdsSorted(long conversationId) {
+    public List<Long> getAllMessageIdsSorted(long conversationId) {
         RuntimeAssertion.require(mSession != null);
 
-        // presort IDs list (by ID, descending)
-        ArrayList<Long> list = mSession.messages().allForConversation(conversationId); // unsorted
+        // List is sorted by id (equal to dateReceived); Reverse to get newest first
+        List<Long> list = mSession.messages().allForConversation(conversationId);
         Collections.reverse(list);
-
-        KulloComparator countingComp = new MessagesComparatorDsc(mSession);
-        KulloSort.insertionsort(list, countingComp);
-        Log.d(TAG, "Done sorting messages. " + countingComp.getStats());
-
         return list;
     }
 

@@ -9,13 +9,13 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -37,9 +37,10 @@ import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
     public static final String TAG = "SettingsActivity";
-    public static final int PICTURE_REQUEST_CODE = 1;
-    public static final int PICTURE_CROP_CODE = 2;
-    private static final String CLEAR_ACTION = "ClearAvatar";
+
+    private static final int REQUEST_CODE_SELECT_AVATAR_IMAGE = 1;
+    private static final int REQUEST_CODE_CROP_AVATAR_IMAGE = 2;
+    private static final String ACTION_CLEAR_AVATAR = "ClearAvatar";
 
     private TextInputLayout mName;
     private TextInputLayout mOrganization;
@@ -49,7 +50,7 @@ public class SettingsActivity extends AppCompatActivity {
     private EditText mFooterEditText;
     private ImageView mAvatarView;
 
-    private Uri mOutputFileUri;
+    private Uri mCameraOutputFileUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,8 +118,9 @@ public class SettingsActivity extends AppCompatActivity {
             case android.R.id.home: // back button
                 finish();
                 return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
     }
 
     private void setupLayout() {
@@ -151,7 +153,7 @@ public class SettingsActivity extends AppCompatActivity {
         mAvatarView.setOnClickListener(new View.OnClickListener() {
             //@Override
             public void onClick(View v) {
-                openImageIntent();
+                openSelectAvatarSourcesMenu();
             }
         });
     }
@@ -166,21 +168,20 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    private void openImageIntent() {
-        // Determine Uri of camera image to save.
-        final File root = new File(Environment.getExternalStorageDirectory() + File.separator + "amfb" + File.separator);
-        root.mkdir();
-        final String fname = "img_" + System.currentTimeMillis() + ".jpg";
-        final File sdImageMainDirectory = new File(root, fname);
-        mOutputFileUri = Uri.fromFile(sdImageMainDirectory);
+    private void openSelectAvatarSourcesMenu() {
+        // Determine Uri of camera image to save
+        final File cameraOutputDir = getExternalFilesDir(null);
+        final File cameraOutputFile = new File(cameraOutputDir, "cameraimg_" + System.currentTimeMillis() + ".jpg");
+        mCameraOutputFileUri = Uri.fromFile(cameraOutputFile);
+        Log.d(TAG, "Camera output file: " + mCameraOutputFileUri);
 
         // Option list
-        final List<Intent> extraIntents = new ArrayList<Intent>();
+        final List<Intent> extraIntents = new ArrayList<>();
 
         // Clear
         final Intent clearIntent = new Intent();
         clearIntent.setClass(this, SettingsActivity.class);
-        clearIntent.setAction(CLEAR_ACTION);
+        clearIntent.setAction(ACTION_CLEAR_AVATAR);
         final LabeledIntent clearIntentOption = new LabeledIntent(clearIntent, getPackageName(),
             getString(R.string.settings_remove_avatar), R.drawable.kullo_settings_avatar);
         extraIntents.add(clearIntentOption);
@@ -188,13 +189,13 @@ public class SettingsActivity extends AppCompatActivity {
         // Camera
         final Intent captureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         final PackageManager packageManager = this.getPackageManager();
-        final List<ResolveInfo> listCam = packageManager.queryIntentActivities(captureIntent, 0);
-        for (ResolveInfo res : listCam){
-            final String packageName = res.activityInfo.packageName;
+        final List<ResolveInfo> cameras = packageManager.queryIntentActivities(captureIntent, 0);
+        for (ResolveInfo camera : cameras) {
+            final String packageName = camera.activityInfo.packageName;
             final Intent intent = new Intent(captureIntent);
-            intent.setComponent(new ComponentName(res.activityInfo.packageName, res.activityInfo.name));
+            intent.setComponent(new ComponentName(camera.activityInfo.packageName, camera.activityInfo.name));
             intent.setPackage(packageName);
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, mOutputFileUri);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, mCameraOutputFileUri);
             extraIntents.add(intent);
         }
 
@@ -203,12 +204,12 @@ public class SettingsActivity extends AppCompatActivity {
                 android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         galleryIntent.setType("image/");
 
-        // Chooser of filesystem options.
+        // Chooser of filesystem options
         final Intent chooserIntent = Intent.createChooser(galleryIntent, getString(R.string.select_image_source));
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents.toArray(new Parcelable[]{}));
 
         // Launch the option menu
-        startActivityForResult(chooserIntent, PICTURE_REQUEST_CODE);
+        startActivityForResult(chooserIntent, REQUEST_CODE_SELECT_AVATAR_IMAGE);
     }
 
     private boolean detectClearAvatarIntent() {
@@ -217,7 +218,7 @@ public class SettingsActivity extends AppCompatActivity {
             return false;
 
         String action = inputIntent.getAction();
-        if (action != null && action.equals(CLEAR_ACTION)) {
+        if (action != null && action.equals(ACTION_CLEAR_AVATAR)) {
             setResult(Activity.RESULT_OK, inputIntent);
             finish();
             return true;
@@ -229,8 +230,8 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == Activity.RESULT_OK) {
-            if (requestCode == PICTURE_REQUEST_CODE) {
+        if (requestCode == REQUEST_CODE_SELECT_AVATAR_IMAGE) {
+            if (resultCode == Activity.RESULT_OK) {
                 // identify action
                 final boolean isCamera;
                 boolean isDelete = false;
@@ -242,9 +243,7 @@ public class SettingsActivity extends AppCompatActivity {
                         isCamera = false;
                     } else {
                         isCamera = action.equals(MediaStore.ACTION_IMAGE_CAPTURE);
-                        if (!isCamera) {
-                            isDelete = action.equals(CLEAR_ACTION);
-                        }
+                        isDelete = action.equals(ACTION_CLEAR_AVATAR);
                     }
                 }
 
@@ -257,29 +256,30 @@ public class SettingsActivity extends AppCompatActivity {
                     final Intent cropIntent = new Intent(this, CropImageActivity.class);
                     if (isCamera) {
                         cropIntent.putExtra(CropImageActivity.INPUT_METHOD, CropImageActivity.CAMERA_INPUT);
-                        cropIntent.putExtra(CropImageActivity.BITMAP_INPUT_URI, mOutputFileUri.toString());
+                        cropIntent.putExtra(CropImageActivity.BITMAP_INPUT_URI, mCameraOutputFileUri.toString());
                     } else {
                         Uri selectedImageUri = data.getData();
                         cropIntent.putExtra(CropImageActivity.INPUT_METHOD, CropImageActivity.FILE_INPUT);
                         cropIntent.putExtra(CropImageActivity.BITMAP_INPUT_URI, selectedImageUri.toString());
                     }
 
-                    startActivityForResult(cropIntent, PICTURE_CROP_CODE);
+                    startActivityForResult(cropIntent, REQUEST_CODE_CROP_AVATAR_IMAGE);
                 }
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+                Toast.makeText(this, R.string.capture_image_canceled, Toast.LENGTH_SHORT).show();
+            } else {
+                RuntimeAssertion.fail("Unhandled result code");
             }
-        } else if (resultCode == PICTURE_CROP_CODE) {
-            // back from crop activity: update view from stored data
-            updateAvatarViewFromSession();
-        } else if (resultCode == Activity.RESULT_CANCELED){
-            // user cancelled Image capture
-            Toast.makeText(this.getApplicationContext(),
-                    R.string.capture_image_canceled, Toast.LENGTH_SHORT)
-                    .show();
+        } else if (requestCode == REQUEST_CODE_CROP_AVATAR_IMAGE) {
+            if (resultCode == Activity.RESULT_OK) {
+                updateAvatarViewFromSession();
+            } else if (resultCode == Activity.RESULT_CANCELED) {
+                Toast.makeText(this, R.string.capture_image_canceled, Toast.LENGTH_SHORT).show();
+            } else {
+                RuntimeAssertion.fail("Unhandled result code");
+            }
         } else {
-            // failed to capture image
-            Toast.makeText(this.getApplicationContext(),
-                    R.string.capture_image_failed, Toast.LENGTH_SHORT)
-                    .show();
+            RuntimeAssertion.fail("Unhandled request code");
         }
     }
 

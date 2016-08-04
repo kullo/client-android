@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -20,6 +21,7 @@ import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Debug;
 import net.kullo.android.littlehelpers.ListHelper;
+import net.kullo.android.littlehelpers.MimeTypeMerger;
 import net.kullo.android.littlehelpers.StreamCopy;
 import net.kullo.android.observers.listenerobservers.MessageAttachmentsSaveListenerObserver;
 import net.kullo.javautils.RuntimeAssertion;
@@ -42,11 +44,23 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
         SHARE,
     }
 
+    private class ReadyFile {
+        @NonNull public File tmpfile;
+        @NonNull public String filename;
+        @NonNull public Uri uri;
+
+        public ReadyFile(@NonNull File tmpfile_, @NonNull String filename_, @NonNull Uri uri_) {
+            tmpfile = tmpfile_;
+            filename = filename_;
+            uri = uri_;
+        }
+    }
+
     private OpenAction mCurrentAction = null;
     private int mPendingFiles = 0;
-    private ArrayList<Uri> mReadyFiles = new ArrayList<>();
+    private ArrayList<ReadyFile> mReadyFiles = new ArrayList<>();
     private String mCurrentActionMergedMimeType;
-    private Uri mCurrentActionSaveToTmpFile;
+    private File mCurrentActionSaveToTmpFile;
 
     public MessageAttachmentsOpener(Activity activity) {
         mBaseActivity = activity;
@@ -66,17 +80,17 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
                 switch (scheme) {
                     case "file":
                         // Move tmp to target
-                        File from = new File(mCurrentActionSaveToTmpFile.getPath());
+                        File from = mCurrentActionSaveToTmpFile;
                         File to = new File(target.getPath());
                         if (!from.renameTo(to)) {
                             Log.e(TAG, "Could not rename file. Falling back to copy.");
-                            if (!StreamCopy.copyToUri(mBaseActivity, mCurrentActionSaveToTmpFile, target)) {
+                            if (!StreamCopy.copyToUri(mBaseActivity, Uri.fromFile(mCurrentActionSaveToTmpFile), target)) {
                                 Toast.makeText(mBaseActivity, R.string.singlemessage_file_save_failed, Toast.LENGTH_SHORT).show();
                             }
                         }
                         break;
                     case "content":
-                        if (!StreamCopy.copyToUri(mBaseActivity, mCurrentActionSaveToTmpFile, target)) {
+                        if (!StreamCopy.copyToUri(mBaseActivity, Uri.fromFile(mCurrentActionSaveToTmpFile), target)) {
                             Toast.makeText(mBaseActivity, R.string.singlemessage_file_save_failed, Toast.LENGTH_SHORT).show();
                         }
                         break;
@@ -130,65 +144,58 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
     private void saveAttachments(final long messageId, final List<Long> attachmentList) {
         mPendingFiles = 0;
         mReadyFiles.clear();
-        mCurrentActionMergedMimeType = "";
+
+        List<String> mimeTypes = new ArrayList<>();
+        for (long attachmentId : attachmentList) {
+            mimeTypes.add(SessionConnector.get().getMessageAttachmentMimeType(messageId, attachmentId));
+        }
+        mCurrentActionMergedMimeType = MimeTypeMerger.merge(mimeTypes);
 
         ArrayList<File> outputFiles = new ArrayList<>();
         for (long attachmentId : attachmentList) {
-            File fileHandle = getFileHandleForAttachment(messageId, attachmentId);
-            if (fileHandle != null) outputFiles.add(fileHandle);
+            File tmpfile = getTmpFilepathForAttachment(messageId, attachmentId);
+            if (tmpfile == null) {
+                // cannot open a file
+                return;
+            }
+
+            outputFiles.add(tmpfile);
         }
 
-        if (outputFiles.size() == attachmentList.size()) {
-            // all passed
-            mPendingFiles = attachmentList.size();
-            createSavingDialog();
-            for (int i = 0; i < attachmentList.size(); i++) {
-                startSavingFile(messageId, attachmentList.get(i), outputFiles.get(i));
-            }
+        mPendingFiles = attachmentList.size();
+        createSavingDialog();
+        for (int i = 0; i < attachmentList.size(); i++) {
+            startSavingFile(messageId, attachmentList.get(i), outputFiles.get(i));
         }
     }
 
     @Nullable
-    private File getFileHandleForAttachment(final long messageId, final long attachmentId) {
+    private File getTmpFilepathForAttachment(final long messageId, final long attachmentId) {
         String filename = SessionConnector.get().getMessageAttachmentFilename(messageId, attachmentId);
-        String mimeType = SessionConnector.get().getMessageAttachmentMimeType(messageId, attachmentId);
+        final File fileOpenCacheDir = ((KulloApplication) mBaseActivity.getApplication()).fileOpenCacheDir();
+        final File tmpfile = new File(fileOpenCacheDir, filename);
 
-        File tmpDirectory = mBaseActivity.getExternalFilesDir("tmp");
-        if (tmpDirectory == null) {
-            Log.d(TAG, "Cannot open tmp directory for storing attachments");
-            new MaterialDialog.Builder(mBaseActivity)
-                    .title(R.string.attachments_cannot_open_externaldir_title)
-                    .content(R.string.attachments_cannot_open_externaldir_text)
-                    .positiveText(R.string.ok)
-                    .onPositive(new MaterialDialog.SingleButtonCallback() {
-                        @Override
-                        public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .show();
-            return null;
-        }
-
-        File file = new File(tmpDirectory.getPath(), filename);
         if (mCurrentAction.equals(OpenAction.OPEN) || mCurrentAction.equals(OpenAction.OPEN_WITH)) {
-            if (!((KulloApplication) mBaseActivity.getApplication()).canOpenFileType(file, mimeType)) {
-                Log.d(TAG, "Cannot open file: '" + file + "' mimeType: '" + mimeType + "'");
-                new MaterialDialog.Builder(mBaseActivity)
-                        .title(R.string.attachments_unknown_mimetype_title)
-                        .content(R.string.attachments_unknown_mimetype_text)
-                        .positiveText(R.string.ok)
-                        .onPositive(new MaterialDialog.SingleButtonCallback() {
-                            @Override
-                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .show();
-                return null;
+            {
+                final String mimeType = SessionConnector.get().getMessageAttachmentMimeType(messageId, attachmentId);
+                if (!((KulloApplication) mBaseActivity.getApplication()).canOpenFileType(tmpfile, mimeType)) {
+                    Log.d(TAG, "Cannot open file: '" + tmpfile + "' mimeType: '" + mimeType + "'");
+                    new MaterialDialog.Builder(mBaseActivity)
+                            .title(R.string.attachments_unknown_mimetype_title)
+                            .content(R.string.attachments_unknown_mimetype_text)
+                            .positiveText(R.string.ok)
+                            .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                @Override
+                                public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                    dialog.dismiss();
+                                }
+                            })
+                            .show();
+                    return null;
+                }
             }
         }
-        return file;
+        return tmpfile;
     }
 
     private void createSavingDialog() {
@@ -200,9 +207,9 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
                 .show();
     }
 
-    private void startSavingFile(long messageId, long attachmentId, final File file) {
-        Log.d(TAG, "Saving file to: " + file.getAbsolutePath());
-        SessionConnector.get().saveMessageAttachment(messageId, attachmentId, file.getAbsolutePath());
+    private void startSavingFile(long messageId, long attachmentId, final File destination) {
+        Log.d(TAG, "Saving file to: " + destination.getAbsolutePath());
+        SessionConnector.get().saveMessageAttachment(messageId, attachmentId, destination.getAbsolutePath());
     }
 
     @Override
@@ -210,7 +217,7 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
         mBaseActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                prepareEntryForProcess(messageId, attachmentId, path);
+                prepareTmpfileForProcess(path);
                 if (mPendingFiles == 0) {
                     if (mSavingAttachmentDialog != null) {
                         mSavingAttachmentDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
@@ -249,35 +256,18 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
         });
     }
 
-    private String mergeMimeType(String currentMimeType, String newMimeType) {
-        if (currentMimeType == null || currentMimeType.length() == 0) {
-            return newMimeType;
-        }
-
-        if (currentMimeType.equals(newMimeType)) {
-            // already correct
-            return currentMimeType;
-        }
-
-        String firstNew = newMimeType.substring(0, newMimeType.indexOf('/'));
-        String firstCurrent = currentMimeType.substring(0, currentMimeType.indexOf('/'));
-        if (firstCurrent.equals(firstNew)) {
-            return firstNew + "/*";
-        } else {
-            return "*/*";
-        }
-
-    }
-
-    private void prepareEntryForProcess(final long messageId, final long attachmentId, final String path) {
+    private void prepareTmpfileForProcess(final String path) {
         mPendingFiles--;
-        mReadyFiles.add(Uri.fromFile(new File(path)));
-        String mimeType = SessionConnector.get().getMessageAttachmentMimeType(messageId, attachmentId);
-        mCurrentActionMergedMimeType = mergeMimeType(mCurrentActionMergedMimeType, mimeType);
+        File tmpfile = new File(path);
+        String filename = tmpfile.getName();
+        Uri uri = FileProvider.getUriForFile(mBaseActivity, KulloApplication.ID, tmpfile);
+        Log.d(TAG, "Serving URI: " + uri);
+        mReadyFiles.add(new ReadyFile(tmpfile, filename, uri));
     }
 
     private void processFiles() {
         Intent deliverIntent = new Intent();
+        deliverIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
         Log.d(TAG, "Processing files ...");
 
@@ -309,21 +299,26 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
 
         if (mCurrentAction.equals(OpenAction.SHARE)) {
             if (mReadyFiles.size() == 1) {
-                deliverIntent.putExtra(Intent.EXTRA_STREAM, mReadyFiles.get(0));
+                ReadyFile rf = mReadyFiles.get(0);
+                deliverIntent.putExtra(Intent.EXTRA_STREAM, rf.uri);
             } else {
-                deliverIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, mReadyFiles);
+                ArrayList<Uri> uris = new ArrayList<>();
+                for (ReadyFile rf : mReadyFiles) {
+                    uris.add(rf.uri);
+                }
+                deliverIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
             }
             deliverIntent.setType(mCurrentActionMergedMimeType);
         } else if (mCurrentAction.equals(OpenAction.SAVE_TO)) {
-            mCurrentActionSaveToTmpFile = mReadyFiles.get(0);
+            ReadyFile rf = mReadyFiles.get(0);
+            mCurrentActionSaveToTmpFile = rf.tmpfile;
+            deliverIntent.putExtra(Intent.EXTRA_TITLE, rf.filename);
             deliverIntent.setType(mCurrentActionMergedMimeType);
-            String filename = mCurrentActionSaveToTmpFile.getLastPathSegment();
-            deliverIntent.putExtra(Intent.EXTRA_TITLE, filename);
         } else {
-            mCurrentActionSaveToTmpFile = mReadyFiles.get(0);
-            deliverIntent.setDataAndType(mCurrentActionSaveToTmpFile, mCurrentActionMergedMimeType);
-            String filename = mCurrentActionSaveToTmpFile.getLastPathSegment();
-            deliverIntent.putExtra(Intent.EXTRA_TITLE, filename);
+            // open / open with
+            ReadyFile rf = mReadyFiles.get(0);
+            deliverIntent.setDataAndType(rf.uri, mCurrentActionMergedMimeType);
+            deliverIntent.putExtra(Intent.EXTRA_TITLE, rf.filename);
         }
 
         Log.d(TAG, "Intent: " + Debug.getIntentDetails(deliverIntent));

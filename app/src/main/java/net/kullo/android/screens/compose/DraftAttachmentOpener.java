@@ -5,8 +5,11 @@ import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.support.annotation.NonNull;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 
+import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
@@ -27,41 +30,28 @@ public class DraftAttachmentOpener implements DraftAttachmentsSaveListenerObserv
     }
 
     public void saveAndOpenAttachment(long conversationId, long attachmentId) {
-        String filename = SessionConnector.get().getDraftAttachmentFilename(conversationId, attachmentId);
-        String mimeType = SessionConnector.get().getDraftAttachmentMimeType(conversationId, attachmentId);
-        File tmpDirectory = mBaseActivity.getExternalFilesDir("tmp");
-        if (tmpDirectory == null) {
-            Log.d(TAG, "Cannot open tmp directory for storing attachments");
-            new MaterialDialog.Builder(mBaseActivity)
-                    .title(R.string.attachments_cannot_open_externaldir_title)
-                    .content(R.string.attachments_cannot_open_externaldir_text)
-                    .positiveText(R.string.ok)
-                    .callback(new MaterialDialog.ButtonCallback() {
-                        @Override
-                        public void onPositive(MaterialDialog dialog) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .show();
-            return;
-        }
+        final String filename = SessionConnector.get().getDraftAttachmentFilename(conversationId, attachmentId);
+        final File fileOpenCacheDir = ((KulloApplication) mBaseActivity.getApplication()).fileOpenCacheDir();
+        final File tmpfile = new File(fileOpenCacheDir, filename);
 
-        File file = new File(tmpDirectory.getPath(), filename);
-
-        if (!((KulloApplication) mBaseActivity.getApplication()).canOpenFileType(file, mimeType)) {
-            Log.d(TAG, "Cannot open file: '" + file + "' mimeType: '" + mimeType + "'");
-            new MaterialDialog.Builder(mBaseActivity)
-                    .title(R.string.attachments_unknown_mimetype_title)
-                    .content(R.string.attachments_unknown_mimetype_text)
-                    .positiveText(R.string.ok)
-                    .callback(new MaterialDialog.ButtonCallback() {
-                        @Override
-                        public void onPositive(MaterialDialog dialog) {
-                            dialog.dismiss();
-                        }
-                    })
-                    .show();
-            return;
+        {
+            // Check this in advance to avoid copying file from DB to cache when it cannot be opened
+            final String mimeType = SessionConnector.get().getDraftAttachmentMimeType(conversationId, attachmentId);
+            if (!((KulloApplication) mBaseActivity.getApplication()).canOpenFileType(tmpfile, mimeType)) {
+                Log.d(TAG, "Cannot open file: '" + tmpfile + "' mimeType: '" + mimeType + "'");
+                new MaterialDialog.Builder(mBaseActivity)
+                        .title(R.string.attachments_unknown_mimetype_title)
+                        .content(R.string.attachments_unknown_mimetype_text)
+                        .positiveText(R.string.ok)
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
+                return;
+            }
         }
 
         mSavingAttachmentDialog = new MaterialDialog.Builder(mBaseActivity)
@@ -71,8 +61,8 @@ public class DraftAttachmentOpener implements DraftAttachmentsSaveListenerObserv
                 .cancelable(false)
                 .show();
 
-        Log.d(TAG, "Saving file to: " + file.getAbsolutePath());
-        SessionConnector.get().saveDraftAttachmentContent(conversationId, attachmentId, file.getAbsolutePath());
+        Log.d(TAG, "Saving file to: " + tmpfile.getAbsolutePath());
+        SessionConnector.get().saveDraftAttachmentContent(conversationId, attachmentId, tmpfile.getAbsolutePath());
     }
 
     public void registerSaveFinishedListenerObserver() {
@@ -130,9 +120,14 @@ public class DraftAttachmentOpener implements DraftAttachmentsSaveListenerObserv
     private void openFile(long conversationId, long attachmentId, String path) {
         String mimeType = SessionConnector.get().getDraftAttachmentMimeType(conversationId, attachmentId);
 
+        File tmpfile = new File(path);
+        Uri uri = FileProvider.getUriForFile(mBaseActivity, KulloApplication.ID, tmpfile);
+        Log.d(TAG, "Providing URI: " + uri);
+
         Intent openFileIntent = new Intent();
-        openFileIntent.setAction(android.content.Intent.ACTION_VIEW);
-        openFileIntent.setDataAndType(Uri.fromFile(new File(path)), mimeType);
+        openFileIntent.setAction(Intent.ACTION_VIEW);
+        openFileIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        openFileIntent.setDataAndType(uri, mimeType);
 
         mBaseActivity.startActivity(openFileIntent);
     }

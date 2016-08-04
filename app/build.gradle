@@ -14,8 +14,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 15
         targetSdkVersion TARGET_SDK_VERSION
-        versionCode 3400
-        versionName "34"
+        versionCode 3500
+        versionName "35"
 
         testInstrumentationRunner "android.test.InstrumentationTestRunner"
     }

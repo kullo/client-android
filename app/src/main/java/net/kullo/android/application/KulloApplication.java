@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import net.danlew.android.joda.JodaTimeAndroid;
@@ -32,6 +33,7 @@ public class KulloApplication extends Application {
     public static final String TAG = "KulloApplication";
     public static final Uri MAINTAINER_WEBSITE = Uri.parse("https://www.kullo.net");
     public static final String LICENSES_FILE = "file:///android_asset/licenses-android.html";
+    public static final String ID = "net.kullo.android";
 
     private static final int LATEST_PREFERENCES_VERSION = 3;
 
@@ -44,6 +46,38 @@ public class KulloApplication extends Application {
 
         deleteObsoletePreferences();
         migratePreferences(getSharedPreferences(KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE));
+
+        cleanExternalFilesDir();
+    }
+
+    private void cleanExternalFilesDir() {
+        // Cleans the entire app-specific external files dir. This was used before
+        // version 35 as temporary storage when handling attachments.
+        // We currently do not use this directory. Database is in internal files (getFilesDir())
+        // and temporary files are in the app's internal cache directory (getCacheDir()).
+        final File appExternal = getExternalFilesDir(null);
+        if (appExternal != null) {
+            // shared storage is currently available
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    cleanDirectory(appExternal);
+                }
+            }).run();
+        }
+    }
+
+    private void cleanDirectory(@NonNull File path) {
+        for (File entry : path.listFiles()) {
+            if (entry.isDirectory()) {
+                cleanDirectory(entry);
+            } else if (entry.isFile()) {
+                Log.d(TAG, "Removing " + entry.getAbsolutePath() + " ...");
+                if (!entry.delete()) {
+                    Log.e(TAG, "Error deleting " + entry.getAbsolutePath());
+                }
+            }
+        }
     }
 
     public DateTimeFormatter getShortDateFormatter() {
@@ -64,6 +98,13 @@ public class KulloApplication extends Application {
         String pattern = ((SimpleDateFormat) systemDateFormat).toLocalizedPattern() + ", " +
             ((SimpleDateFormat) systemTimeFormat).toLocalizedPattern();
         return DateTimeFormat.forPattern(pattern);
+    }
+
+    @NonNull
+    public File fileOpenCacheDir() {
+        final File fileOpenCacheDir = new File(getCacheDir(), "openfile");
+        fileOpenCacheDir.mkdir();
+        return fileOpenCacheDir;
     }
 
     public boolean canOpenFileType(File file, String mimeType) {

@@ -1,6 +1,7 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -53,21 +54,28 @@ public class WelcomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_welcome);
 
         Ui.prepareActivityForTaskManager(this);
+        Ui.setColorStatusBarArrangeHeader(this);
 
         mLayoutContent = (RelativeLayout) findViewById(R.id.content);
+        connectButtons();
 
         // call registerCreateSessionListenerObserver before checkForStoredCredentialsAndCreateSession
         // to ensure existing login information cause an activity switch to ConversationsListActivity
         registerCreateSessionListenerObserver();
+    }
 
-        if (checkForStoredCredentialsAndCreateSession()) {
-            // Activity started as an intermediate step to ConversationsListActivity (must be after logout)
-            mLayoutContent.setVisibility(View.GONE);
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        Dialog googlePlayAvailabilityDialog = GcmConnector.get().checkGooglePlayAvailabilityAndPrompt(this);
+        if (googlePlayAvailabilityDialog != null) {
+            googlePlayAvailabilityDialog.show();
         } else {
-            // Activity started for user to choose login or register
-            Ui.setColorStatusBarArrangeHeader(this);
-            connectButtons();
-            GcmConnector.get().checkGooglePlayAvailabilityAndPrompt(this);
+            if (checkForStoredCredentialsAndCreateSession()) {
+                // Activity started as an intermediate step to ConversationsListActivity (must be after logout)
+                mLayoutContent.setVisibility(View.GONE);
+            }
         }
     }
 

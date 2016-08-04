@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -88,7 +89,14 @@ public class SessionConnector {
     }
 
     private AsyncTasksHolder mTaskHolder = new AsyncTasksHolder();
+
+    // Access to mSession must be synchronized, since some functions like
+    // sessionAvailable() are called from other threads than main. Use extra final
+    // field since mSession can change during the lifetime of SessionConnector
+    // Note that libkullo functions must be called from the main thread.
+    private final Boolean mSessionGuard = false;
     private Session mSession = null;
+
     private PushToken mPushToken = null;
     private Registration mRegistration;
 
@@ -119,6 +127,7 @@ public class SessionConnector {
     //LOGIN LOGOUT
 
     @NonNull
+    @MainThread
     public CreateSessionResult createActivityWithSession(Activity callingActivity) {
         if (sessionAvailable()) return new CreateSessionResult(CreateSessionState.EXISTS);
 
@@ -136,6 +145,7 @@ public class SessionConnector {
         );
     }
 
+    @MainThread
     public void checkLoginAndCreateSession(final LoginActivity callingActivity, final Address address, final MasterKey masterKey) {
         RuntimeAssertion.require(address != null);
         RuntimeAssertion.require(masterKey != null);
@@ -169,6 +179,7 @@ public class SessionConnector {
         }));
     }
 
+    @MainThread
     public AsyncTask createSession(final Activity callingActivity, Credentials credentials) {
         RuntimeAssertion.require(credentials != null);
 
@@ -266,17 +277,28 @@ public class SessionConnector {
             private final String TAG = "ClientCreateSessionList"; // max 23 chars
 
             @Override
-            public void finished(Session session) {
+            public void finished(final Session session) {
                 Log.d(TAG, "createSession finished :)");
-                mSession = session;
-                mSession.syncer().setListener(new ConnectorSyncerListener());
-                migrateUserSettings(callingActivity);
 
-                synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                        ((ClientCreateSessionListenerObserver) observer).finished();
-                    }
+                synchronized (mSessionGuard) {
+                    mSession = session;
+                    mSession.syncer().setListener(new ConnectorSyncerListener());
                 }
+
+                callingActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Caution: everything in here might run after task.waitUntilDone()
+
+                        migrateUserSettings(callingActivity);
+
+                        synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
+                            for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
+                                ((ClientCreateSessionListenerObserver) observer).finished();
+                            }
+                        }
+                    }
+                });
             }
 
             @Override
@@ -335,12 +357,15 @@ public class SessionConnector {
         return new Credentials(address, masterKey);
     }
 
-    @Nullable
+    @MainThread
     public void migrateUserSettings(Context context) {
         SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences(
                 KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
 
-        UserSettings userSettings = mSession.userSettings();
+        UserSettings userSettings;
+        synchronized (mSessionGuard) {
+            userSettings = mSession.userSettings();
+        }
         String addressString = userSettings.address().toString();
         final String KEY_NAME             = addressString + KulloConstants.SEPARATOR + "user_name";
         final String KEY_ORGANIZATION     = addressString + KulloConstants.SEPARATOR + "user_organization";
@@ -385,26 +410,20 @@ public class SessionConnector {
         editor.commit();
     }
 
+    @MainThread
     public boolean userSettingsAreValidForSync() {
-        return !mSession.userSettings().name().isEmpty();
+        synchronized (mSessionGuard) {
+            return !mSession.userSettings().name().isEmpty();
+        }
     }
 
-    /*
-     * Callback runs on UI thread
-     */
+    // Callback runs on main thread
+    @MainThread
     public void logout(final Activity callingActivity, final Runnable callback) {
         Log.d(TAG, "Logging out user ...");
 
-        if (mSession != null) {
+        if (sessionAvailable()) {
             new android.os.AsyncTask<Void, Void, Void>() {
-                private Address address;
-
-                @Override
-                protected void onPreExecute() {
-                    // Access UserSetting here on UI thread
-                    address = mSession.userSettings().address();
-                }
-
                 @Override
                 protected Void doInBackground(Void... params) {
                     mSession.syncer().cancel();
@@ -414,12 +433,11 @@ public class SessionConnector {
 
                     // Since all workers are done, this should be the last reference
                     // of the session.
-                    mSession = null;
+                    synchronized (mSessionGuard) {
+                        mSession = null;
+                    }
 
-                    // this would delete the account data.  Commented out by now
-                    // forgetUser(callingActivity, address);
-
-                    // remove active user address from shared preferences
+                    // remove active user entry from shared preferences
                     SharedPreferences sharedPref = callingActivity.getApplicationContext().getSharedPreferences(
                         KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
                     sharedPref.edit().remove(KulloConstants.ACTIVE_USER).apply();
@@ -465,23 +483,37 @@ public class SessionConnector {
     }
 
     public boolean sessionAvailable() {
-        return mSession != null;
+        synchronized (mSessionGuard) {
+            return mSession != null;
+        }
     }
 
 
     // SYNC
+
+    @MainThread
     public boolean isSyncing() {
-        return mSession.syncer().isSyncing();
+        synchronized (mSessionGuard) {
+            return mSession.syncer().isSyncing();
+        }
     }
 
+    @MainThread
     public void syncKullo() {
-        RuntimeAssertion.require(mSession != null);
-        mSession.syncer().requestSync(SyncMode.WITHOUTATTACHMENTS);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.syncer().requestSync(SyncMode.WITHOUTATTACHMENTS);
+        }
     }
 
+    @MainThread
     public void syncIfNecessary() {
-        RuntimeAssertion.require(mSession != null);
-        DateTime lastFullSync = mSession.syncer().lastFullSync();
+        DateTime lastFullSync;
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            lastFullSync = mSession.syncer().lastFullSync();
+        }
+
         if (lastFullSync == null) {
             syncKullo();
         } else {
@@ -493,9 +525,12 @@ public class SessionConnector {
         }
     }
 
+    @MainThread
     public void sendMessages() {
-        RuntimeAssertion.require(mSession != null);
-        mSession.syncer().requestSync(SyncMode.SENDONLY);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.syncer().requestSync(SyncMode.SENDONLY);
+        }
     }
 
     private class ConnectorSyncerListener extends SyncerListener {
@@ -548,6 +583,7 @@ public class SessionConnector {
     // CONVERSATIONS
 
     @NonNull
+    @MainThread
     public List<Long> getAllConversationIdsSorted() {
         RuntimeAssertion.require(mSession != null);
 
@@ -560,6 +596,7 @@ public class SessionConnector {
     }
 
     @NonNull
+    @MainThread
     public org.joda.time.DateTime getLatestMessageTimestamp(long conversationId) {
         RuntimeAssertion.require(mSession != null);
 
@@ -572,12 +609,16 @@ public class SessionConnector {
         return KulloUtils.convertToJodaTime(Conversations.emptyConversationTimestamp());
     }
 
+    @MainThread
     public void removeConversation(long conversationId) {
-        RuntimeAssertion.require(mSession != null);
-        mSession.conversations().remove(conversationId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.conversations().remove(conversationId);
+        }
     }
 
     // Get all data at once to avoid unnecessary JNI calls when scrolling the list
+    @MainThread
     public ConversationData getConversationData(Context context, long conversationId) {
         RuntimeAssertion.require(mSession != null);
 
@@ -632,34 +673,44 @@ public class SessionConnector {
         return StringUtils.join(participantTitles, ", ");
     }
 
+    @MainThread
     public int getConversationUnreadCount(long conversationId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.conversations().unreadMessages(conversationId);
-    }
-
-    public void saveDraftForConversation(long conversationId, String message, boolean prepareToSend) {
-        RuntimeAssertion.require(mSession != null);
-
-        if (prepareToSend) {
-            // User is done writing. This trims the message before sending
-            mSession.drafts().setText(conversationId, message.trim());
-            mSession.drafts().prepareToSend(conversationId);
-        } else {
-            mSession.drafts().setText(conversationId, message);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.conversations().unreadMessages(conversationId);
         }
     }
 
-    public void clearDraftForConversation(long conversationId) {
-        RuntimeAssertion.require(mSession != null);
+    @MainThread
+    public void saveDraftForConversation(long conversationId, String message, boolean prepareToSend) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
 
-        mSession.drafts().clear(conversationId);
+            if (prepareToSend) {
+                // User is done writing. This trims the message before sending
+                mSession.drafts().setText(conversationId, message.trim());
+                mSession.drafts().prepareToSend(conversationId);
+            } else {
+                mSession.drafts().setText(conversationId, message);
+            }
+        }
+    }
+
+    @MainThread
+    public void clearDraftForConversation(long conversationId) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.drafts().clear(conversationId);
+        }
     }
 
     @NonNull
+    @MainThread
     public String getDraftText(long conversationId) {
-        RuntimeAssertion.require(mSession != null);
-
-        return mSession.drafts().text(conversationId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.drafts().text(conversationId);
+        }
     }
 
     public long startConversationWithSingleRecipient(String recipientString) {
@@ -669,14 +720,17 @@ public class SessionConnector {
         return addNewConversationForKulloAddresses(recipients);
     }
 
+    @MainThread
     public long addNewConversationForKulloAddresses(AddressSet participants) {
-        RuntimeAssertion.require(mSession != null);
-
-        return mSession.conversations().add(participants);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.conversations().add(participants);
+        }
     }
 
     // ATTACHMENTS
     @NonNull
+    @MainThread
     public AsyncTask addAttachmentToDraft(long conversationId, String filePath, String mimeType) {
         RuntimeAssertion.require(mSession != null);
         RuntimeAssertion.require(filePath != null);
@@ -706,31 +760,47 @@ public class SessionConnector {
         return task;
     }
 
+    @MainThread
     public void removeDraftAttachment(long conversationId, long attachmentId) {
-        RuntimeAssertion.require(mSession != null);
-        mSession.draftAttachments().remove(conversationId, attachmentId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.draftAttachments().remove(conversationId, attachmentId);
+        }
     }
 
+    @MainThread
     public ArrayList<Long> getAttachmentsForDraft(long conversationId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.draftAttachments().allForDraft(conversationId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.draftAttachments().allForDraft(conversationId);
+        }
     }
 
+    @MainThread
     public String getDraftAttachmentFilename(long conversationId, long attachmentId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.draftAttachments().filename(conversationId, attachmentId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.draftAttachments().filename(conversationId, attachmentId);
+        }
     }
 
+    @MainThread
     public long getDraftAttachmentFilesize(long conversationId, long attachmentId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.draftAttachments().size(conversationId, attachmentId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.draftAttachments().size(conversationId, attachmentId);
+        }
     }
 
+    @MainThread
     public String getDraftAttachmentMimeType(long conversationId, long attachmentId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.draftAttachments().mimeType(conversationId, attachmentId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.draftAttachments().mimeType(conversationId, attachmentId);
+        }
     }
 
+    @MainThread
     public void saveDraftAttachmentContent(long conversationId, long attachmentId, String path) {
         RuntimeAssertion.require(mSession != null);
 
@@ -758,173 +828,262 @@ public class SessionConnector {
     // PARTICIPANTS SENDERS
 
     @NonNull
+    @MainThread
     public AddressSet getParticipantAddresses(long conversationId) {
-        RuntimeAssertion.require(mSession != null);
-
-        return new AddressSet(mSession.conversations().participants(conversationId));
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return new AddressSet(mSession.conversations().participants(conversationId));
+        }
     }
 
     @Nullable
+    @MainThread
     public String getGlobalParticipantName(Address address) {
-        RuntimeAssertion.require(mSession != null);
-        RuntimeAssertion.require(address != null);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            RuntimeAssertion.require(address != null);
 
-        long latestMessageId = mSession.messages().latestForSender(address);
+            long latestMessageId = mSession.messages().latestForSender(address);
 
-        if (latestMessageId >= 0) {
-            return mSession.senders().name(latestMessageId);
-        } else {
-            return null;
+            if (latestMessageId >= 0) {
+                return mSession.senders().name(latestMessageId);
+            } else {
+                return null;
+            }
         }
     }
 
     //CLIENT CURRENT USER
 
+    @NonNull
+    @MainThread
     public String getClientName() {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.userSettings().name();
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.userSettings().name();
+        }
     }
 
+    @NonNull
+    @MainThread
     public String getClientOrganization() {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.userSettings().organization();
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.userSettings().organization();
+        }
     }
 
+    @NonNull
+    @MainThread
     public String getClientFooter() {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.userSettings().footer();
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.userSettings().footer();
+        }
     }
 
+    @MainThread
     public void setClientName(String name) {
-        RuntimeAssertion.require(mSession != null);
-        RuntimeAssertion.require(name != null);
-        mSession.userSettings().setName(name);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            RuntimeAssertion.require(name != null);
+            mSession.userSettings().setName(name);
+        }
     }
 
+    @MainThread
     public void setClientOrganization(String organization) {
-        RuntimeAssertion.require(mSession != null);
-        RuntimeAssertion.require(organization != null);
-        mSession.userSettings().setOrganization(organization);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            RuntimeAssertion.require(organization != null);
+            mSession.userSettings().setOrganization(organization);
+        }
     }
 
+    @MainThread
     public void setClientFooter(String footer) {
-        RuntimeAssertion.require(mSession != null);
-        RuntimeAssertion.require(footer != null);
-        mSession.userSettings().setFooter(footer);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            RuntimeAssertion.require(footer != null);
+            mSession.userSettings().setFooter(footer);
+        }
     }
 
+    @MainThread
     public void setClientAvatar(byte[] avatar) {
-        RuntimeAssertion.require(mSession != null);
-        RuntimeAssertion.require(avatar != null);
-        mSession.userSettings().setAvatar(avatar);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            RuntimeAssertion.require(avatar != null);
+            mSession.userSettings().setAvatar(avatar);
+        }
     }
 
+    @MainThread
     public void setClientAvatarMimeType(String avatarMimeType) {
-        RuntimeAssertion.require(mSession != null);
-        RuntimeAssertion.require(avatarMimeType != null);
-        mSession.userSettings().setAvatarMimeType(avatarMimeType);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            RuntimeAssertion.require(avatarMimeType != null);
+            mSession.userSettings().setAvatarMimeType(avatarMimeType);
+        }
     }
 
+    @MainThread
     public String getClientAddressAsString() {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.userSettings().address().toString();
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.userSettings().address().toString();
+        }
     }
 
+    @MainThread
     public byte[] getClientAvatar() {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.userSettings().avatar();
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.userSettings().avatar();
+        }
     }
 
+    @MainThread
     public String getMasterKeyAsPem() {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.userSettings().masterKey().pem();
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.userSettings().masterKey().pem();
+        }
     }
 
     // MESSAGE
 
+    @MainThread
     public void removeMessage(final long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        mSession.messages().remove(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.messages().remove(messageId);
+        }
     }
 
     @NonNull
+    @MainThread
     public List<Long> getAllMessageIdsSorted(long conversationId) {
-        RuntimeAssertion.require(mSession != null);
+        List<Long> out;
+
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            out = mSession.messages().allForConversation(conversationId);
+        }
 
         // List is sorted by id (equal to dateReceived); Reverse to get newest first
-        List<Long> list = mSession.messages().allForConversation(conversationId);
-        Collections.reverse(list);
-        return list;
+        Collections.reverse(out);
+        return out;
     }
 
+    @MainThread
     public int getMessageCount(long conversationId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.messages().allForConversation(conversationId).size();
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messages().allForConversation(conversationId).size();
+        }
     }
 
+    @MainThread
     public long getMessageConversation(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.messages().conversation(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messages().conversation(messageId);
+        }
     }
 
     @NonNull
+    @MainThread
     public String getMessageText(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.messages().text(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messages().text(messageId);
+        }
     }
 
     @NonNull
+    @MainThread
     public String getMessageFooter(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.messages().footer(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messages().footer(messageId);
+        }
     }
 
+    @MainThread
     public boolean getMessageUnread(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        return !mSession.messages().isRead(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return !mSession.messages().isRead(messageId);
+        }
     }
 
+    @MainThread
     public void setMessageRead(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        mSession.messages().setRead(messageId, true);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.messages().setRead(messageId, true);
+        }
     }
 
     @NonNull
+    @MainThread
     public org.joda.time.DateTime getMessageDateReceived(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        return KulloUtils.convertToJodaTime(mSession.messages().dateReceived(messageId));
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return KulloUtils.convertToJodaTime(mSession.messages().dateReceived(messageId));
+        }
     }
 
+    @MainThread
     public boolean getMessageAttachmentsDownloaded(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.messageAttachments().allAttachmentsDownloaded(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messageAttachments().allAttachmentsDownloaded(messageId);
+        }
     }
 
+    @MainThread
     public ArrayList<Long> getMessageAttachmentsIds(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.messageAttachments().allForMessage(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messageAttachments().allForMessage(messageId);
+        }
     }
 
+    @MainThread
     public String getMessageAttachmentFilename(long messageId, long attachmentId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.messageAttachments().filename(messageId, attachmentId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messageAttachments().filename(messageId, attachmentId);
+        }
     }
 
+    @MainThread
     public long getMessageAttachmentFilesize(long messageId, long attachmentId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.messageAttachments().size(messageId, attachmentId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messageAttachments().size(messageId, attachmentId);
+        }
     }
 
+    @MainThread
     public String getMessageAttachmentMimeType(long messageId, long attachmentId) {
-        RuntimeAssertion.require(mSession != null);
-        return mSession.messageAttachments().mimeType(messageId, attachmentId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messageAttachments().mimeType(messageId, attachmentId);
+        }
     }
 
+    @MainThread
     public void downloadAttachments(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        mSession.syncer().requestDownloadingAttachmentsForMessage(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.syncer().requestDownloadingAttachmentsForMessage(messageId);
+        }
     }
 
+    @MainThread
     public void saveMessageAttachment(long messageId, long attachmentId, String path) {
         RuntimeAssertion.require(mSession != null);
         mTaskHolder.add(mSession.messageAttachments().saveToAsync(messageId, attachmentId, path, new MessageAttachmentsSaveToListener() {
@@ -949,19 +1108,21 @@ public class SessionConnector {
     }
 
     @NonNull
+    @MainThread
     public String getSenderName(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        RuntimeAssertion.require(messageId > 0);
-
-        return mSession.senders().name(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.senders().name(messageId);
+        }
     }
 
     @NonNull
+    @MainThread
     public String getSenderOrganization(long messageId) {
-        RuntimeAssertion.require(mSession != null);
-        RuntimeAssertion.require(messageId > 0);
-
-        return mSession.senders().organization(messageId);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.senders().organization(messageId);
+        }
     }
 
     /**
@@ -970,26 +1131,27 @@ public class SessionConnector {
      * null is returned.
      */
     @Nullable
+    @MainThread
     public Bitmap getSenderAvatar(Context context, long messageId) {
         RuntimeAssertion.require(mSession != null);
 
-        Bitmap avatarBitmap = AvatarUtils.avatarToBitmap(mSession.senders().avatar(messageId));
+        final boolean messageExists = mSession.senders().address(messageId) != null;
+        if (!messageExists) return null;
+
+        final byte[] senderAvatar = mSession.senders().avatar(messageId);
+        final String senderName = mSession.senders().name(messageId);
+
+        Bitmap avatarBitmap = AvatarUtils.avatarToBitmap(senderAvatar);
         if (avatarBitmap != null) {
             return avatarBitmap;
-        }
-
-        Address senderAddress = mSession.senders().address(messageId);
-        if (senderAddress != null) {
-            String senderName = mSession.senders().name(messageId);
+        } else {
             String initials = KulloUtils.generateInitialsForAddressAndName(senderName);
             return AvatarUtils.getSenderThumbnailFromInitials(context, initials);
         }
-
-        // message does not exist
-        return null;
     }
 
     // REGISTRATION
+    @MainThread
     public void generateKeysAsync() {
         Client client = ClientConnector.get().getClient();
 
@@ -1015,6 +1177,7 @@ public class SessionConnector {
         }));
     }
 
+    @MainThread
     public void registerAddressAsync(@NonNull final String addressString) {
         RuntimeAssertion.require(mRegistration != null);
 
@@ -1062,13 +1225,14 @@ public class SessionConnector {
 
     // Push Notifications
 
+    @MainThread
+    // Tries to register a push token and does not wait for return value
     public void registerPushToken(String registrationToken) {
         RuntimeAssertion.require(mSession != null);
 
         // Token changed? unregister old one
         if (mPushToken != null) {
-            if (!tryUnregisterPushToken(3000))
-            {
+            if (!tryUnregisterPushToken(3000)) {
                 Log.w(TAG, "Could not unregister old push token.");
             }
         }
@@ -1077,23 +1241,23 @@ public class SessionConnector {
         mPushToken = new PushToken(
                 PushTokenType.GCM, registrationToken, PushTokenEnvironment.ANDROID);
 
-        AsyncTask registerTask = mSession.registerPushToken(mPushToken);
-        if (registerTask != null) {
-            registerTask.waitUntilDone();
-        }
+        mTaskHolder.add(mSession.registerPushToken(mPushToken));
     }
 
     // Runs callback on UI thread
     // Blocks UI thread up to `timeoutMs` milliseconds. This is intentional to ensure
     // all API calls are run on the UI thread.
+    @MainThread
     public boolean tryUnregisterPushToken(int timeoutMs) {
-        RuntimeAssertion.require(mSession != null);
-
         if (mPushToken == null) {
             return true;
         }
 
-        AsyncTask unregisterTask = mSession.unregisterPushToken(mPushToken);
+        AsyncTask unregisterTask;
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            unregisterTask = mSession.unregisterPushToken(mPushToken);
+        }
         unregisterTask.waitForMs(timeoutMs);
 
         if (unregisterTask.isDone()) {
@@ -1107,7 +1271,9 @@ public class SessionConnector {
     }
 
     public boolean hasPushToken() {
-        RuntimeAssertion.require(mSession != null);
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+        }
 
         return mPushToken != null;
     }
@@ -1154,11 +1320,5 @@ public class SessionConnector {
             }
         }
         Log.w(TAG, "Event observer to be removed not found for type: '" + type.toString() + "'");
-    }
-
-    @NonNull
-    public Session getSession() {
-        RuntimeAssertion.require(mSession != null);
-        return mSession;
     }
 }

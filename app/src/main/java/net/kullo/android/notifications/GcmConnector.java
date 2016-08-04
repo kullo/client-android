@@ -2,9 +2,11 @@
 package net.kullo.android.notifications;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.support.annotation.CheckResult;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -25,26 +27,30 @@ public class GcmConnector {
     }
 
     /* members */
-    private boolean mHasGooglePlay = false;
+    private Boolean mHasGooglePlay = null;
 
     // check gplay at app start, prompt user if not there
-    public void checkGooglePlayAvailabilityAndPrompt(Activity activity) {
+    @CheckResult
+    public Dialog checkGooglePlayAvailabilityAndPrompt(Activity activity) {
         GoogleApiAvailability playAPI = GoogleApiAvailability.getInstance();
         int result = playAPI.isGooglePlayServicesAvailable(activity);
         if (result != ConnectionResult.SUCCESS) {
             if (playAPI.isUserResolvableError(result)) {
-                playAPI.getErrorDialog(activity, result, PLAY_SERVICES_RESOLUTION_REQUEST).show();
+                return playAPI.getErrorDialog(activity, result, PLAY_SERVICES_RESOLUTION_REQUEST);
             } else {
                 Log.i(TAG, "Failed to connect to Google Play Services");
+                return null;
             }
         } else {
             mHasGooglePlay = true;
+            return null;
         }
     }
 
     // if conditions are right, launch service that will retrieve a new token
     public void fetchAndRegisterToken(Context context) {
         RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
+        checkGooglePlay(context);
 
         if (!mHasGooglePlay) {
             Log.i(TAG, "Device does not have Google Play Services. Skipping Push notifications.");
@@ -64,5 +70,13 @@ public class GcmConnector {
 
     public void removeAllNotifications(Context context) {
         ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
+    }
+
+    private void checkGooglePlay(Context context) {
+        if (mHasGooglePlay == null) {
+            GoogleApiAvailability playAPI = GoogleApiAvailability.getInstance();
+            int result = playAPI.isGooglePlayServicesAvailable(context);
+            mHasGooglePlay = (result == ConnectionResult.SUCCESS);
+        }
     }
 }

@@ -1,11 +1,20 @@
 Kullo for Android
 -----------------
 
+## v35 (2016-08-03)
+
+ * Push notification: don't jump to inbox when there is a GCM availability error message
+ * Push notification: properly check GCM availability when app is started at a different activity
+ * Use stream method to open and share attachments
+ * Store all temporary files in the cache directory
+ * Other minor stability improvements
+
 ## v34 (2016-07-22)
 
  * Fix a timeout issue when sending or receiving large attachments
  * Fix crash when leaving inbox in landscape mode
  * Fix bug in "Save to" action for attachments
+ * Use app-specific external dir to store camera images instead of "amfb" on SD card
  * Other minor stability improvements and dependency updates
 
 ### Components

@@ -1,23 +1,25 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.graphics.Bitmap;
-import com.isseiaoki.simplecropview.CropImageView;
-import android.view.MenuItem;
 import android.view.Menu;
-import android.content.Intent;
-import android.net.Uri;
-import java.io.InputStream;
-import android.graphics.BitmapFactory;
-import java.io.FileNotFoundException;
+import android.view.MenuItem;
+
+import com.isseiaoki.simplecropview.CropImageView;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.SessionConnector;
-import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.littlehelpers.Ui;
+
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 public class CropImageActivity extends AppCompatActivity {
     public static final String INPUT_METHOD = "InputMethod";
@@ -37,7 +39,7 @@ public class CropImageActivity extends AppCompatActivity {
         Ui.setColorStatusBarArrangeHeader(this);
 
         mCropImageView = (CropImageView)findViewById(R.id.cropImageView);
-        getInputBitmap();
+        loadInputBitmap();
     }
 
     @Override
@@ -65,24 +67,22 @@ public class CropImageActivity extends AppCompatActivity {
         return true;
     }
 
-    private void getInputBitmap() {
+    private void loadInputBitmap() {
         final Intent intent = getIntent();
         final Uri fileUri = Uri.parse(intent.getStringExtra(BITMAP_INPUT_URI));
-        final String method = intent.getStringExtra(INPUT_METHOD);
-        Bitmap selectedBitmap = null;
-        if (method.equals(CAMERA_INPUT)) {
-            selectedBitmap = BitmapFactory.decodeFile(fileUri.getPath());
-        } else if (method.equals(FILE_INPUT)) {
-            try {
-                InputStream input = this.getContentResolver().openInputStream(fileUri);
-                selectedBitmap = BitmapFactory.decodeStream(input);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
+
+        Bitmap selectedBitmap;
+        try {
+            InputStream input = getContentResolver().openInputStream(fileUri);
+            selectedBitmap = BitmapFactory.decodeStream(input);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return;
         }
 
-        // to reduce memory usage, limit maximum size of bitmap (otherwise we risk exception for out of memory)
+        // Limit maximum size of bitmap. Otherwise we risk exception for out of memory
         selectedBitmap = AvatarUtils.resizeBitmapWithLongerSideLimitedTo(KulloConstants.AVATAR_MAX_ALLOWED_SIDE, selectedBitmap);
+
         mCropImageView.setImageBitmap(selectedBitmap);
     }
 

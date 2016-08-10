@@ -1,6 +1,17 @@
 Kullo for Android
 -----------------
 
+## v36 (2016-08-08)
+
+ * Fix network issue when sending message to multiple recipients
+ * Improve compression performance for large attachments
+ * Store temporary camera images in the cache directory
+
+### Components
+
+ * Update libkullo to v54
+ * Update SmartSqlite to v13
+
 ## v35 (2016-08-03)
 
  * Push notification: don't jump to inbox when there is a GCM availability error message

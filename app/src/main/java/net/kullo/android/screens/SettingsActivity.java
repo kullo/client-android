@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.design.widget.TextInputLayout;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -23,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
@@ -38,7 +40,7 @@ import java.util.List;
 public class SettingsActivity extends AppCompatActivity {
     public static final String TAG = "SettingsActivity";
 
-    private static final int REQUEST_CODE_SELECT_AVATAR_IMAGE = 1;
+    private static final int REQUEST_CODE_AVATAR_SOURCE_SELECTION = 1;
     private static final int REQUEST_CODE_CROP_AVATAR_IMAGE = 2;
     private static final String ACTION_CLEAR_AVATAR = "ClearAvatar";
 
@@ -170,9 +172,9 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void openSelectAvatarSourcesMenu() {
         // Determine Uri of camera image to save
-        final File cameraOutputDir = getExternalFilesDir(null);
-        final File cameraOutputFile = new File(cameraOutputDir, "cameraimg_" + System.currentTimeMillis() + ".jpg");
-        mCameraOutputFileUri = Uri.fromFile(cameraOutputFile);
+        final File cameraOutputDir = ((KulloApplication) getApplication()).captureCacheDir();
+        final File cameraOutputFile = new File(cameraOutputDir, "img_" + System.currentTimeMillis() + ".jpg");
+        mCameraOutputFileUri = FileProvider.getUriForFile(this, KulloApplication.ID, cameraOutputFile);
         Log.d(TAG, "Camera output file: " + mCameraOutputFileUri);
 
         // Option list
@@ -191,11 +193,10 @@ public class SettingsActivity extends AppCompatActivity {
         final PackageManager packageManager = this.getPackageManager();
         final List<ResolveInfo> cameras = packageManager.queryIntentActivities(captureIntent, 0);
         for (ResolveInfo camera : cameras) {
-            final String packageName = camera.activityInfo.packageName;
             final Intent intent = new Intent(captureIntent);
             intent.setComponent(new ComponentName(camera.activityInfo.packageName, camera.activityInfo.name));
-            intent.setPackage(packageName);
             intent.putExtra(MediaStore.EXTRA_OUTPUT, mCameraOutputFileUri);
+            intent.setFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             extraIntents.add(intent);
         }
 
@@ -209,7 +210,7 @@ public class SettingsActivity extends AppCompatActivity {
         chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, extraIntents.toArray(new Parcelable[]{}));
 
         // Launch the option menu
-        startActivityForResult(chooserIntent, REQUEST_CODE_SELECT_AVATAR_IMAGE);
+        startActivityForResult(chooserIntent, REQUEST_CODE_AVATAR_SOURCE_SELECTION);
     }
 
     private boolean detectClearAvatarIntent() {
@@ -230,7 +231,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE_SELECT_AVATAR_IMAGE) {
+        if (requestCode == REQUEST_CODE_AVATAR_SOURCE_SELECTION) {
             if (resultCode == Activity.RESULT_OK) {
                 // identify action
                 final boolean isCamera;

@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- the name "openfile" is part of the public URI, e.g. content://net.kullo.android/openfile/123.png -->
-    <!-- the path "openfile" is the cache dir subfolder where files are stored before opening -->
+    <!--
+    the name "openfile" is part of the public URI, e.g. content://net.kullo.android/openfile/123.png
+    the path "openfile" is the cache dir subfolder where files are stored before opening
+    See also KulloApplication#fileOpenCacheDir()
+    -->
     <cache-path name="openfile" path="openfile" />
+
+    <!--
+    the name "capture" is part of the public URI, e.g. content://net.kullo.android/capture/123.jpg
+    the path "capture" is the cache dir subfolder where files are stored before opening
+    See also KulloApplication#captureCacheDir()
+    -->
+    <cache-path name="capture" path="capture" />
 </paths>

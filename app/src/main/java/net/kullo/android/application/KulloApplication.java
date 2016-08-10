@@ -107,6 +107,13 @@ public class KulloApplication extends Application {
         return fileOpenCacheDir;
     }
 
+    @NonNull
+    public File captureCacheDir() {
+        final File fileOpenCacheDir = new File(getCacheDir(), "capture");
+        fileOpenCacheDir.mkdir();
+        return fileOpenCacheDir;
+    }
+
     public boolean canOpenFileType(File file, String mimeType) {
         Intent openFileIntent = new Intent();
         openFileIntent.setAction(android.content.Intent.ACTION_VIEW);

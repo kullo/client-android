@@ -5,9 +5,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
-import android.media.RingtoneManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -50,7 +47,7 @@ public class GcmNotificationListenerService extends GcmListenerService {
         } else {
             // no notification payload, sync silently
             SessionConnector sessionConnector = SessionConnector.get();
-            if (sessionConnector.sessionAvailable()) sessionConnector.syncKullo();
+            if (sessionConnector.sessionAvailable()) sessionConnector.sync();
         }
     }
 }

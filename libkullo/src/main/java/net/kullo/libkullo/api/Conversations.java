@@ -26,10 +26,11 @@ public abstract class Conversations {
     public abstract long add(HashSet<Address> participants);
 
     /**
-     * Removes the given conversation and all data that depends on it (messages,
-     * draft, ...)
+     * Triggers removal of the given conversation. This will also remove all
+     * dependencies (messages, drafts, ...). Removal happens asynchronously after
+     * calling this method.
      */
-    public abstract void remove(long convId);
+    public abstract void triggerRemoval(long convId);
 
     /** Returns the participants (excluding the local user) */
     public abstract HashSet<Address> participants(long convId);
@@ -100,12 +101,12 @@ public abstract class Conversations {
         private native long native_add(long _nativeRef, HashSet<Address> participants);
 
         @Override
-        public void remove(long convId)
+        public void triggerRemoval(long convId)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            native_remove(this.nativeRef, convId);
+            native_triggerRemoval(this.nativeRef, convId);
         }
-        private native void native_remove(long _nativeRef, long convId);
+        private native void native_triggerRemoval(long _nativeRef, long convId);
 
         @Override
         public HashSet<Address> participants(long convId)

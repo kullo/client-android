@@ -90,10 +90,12 @@ ellipsis (…)
     <string name="action_toggle_message_size">Inflate</string>
     <string name="empty_conversation_title">Neu</string>
     <string name="download_attachments">Herunterladen</string>
-    <string name="swipe_to_refresh">Wische nach unten, um Posteingang zu synchronisieren</string>
+    <string name="conversations_empty_state_text">Derzeit sind keine Konversationen in diesem Posteingang. Synchronisiere um Nachrichten vom Server zu laden oder starte eine neue Konversation.</string>
     <string name="conversation_options">Konversation bearbeiten</string>
     <string name="title_n_selected">%1$d ausgewählt</string>
-    <string name="toast_n_skipped">%1$d nicht-leere Konversationen übersprungen</string>
+    <string name="conversations_confirm_delete_conversations_title">Konversationen löschen</string>
+    <string name="conversations_confirm_delete_conversations_body">Wirklich %1$d Konversationen mit insgesamt %2$d Nachrichten löschen?</string>
+    <string name="conversations_toast_n_empty_deleted">Lösche %1$d leere Konversationen</string>
 
     <!-- messages list -->
     <string name="message_options">Nachricht bearbeiten</string>

@@ -10,6 +10,7 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -439,18 +440,22 @@ public class ComposeActivity extends AppCompatActivity {
         }
     }
 
+    @NonNull
+    private static String mimeTypeOrFallback(String mimeType) {
+        if (mimeType != null) return mimeType;
+        else return "application/octet-stream";
+    }
+
     private void handleAttachmentFromFileUri(final Uri selectedFileUri) {
         final String guessedMimeType = URLConnection.guessContentTypeFromName(selectedFileUri.toString());
-        final String mimeType = (guessedMimeType != null)
-                ? guessedMimeType
-                : "application/octet-stream";
+        final String mimeType = mimeTypeOrFallback(guessedMimeType);
 
         AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, selectedFileUri.getPath(), mimeType);
         task.waitUntilDone();
     }
 
     private void handleAttachmentFromContentUri(final Uri selectedFileUri) {
-        final String mimeType = getContentResolver().getType(selectedFileUri);
+        final String mimeType = mimeTypeOrFallback(getContentResolver().getType(selectedFileUri));
 
         // copy file in known location for uploading
         String tmpFilename = "tmp.tmp"; // default filename if original can't be retrieved

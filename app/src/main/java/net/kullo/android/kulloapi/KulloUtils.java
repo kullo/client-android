@@ -12,34 +12,35 @@ import net.kullo.libkullo.api.DateTime;
 import net.kullo.libkullo.api.MasterKey;
 import net.kullo.libkullo.api.SyncProgress;
 
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class KulloUtils {
-    private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
-    private static final Pattern NON_ALPHANUMERIC = Pattern.compile("[_\\W]");
+    // match all words, beginning with a letter or a digit (alnum + (word|-)*)
+    private static final Pattern WORD = Pattern.compile("\\p{Alnum}(?:-|\\w)*");
 
     public static String generateInitialsForAddressAndName(@Nullable String name) {
-        List<String> out = new LinkedList<>();
+        String out = "";
 
         if (name != null && !name.isEmpty()) {
-            String[] nameParts = WHITESPACE.split(name);
+            Matcher matcher = WORD.matcher(name.toUpperCase());
+            List<String> nameParts = new ArrayList<>();
 
-            for (String namePart : nameParts) {
-                namePart = NON_ALPHANUMERIC.matcher(namePart).replaceAll("");
+            while (matcher.find()) {
+                nameParts.add(matcher.group());
+            }
 
-                if (!namePart.isEmpty()) {
-                    out.add(getFirstUnicodeCharacter(namePart));
-
-                    if (out.size() == 2) break;
-                }
+            if (nameParts.size() >= 1) {
+                out += getFirstUnicodeCharacter(nameParts.get(0));
+            }
+            if (nameParts.size() >= 2) {
+                out += getFirstUnicodeCharacter(nameParts.get(nameParts.size() - 1));
             }
         }
 
-        return StringUtils.join(out, "");
+        return out;
     }
 
     @NonNull

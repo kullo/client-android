@@ -16,37 +16,63 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * the queue.
  */
 public abstract class Syncer {
-    /** Set or replace the SyncerListener which should receive sync events. */
+    /**
+     * Set or replace the SyncerListener which should receive sync events.
+     *
+     * Thread-safe.
+     */
     public abstract void setListener(SyncerListener listener);
 
     /**
      * Get the finishing time of the last successful full sync.
      * A full sync is one with "WithoutAttachments" or "Everything" sync mode.
      * Returns null if there hasn't been a sync yet.
+     *
+     * Thread-safe.
      */
     public abstract DateTime lastFullSync();
 
-    /** Request that the data specified in mode is synced. */
+    /**
+     * Request that the data specified in mode is synced.
+     *
+     * Thread-safe.
+     */
     public abstract void requestSync(SyncMode mode);
 
-    /** Request that all attachments for the given message are downloaded. */
+    /**
+     * Request that all attachments for the given message are downloaded.
+     *
+     * Thread-safe.
+     */
     public abstract void requestDownloadingAttachmentsForMessage(long msgId);
 
     /**
      * Cancels the running sync and enqueued syncs, but doesn't wait for
      * termination. Stops all callbacks, even if the task continues to run.
+     *
+     * Thread-safe.
      */
     public abstract void cancel();
 
-    /** Returns true iff a sync is currently running. */
+    /**
+     * Returns true iff a sync is currently running.
+     *
+     * Thread-safe.
+     */
     public abstract boolean isSyncing();
 
-    /** Blocks until the running sync and all enqueued syncs have finished. */
+    /**
+     * Blocks until the running sync and all enqueued syncs have finished.
+     *
+     * Thread-safe.
+     */
     public abstract void waitUntilDone();
 
     /**
      * Blocks until the sync and all enqueued syncs have finished executing or
      * until the timeout has expired. Returns false on timeout, true otherwise.
+     *
+     * Thread-safe.
      */
     public abstract boolean waitForMs(int timeout);
 

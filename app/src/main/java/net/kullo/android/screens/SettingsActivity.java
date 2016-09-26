@@ -111,7 +111,7 @@ public class SettingsActivity extends AppCompatActivity {
         SessionConnector.get().setClientFooter(mFooterEditText.getText().toString().trim());
 
         // Upload potential changes to UserSettings
-        SessionConnector.get().syncKullo();
+        SessionConnector.get().sync();
     }
 
     @Override

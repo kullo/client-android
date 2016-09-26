@@ -1,6 +1,22 @@
 Kullo for Android
 -----------------
 
+## v37 (2016-09-22)
+
+ * Implement deleting of conversations including all messages
+ * Fix crash when adding some kind of attachments
+ * Show new conversation button when inbox is empty
+
+### Components
+
+ * Update libkullo to v55
+ * Update SmartSqlite to v14
+ * Update Botan to 1.11.31
+
+### Requirements
+
+ * Google Play Services 9.6
+
 ## v36 (2016-08-08)
 
  * Fix network issue when sending message to multiple recipients

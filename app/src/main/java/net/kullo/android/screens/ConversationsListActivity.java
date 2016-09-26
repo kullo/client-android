@@ -3,6 +3,7 @@ package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
@@ -22,6 +23,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.DialogAction;
+import com.afollestad.materialdialogs.MaterialDialog;
 import com.timehop.stickyheadersrecyclerview.StickyRecyclerHeadersDecoration;
 
 import net.kullo.android.R;
@@ -43,6 +46,7 @@ import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
@@ -162,13 +166,16 @@ public class ConversationsListActivity extends AppCompatActivity implements
     }
 
     private void updateSwipeLayoutEnabled() {
-        mSwipeLayout.setEnabled(mIsAtTopScrollPosition && !SessionConnector.get().isSyncing());
+        mSwipeLayout.setEnabled(
+                !SessionConnector.get().isSyncing()
+                && (mIsAtTopScrollPosition || mAdapter.getItemCount() == 0)
+        );
     }
 
     private void handleSyncFromIntent() {
         String action = getIntent().getAction();
         if (action != null && action.equals(KulloConstants.ACTION_SYNC)) {
-            SessionConnector.get().syncKullo();
+            SessionConnector.get().sync();
 
             // reset action so that it is not executed multiple times
             getIntent().setAction(null);
@@ -421,7 +428,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
 
     // This method will get triggered on item click in navigation menu
     @Override
-    public boolean onNavigationItemSelected(MenuItem menuItem) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
         menuItem.setCheckable(true);
         menuItem.setChecked(true);
 
@@ -481,7 +488,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
         // handle item selection, if it doesn't land here, the activity might have snatched it
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                SessionConnector.get().syncKullo();
+                SessionConnector.get().sync();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -503,24 +510,21 @@ public class ConversationsListActivity extends AppCompatActivity implements
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                SessionConnector.get().syncKullo();
+                SessionConnector.get().sync();
             }
         });
     }
 
     private void setVisibilityControlsIfListIsEmpty() {
         ImageView swipeToRefreshImage = (ImageView) findViewById(R.id.swipe_to_refresh_image);
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_conversations);
         TextView swipeToRefreshText = (TextView) findViewById(R.id.swipe_to_refresh_text);
 
         if (mAdapter.getItemCount() == 0) {
             swipeToRefreshImage.setVisibility(View.VISIBLE);
             swipeToRefreshText.setVisibility(View.VISIBLE);
-            fab.setVisibility(View.GONE);
         } else {
             swipeToRefreshImage.setVisibility(View.GONE);
             swipeToRefreshText.setVisibility(View.GONE);
-            fab.setVisibility(View.VISIBLE);
         }
     }
 
@@ -562,25 +566,51 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 }
 
                 @Override
-                public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                public boolean onActionItemClicked(final ActionMode mode, MenuItem item) {
                     switch (item.getItemId()) {
                         case R.id.action_delete: {
-                            // only delete empty conversations
-                            int skippedConversationsCount = 0;
-                            for (Long convId : mAdapter.getSelectedItems()) {
-                                if (SessionConnector.get().getMessageCount(convId) == 0) {
-                                    SessionConnector.get().removeConversation(convId);
-                                } else {
-                                    skippedConversationsCount++;
-                                }
+                            int messagesToBeRemovedCount = 0;
+                            final List<Long> conversationsToBeRemoved = new ArrayList<>();
+                            for (long conversationId : mAdapter.getSelectedItems()) {
+                                conversationsToBeRemoved.add(conversationId);
+                                messagesToBeRemovedCount += SessionConnector.get().getMessageCount(conversationId);
                             }
-                            if (skippedConversationsCount > 0) {
+
+                            if (messagesToBeRemovedCount > 0) {
+                                new MaterialDialog.Builder(ConversationsListActivity.this)
+                                        .title(R.string.conversations_confirm_delete_conversations_title)
+                                        .content(String.format(
+                                                getString(R.string.conversations_confirm_delete_conversations_body),
+                                                conversationsToBeRemoved.size(),
+                                                messagesToBeRemovedCount))
+                                        .positiveText(R.string.action_delete)
+                                        .negativeText(R.string.cancel)
+                                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+                                            @Override
+                                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                                SessionConnector.get().removeConversations(conversationsToBeRemoved);
+                                                SessionConnector.get().sync();
+                                                mode.finish();
+                                            }
+                                        })
+                                        .onNegative(new MaterialDialog.SingleButtonCallback() {
+                                            @Override
+                                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                                dialog.dismiss();
+                                                mode.finish();
+                                            }
+                                        })
+                                        .show();
+                            } else {
+                                // All conversations are empty
+                                // Don't sync here because conversations without messages cannot be synced
+                                SessionConnector.get().removeConversations(conversationsToBeRemoved);
                                 final String text = String.format(
-                                        getResources().getString(R.string.toast_n_skipped),
-                                        skippedConversationsCount);
+                                        getResources().getString(R.string.conversations_toast_n_empty_deleted),
+                                        conversationsToBeRemoved.size());
                                 Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
+                                mode.finish();
                             }
-                            mode.finish();
                             return true;
                         }
                         default:

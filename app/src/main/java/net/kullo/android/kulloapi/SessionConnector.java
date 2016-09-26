@@ -499,7 +499,7 @@ public class SessionConnector {
     }
 
     @MainThread
-    public void syncKullo() {
+    public void sync() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             mSession.syncer().requestSync(SyncMode.WITHOUTATTACHMENTS);
@@ -515,12 +515,12 @@ public class SessionConnector {
         }
 
         if (lastFullSync == null) {
-            syncKullo();
+            sync();
         } else {
             org.joda.time.DateTime last = KulloUtils.convertToJodaTime(lastFullSync);
             org.joda.time.DateTime now = org.joda.time.DateTime.now();
             if (Seconds.secondsBetween(last, now).getSeconds() > SECONDS_BETWEEN_SYNCS) {
-                syncKullo();
+                sync();
             }
         }
     }
@@ -610,10 +610,13 @@ public class SessionConnector {
     }
 
     @MainThread
-    public void removeConversation(long conversationId) {
+    public void removeConversations(@NonNull final List<Long> conversationIds) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            mSession.conversations().remove(conversationId);
+
+            for (long conversationId : conversationIds) {
+                mSession.conversations().triggerRemoval(conversationId);
+            }
         }
     }
 
@@ -731,10 +734,9 @@ public class SessionConnector {
     // ATTACHMENTS
     @NonNull
     @MainThread
-    public AsyncTask addAttachmentToDraft(long conversationId, String filePath, String mimeType) {
+    public AsyncTask addAttachmentToDraft(long conversationId, String filePath, @NonNull String mimeType) {
         RuntimeAssertion.require(mSession != null);
         RuntimeAssertion.require(filePath != null);
-        RuntimeAssertion.require(mimeType != null);
 
         AsyncTask task = mSession.draftAttachments().addAsync(conversationId, filePath, mimeType, new DraftAttachmentsAddListener() {
             @Override
@@ -980,7 +982,7 @@ public class SessionConnector {
     public int getMessageCount(long conversationId) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            return mSession.messages().allForConversation(conversationId).size();
+            return mSession.conversations().totalMessages(conversationId);
         }
     }
 

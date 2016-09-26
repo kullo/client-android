@@ -95,10 +95,12 @@ ellipsis (…)
     <string name="action_toggle_message_size">Inflate</string>
     <string name="empty_conversation_title">New</string>
     <string name="download_attachments">Download</string>
-    <string name="swipe_to_refresh">Swipe down to synchronize inbox</string>
+    <string name="conversations_empty_state_text">Right now, there are no conversations in this inbox. Synchronize to get messages from the inbox server or start a new conversation.</string>
     <string name="conversation_options">Edit conversation</string>
     <string name="title_n_selected">%1$d selected</string>
-    <string name="toast_n_skipped">%1$d non-empty conversations skipped</string>
+    <string name="conversations_confirm_delete_conversations_title">Delete conversations</string>
+    <string name="conversations_confirm_delete_conversations_body">Delete %1$d conversations with %2$d messages in total?</string>
+    <string name="conversations_toast_n_empty_deleted">Deleting %1$d empty conversations</string>
 
     <!-- messages list -->
     <string name="message_text_placeholder" translatable="false">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</string>

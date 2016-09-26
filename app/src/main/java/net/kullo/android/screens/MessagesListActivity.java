@@ -95,7 +95,7 @@ public class MessagesListActivity extends AppCompatActivity {
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                SessionConnector.get().syncKullo();
+                SessionConnector.get().sync();
             }
         });
 
@@ -329,7 +329,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 finish();
                 return true;
             case R.id.action_refresh:
-                SessionConnector.get().syncKullo();
+                SessionConnector.get().sync();
                 return true;
             case R.id.action_toggle_message_size:
                 toggleMessageSize();
@@ -487,7 +487,7 @@ public class MessagesListActivity extends AppCompatActivity {
                             for (long selectedMessageId : selectedMessageIdsCopy) {
                                 SessionConnector.get().removeMessage(selectedMessageId);
                             }
-                            SessionConnector.get().syncKullo();
+                            SessionConnector.get().sync();
 
                             mode.finish();
                             return true;

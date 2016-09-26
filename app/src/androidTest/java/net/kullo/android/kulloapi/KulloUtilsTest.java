@@ -13,12 +13,16 @@ public class KulloUtilsTest extends AndroidTestCase {
             // simple
             "John", "J",
             "John Doe", "JD",
+            // compound names
+            "Foo Abc-Def", "FA",
+            "Foo de Abc-Def", "FA",
+            "Foo -Bar", "FB",
             // lower case
-            "john", "j",
-            "john doe", "jd",
+            "john", "J",
+            "john doe", "JD",
             // limit length
-            "John Mike Doe", "JM",
-            "John Mike Doe Junior", "JM",
+            "John Mike Doe", "JD",
+            "John Mike Doe Junior", "JJ",
             // numbers are okay
             "John 2", "J2",
             "1 2", "12",
@@ -48,7 +52,7 @@ public class KulloUtilsTest extends AndroidTestCase {
             "John \r Doe", "JD",
             // Umlauts work
             "La Österreich", "LÖ",
-            "ὕδωρ ῥυθμός", "ὕῥ",
+            "ὕδωρ ῥυθμός", "ὝῬ",
             // Three bytes
             "朽", "朽",
             "A 朽", "A朽",

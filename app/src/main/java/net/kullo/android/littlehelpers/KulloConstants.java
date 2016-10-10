@@ -66,7 +66,11 @@ public class KulloConstants {
     public static final int AVATAR_MAX_SIZE = 24*1024;
     public static final int AVATAR_BEST_QUALITY = 96;
     public static final int AVATAR_QUALITY_DOWNSAMPLING_STEPS = 2;
-    public static final int AVATAR_MAX_ALLOWED_SIDE = 640;
+
+    // 8 mio pixel limit => 5392x1236 pixel for a 10 MB 10784x2472 panorama
+    // picture after downsampling with size 2 (i.e. 2x2 pixels -> 1 pixel),
+    // which is 27 MB in memory.
+    public static final int AVATAR_PREVIEW_MAX_PIXEL_COUNT = 8_000_000;
 
     public static final int BLOCK_SIZE = 6;
 

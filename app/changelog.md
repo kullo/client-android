@@ -1,6 +1,22 @@
 Kullo for Android
 -----------------
 
+## v38 (2016-10-07)
+
+ * Handle several permission issues when selecting an avatar
+ * Scroll messages list to top when a new message was written or received
+ * Don't show notification while app is in the foreground; sync instead
+ * Add push notification debugging infos in about screen
+
+### Components
+
+ * Update libkullo to v56
+ * Update SmartSqlite to v15
+ * Update JsonCpp to 1.7.6
+ * Update Boost to 1.62.0
+ * Update Botan to 1.11.32
+ * Update Crystax NDK to 10.3.2
+
 ## v37 (2016-09-22)
 
  * Implement deleting of conversations including all messages

@@ -1021,6 +1021,15 @@ public class SessionConnector {
     }
 
     @MainThread
+    public boolean messageIncoming(long messageId) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            Address me = mSession.userSettings().address();
+            return !mSession.senders().address(messageId).isEqualTo(me);
+        }
+    }
+
+    @MainThread
     public void setMessageRead(long messageId) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);

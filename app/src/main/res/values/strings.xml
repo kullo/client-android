@@ -135,6 +135,7 @@ ellipsis (…)
     <string name="capture_image_canceled">Image capture canceled</string>
     <string name="action_rotate_image">Rotate</string>
     <string name="crop_image">Crop image</string>
+    <string name="settings_permission_missing_storage">App permission missing: storage</string>
 
     <!-- about -->
     <string name="app_version">version %1$s</string>
@@ -144,6 +145,15 @@ ellipsis (…)
     <string name="action_impressum">Impressum</string>
     <string name="open_website">Website</string>
     <string name="action_licenses">Licenses</string>
+    <string name="about_title_app_features">App features</string>
+    <string name="about_push_notifications_text">Push notifications: %1$s</string>
+    <string name="about_gplay_available">Google Play services ok</string>
+    <string name="about_gplay_not_available">Google Play services not available (%1$s)</string>
+    <string name="about_gplay_not_available_status_disabled">disabled</string>
+    <string name="about_gplay_not_available_status_missing">missing</string>
+    <string name="about_gplay_not_available_status_update_required">update required</string>
+    <string name="about_gplay_not_available_status_unknown">unknown</string>
+    <string name="about_gplay_not_available_status_updating">update installing</string>
 
     <!-- licenses -->
     <string name="activity_title_licenses">Licenses</string>

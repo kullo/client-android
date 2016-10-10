@@ -169,4 +169,20 @@ public class AvatarUtils {
 
         return out;
     }
+
+    public static int sampleSize(double scaleFactorUpperLimit) {
+        double sampleSizeDouble = 1/scaleFactorUpperLimit;
+
+        // round up to power of two
+        double logBase2OfSampleSize = Math.log(sampleSizeDouble) / Math.log(2);
+        return (int) Math.pow(2, Math.ceil(logBase2OfSampleSize));
+    }
+
+    public static double scalingFactorOneDimension(int originalWidth, int originalHeight, int maxPixelCount) {
+        int originalPixelCount = originalWidth*originalHeight;
+
+        double pixelsFactor = Math.min(1.0, (double) maxPixelCount/originalPixelCount);
+
+        return Math.sqrt(pixelsFactor);
+    }
 }

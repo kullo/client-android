@@ -3,6 +3,8 @@ package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.UiThread;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -70,6 +72,9 @@ public class MessagesListActivity extends AppCompatActivity {
     private RecyclerView mMessagesList;
     private TextView mConversationEmptyLabel;
 
+    // when requested, scroll to top will be performed at the end of onResume()
+    private boolean mScrollToTopRequested;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -123,6 +128,10 @@ public class MessagesListActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             mMessagesAdapter.add(messageId, new MessagesComparatorDsc());
+
+                            if (SessionConnector.get().messageIncoming(messageId)) {
+                                scrollToTopAnimated();
+                            }
                         }
                     });
                 }
@@ -171,6 +180,48 @@ public class MessagesListActivity extends AppCompatActivity {
 
         registerSyncFinishedListenerObserver();
         SessionConnector.get().syncIfNecessary();
+
+        // Fill adapter with the most recent data
+        RuntimeAssertion.require(mMessagesAdapter != null);
+        mMessagesAdapter.updateDataSet();
+    }
+
+    // Called immediately before onResume()
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case KulloConstants.REQUEST_CODE_NEW_MESSAGE:
+                mScrollToTopRequested = true;
+                break;
+            default:
+                Log.w(TAG, "Unhandled request code.");
+                break;
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        GcmConnector.get().removeAllNotifications(this);
+
+        if (SessionConnector.get().isSyncing()) {
+            updateSwipeLayoutEnabled();
+            mSwipeLayout.setRefreshing(false);
+
+            mProgressBarIndeterminate.setVisibility(View.VISIBLE);
+            mProgressBarDeterminate.setVisibility(View.GONE);
+        } else {
+            updateSwipeLayoutEnabled();
+            mSwipeLayout.setRefreshing(false);
+
+            mProgressBarIndeterminate.setVisibility(View.GONE);
+            mProgressBarDeterminate.setVisibility(View.GONE);
+        }
+
+        if (mScrollToTopRequested) {
+            scrollToTopAnimated(500);
+            mScrollToTopRequested = false;
+        }
     }
 
     @Override
@@ -187,6 +238,21 @@ public class MessagesListActivity extends AppCompatActivity {
                 mMessageStateObserver);
 
         unregisterSyncFinishedListenerObserver();
+    }
+
+    @UiThread
+    private void scrollToTopAnimated() {
+        scrollToTopAnimated(0);
+    }
+
+    @UiThread
+    private void scrollToTopAnimated(int delayMs) {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                mMessagesList.smoothScrollToPosition(0);
+            }
+        }, delayMs);
     }
 
     private void updateSwipeLayoutEnabled() {
@@ -264,31 +330,6 @@ public class MessagesListActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        GcmConnector.get().removeAllNotifications(this);
-
-        RuntimeAssertion.require(mMessagesAdapter != null);
-
-        // Fill adapter with the most recent data
-        mMessagesAdapter.updateDataSet();
-
-        if (SessionConnector.get().isSyncing()) {
-            updateSwipeLayoutEnabled();
-            mSwipeLayout.setRefreshing(false);
-
-            mProgressBarIndeterminate.setVisibility(View.VISIBLE);
-            mProgressBarDeterminate.setVisibility(View.GONE);
-        } else {
-            updateSwipeLayoutEnabled();
-            mSwipeLayout.setRefreshing(false);
-
-            mProgressBarIndeterminate.setVisibility(View.GONE);
-            mProgressBarDeterminate.setVisibility(View.GONE);
-        }
-    }
-
     private void updateSenderAvatarViewsInHeader() {
         LinearLayout avatarsRow = (LinearLayout) findViewById(R.id.avatars_row);
         if (SHOW_AVATAR_ROW) {
@@ -315,11 +356,6 @@ public class MessagesListActivity extends AppCompatActivity {
         } else {
             avatarsRow.setVisibility(View.GONE);
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
     }
 
     @Override

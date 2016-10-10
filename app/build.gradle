@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 ext {
     SUPPORT_LIBRARY_VERSION = "24.2.1"
     TARGET_SDK_VERSION = 24
-    BUILD_TOOLS_VERSION = "24.0.2"
+    BUILD_TOOLS_VERSION = "24.0.3"
 }
 
 android {
@@ -14,8 +14,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 15
         targetSdkVersion TARGET_SDK_VERSION
-        versionCode 3700
-        versionName "37"
+        versionCode 3801
+        versionName "38"
 
         testInstrumentationRunner "android.test.InstrumentationTestRunner"
     }

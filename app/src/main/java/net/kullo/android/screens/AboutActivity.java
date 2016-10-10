@@ -12,6 +12,8 @@ import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.littlehelpers.AppVersion;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.notifications.GcmConnector;
+import net.kullo.javautils.RuntimeAssertion;
 
 public class AboutActivity extends AppCompatActivity {
     @Override
@@ -32,6 +34,43 @@ public class AboutActivity extends AppCompatActivity {
         String kudosText = getResources().getString(R.string.licenses_text_kudos);
         String versionsText = ((KulloApplication) getApplication()).softwareVersions();
         ((TextView) findViewById(R.id.kudos_text)).setText(String.format(kudosText, versionsText));
+
+        // app features
+        String googlePlayStatusText;
+        if (GcmConnector.get().googlePlayAvailable()) {
+            googlePlayStatusText = getString(R.string.about_gplay_available);
+        } else {
+            GcmConnector.NotAvailableReason googlePlayNotAvailableReason = GcmConnector.get().googlePlayNotAvailableReason();
+            RuntimeAssertion.require(googlePlayNotAvailableReason != null);
+
+            String googlePlayNotAvailableReasonText = null;
+            switch (googlePlayNotAvailableReason) {
+                case Disabled:
+                    googlePlayNotAvailableReasonText = getString(R.string.about_gplay_not_available_status_disabled);
+                    break;
+                case Missing:
+                    googlePlayNotAvailableReasonText = getString(R.string.about_gplay_not_available_status_missing);
+                    break;
+                case UpdateRequired:
+                    googlePlayNotAvailableReasonText = getString(R.string.about_gplay_not_available_status_update_required);
+                    break;
+                case Updating:
+                    googlePlayNotAvailableReasonText = getString(R.string.about_gplay_not_available_status_updating);
+                    break;
+                case Unknown:
+                    googlePlayNotAvailableReasonText = getString(R.string.about_gplay_not_available_status_unknown);
+                    break;
+                default:
+                    RuntimeAssertion.fail("Unhandled enum value");
+            }
+
+            googlePlayStatusText = String.format(
+                    getString(R.string.about_gplay_not_available),
+                    googlePlayNotAvailableReasonText);
+        }
+
+        String pushText = getResources().getString(R.string.about_push_notifications_text);
+        ((TextView) findViewById(R.id.about_push_notifications_text)).setText(String.format(pushText, googlePlayStatusText));
     }
 
     @Override

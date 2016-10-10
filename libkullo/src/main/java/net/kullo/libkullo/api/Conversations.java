@@ -44,6 +44,12 @@ public abstract class Conversations {
     /** Total number of undone messages */
     public abstract int undoneMessages(long convId);
 
+    /** Total number of incoming messages */
+    public abstract int incomingMessages(long convId);
+
+    /** Total number of outgoing messages */
+    public abstract int outgoingMessages(long convId);
+
     /**
      * Timestamp of the latest message (for sorting). Returns the result of
      * emptyConversationTimestamp() if the conversation has no messages.
@@ -139,6 +145,22 @@ public abstract class Conversations {
             return native_undoneMessages(this.nativeRef, convId);
         }
         private native int native_undoneMessages(long _nativeRef, long convId);
+
+        @Override
+        public int incomingMessages(long convId)
+        {
+            assert !this.destroyed.get() : "trying to use a destroyed object";
+            return native_incomingMessages(this.nativeRef, convId);
+        }
+        private native int native_incomingMessages(long _nativeRef, long convId);
+
+        @Override
+        public int outgoingMessages(long convId)
+        {
+            assert !this.destroyed.get() : "trying to use a destroyed object";
+            return native_outgoingMessages(this.nativeRef, convId);
+        }
+        private native int native_outgoingMessages(long _nativeRef, long convId);
 
         @Override
         public DateTime latestMessageTimestamp(long convId)

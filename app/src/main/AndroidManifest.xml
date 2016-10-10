@@ -2,8 +2,26 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="net.kullo.android">
 
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.CAMERA" />
+    <!--
+    From getExternalFilesDir():
+      Starting in KITKAT [Android 4.4, API level 19, October 2013], no permissions
+      are required to read or write to the returned path; it's always accessible
+      to the calling app. This only applies to paths generated for package name of
+      the calling application. To access paths belonging to other packages,
+      WRITE_EXTERNAL_STORAGE and/or READ_EXTERNAL_STORAGE are required.
+    -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="18" />
+
+    <!--
+    Required when reading files from Gallery to avoid
+      java.lang.SecurityException: Permission Denial: reading
+      com.android.providers.media.MediaProvider uri
+      content://media/external/images/media/69 from pid=4062, uid=10055
+      requires android.permission.READ_EXTERNAL_STORAGE, or grantUriPermission()
+    -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- GCM -->

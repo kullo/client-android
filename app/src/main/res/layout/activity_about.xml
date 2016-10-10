@@ -79,6 +79,40 @@
             <android.support.v7.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/md_additions_card_margin"
+                android:layout_marginLeft="@dimen/md_additions_card_margin"
+                android:layout_marginRight="@dimen/md_additions_card_margin"
+                >
+                <LinearLayout
+                    android:id="@+id/card_features_content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/md_additions_card_padding_big"
+                        android:layout_marginLeft="@dimen/md_additions_card_padding"
+                        android:layout_marginRight="@dimen/md_additions_card_padding"
+                        android:layout_marginBottom="@dimen/md_additions_card_padding"
+                        android:text="@string/about_title_app_features"
+                        style="@style/MdAdditions.Card.Title"
+                        />
+                    <TextView
+                        android:id="@+id/about_push_notifications_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="@dimen/md_additions_card_padding"
+                        android:layout_marginRight="@dimen/md_additions_card_padding"
+                        android:layout_marginBottom="@dimen/md_additions_card_padding"
+                        android:text="@string/about_push_notifications_text"
+                        />
+                </LinearLayout>
+            </android.support.v7.widget.CardView>
+
+            <android.support.v7.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_margin="@dimen/md_additions_card_margin"
                 >
                 <LinearLayout

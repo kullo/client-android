@@ -1,12 +1,14 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.application;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -29,17 +31,24 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-public class KulloApplication extends Application {
+public class KulloApplication extends Application
+        implements Application.ActivityLifecycleCallbacks {
     public static final String TAG = "KulloApplication";
     public static final Uri MAINTAINER_WEBSITE = Uri.parse("https://www.kullo.net");
     public static final String LICENSES_FILE = "file:///android_asset/licenses-android.html";
     public static final String ID = "net.kullo.android";
 
+    public static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 1001;
+
     private static final int LATEST_PREFERENCES_VERSION = 3;
+
+    // only access this variable in updateForegroundActivitiesCount()
+    private int mCountActivitiesInForeground = 0;
 
     @Override
     public void onCreate() {
         super.onCreate();
+        registerActivityLifecycleCallbacks(this);
 
         JodaTimeAndroid.init(this);
         LibKullo.init();
@@ -52,18 +61,20 @@ public class KulloApplication extends Application {
 
     private void cleanExternalFilesDir() {
         // Cleans the entire app-specific external files dir. This was used before
-        // version 35 as temporary storage when handling attachments.
+        // version 35 (released 2016-08-03) as temporary storage when handling attachments.
         // We currently do not use this directory. Database is in internal files (getFilesDir())
         // and temporary files are in the app's internal cache directory (getCacheDir()).
         final File appExternal = getExternalFilesDir(null);
         if (appExternal != null) {
-            // shared storage is currently available
+            Log.d(TAG, "Cleaning " + appExternal.getAbsolutePath() + " ...");
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     cleanDirectory(appExternal);
                 }
             }).run();
+        } else {
+            Log.w(TAG, "Shared storage is currently not available.");
         }
     }
 
@@ -71,9 +82,17 @@ public class KulloApplication extends Application {
         for (File entry : path.listFiles()) {
             if (entry.isDirectory()) {
                 cleanDirectory(entry);
+
+                // directory should be empty now
+                if (entry.delete()) {
+                    Log.d(TAG, "Successfully removed directory " + entry.getAbsolutePath());
+                } else {
+                    Log.e(TAG, "Error deleting directory " + entry.getAbsolutePath());
+                }
             } else if (entry.isFile()) {
-                Log.d(TAG, "Removing " + entry.getAbsolutePath() + " ...");
-                if (!entry.delete()) {
+                if (entry.delete()) {
+                    Log.d(TAG, "Successfully removed " + entry.getAbsolutePath());
+                } else {
                     Log.e(TAG, "Error deleting " + entry.getAbsolutePath());
                 }
             }
@@ -102,15 +121,21 @@ public class KulloApplication extends Application {
 
     @NonNull
     public File fileOpenCacheDir() {
-        final File fileOpenCacheDir = new File(getCacheDir(), "openfile");
-        fileOpenCacheDir.mkdir();
-        return fileOpenCacheDir;
+        return cacheDirWithSubfolder("openfile");
     }
 
     @NonNull
     public File captureCacheDir() {
-        final File fileOpenCacheDir = new File(getCacheDir(), "capture");
-        fileOpenCacheDir.mkdir();
+        return cacheDirWithSubfolder("capture");
+    }
+
+    @NonNull
+    private File cacheDirWithSubfolder(@NonNull final String subfolderName) {
+        final File fileOpenCacheDir = new File(getCacheDir(), subfolderName);
+        if (!fileOpenCacheDir.isDirectory()) {
+            boolean created = fileOpenCacheDir.mkdir();
+            if (!created) throw new RuntimeException("Did not create cache directory");
+        }
         return fileOpenCacheDir;
     }
 
@@ -292,5 +317,52 @@ public class KulloApplication extends Application {
         String value = sharedPreferences.getString(oldKey, "");
         editor.putString(newKey, value);
         editor.remove(oldKey);
+    }
+
+    @Override
+    public void onActivityCreated(Activity activity, Bundle bundle) {
+
+    }
+
+    @Override
+    public void onActivityStarted(Activity activity) {
+
+    }
+
+    @Override
+    public void onActivityResumed(Activity activity) {
+        int newValue = updateForegroundActivitiesCount(+1);
+        Log.d(TAG, "Foreground count: " + newValue);
+    }
+
+    @Override
+    public void onActivityPaused(Activity activity) {
+        int newValue = updateForegroundActivitiesCount(-1);
+        Log.d(TAG, "Foreground count: " + newValue);
+    }
+
+    public int foregroundActivitiesCount() {
+        return updateForegroundActivitiesCount(0);
+    }
+
+    // returns the new value
+    synchronized private int updateForegroundActivitiesCount(int change) {
+        mCountActivitiesInForeground += change;
+        return mCountActivitiesInForeground;
+    }
+
+    @Override
+    public void onActivityStopped(Activity activity) {
+
+    }
+
+    @Override
+    public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
+
+    }
+
+    @Override
+    public void onActivityDestroyed(Activity activity) {
+
     }
 }

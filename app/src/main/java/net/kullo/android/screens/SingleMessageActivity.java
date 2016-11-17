@@ -15,6 +15,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,14 +29,14 @@ import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
-import net.kullo.android.littlehelpers.NonScrollingLinearLayoutManager;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.MessageAttachmentsDownloadedChangedEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
-import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
 import net.kullo.android.screens.messageslist.AttachmentsAdapter;
 import net.kullo.android.screens.singlemessage.MessageAttachmentsOpener;
+import net.kullo.android.ui.NonScrollingLinearLayoutManager;
+import net.kullo.android.ui.RecyclerItemClickListener;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
@@ -64,6 +65,7 @@ public class SingleMessageActivity extends AppCompatActivity {
     private ActionMode mActionMode = null;
 
     // Views
+    private View mOptionalPaddingElement;
     protected CircleImageView mCircleImageView;
     protected TextView mMessageDateTextView;
     protected TextView mSenderNameTextView;
@@ -71,8 +73,8 @@ public class SingleMessageActivity extends AppCompatActivity {
     protected TextView mMessageContentTextView;
     protected RecyclerView mAttachmentsList;
     protected Button mDownloadButton;
-    protected View mFooterDivider;
-    protected Button mFooterButton;
+    protected View mFooterContainer;
+    protected ImageButton mToogleFooterButton;
     protected TextView mFooterTextView;
 
     @Override
@@ -143,16 +145,7 @@ public class SingleMessageActivity extends AppCompatActivity {
         mMessageAttachmentsOpener = new MessageAttachmentsOpener(this);
         mMessageAttachmentsOpener.registerSaveFinishedListenerObserver();
 
-        mCircleImageView = (CircleImageView) findViewById(R.id.sender_avatar);
-        mMessageDateTextView = (TextView) findViewById(R.id.message_date);
-        mSenderNameTextView = (TextView) findViewById(R.id.sender_name);
-        mSenderOrganizationTextView = (TextView) findViewById(R.id.sender_company);
-        mMessageContentTextView = (TextView) findViewById(R.id.message_content);
-        mAttachmentsList = (RecyclerView) findViewById(R.id.attachments_list);
-        mDownloadButton = (Button) findViewById(R.id.download_button);
-        mFooterDivider = findViewById(R.id.footer_divider);
-        mFooterButton = (Button) findViewById(R.id.footer_button);
-        mFooterTextView = (TextView) findViewById(R.id.footer_text);
+        setupUi();
 
         if (result.state == CreateSessionState.CREATING) {
             RuntimeAssertion.require(result.task != null);
@@ -160,6 +153,20 @@ public class SingleMessageActivity extends AppCompatActivity {
         }
 
         GcmConnector.get().fetchAndRegisterToken(this);
+    }
+
+    private void setupUi() {
+        mCircleImageView = (CircleImageView) findViewById(R.id.sender_avatar);
+        mMessageDateTextView = (TextView) findViewById(R.id.message_date);
+        mSenderNameTextView = (TextView) findViewById(R.id.sender_name);
+        mSenderOrganizationTextView = (TextView) findViewById(R.id.sender_company);
+        mMessageContentTextView = (TextView) findViewById(R.id.message_content);
+        mAttachmentsList = (RecyclerView) findViewById(R.id.attachments_list);
+        mDownloadButton = (Button) findViewById(R.id.download_button);
+        mOptionalPaddingElement = findViewById(R.id.optional_padding_element);
+        mFooterContainer = findViewById(R.id.footer_container);
+        mToogleFooterButton = (ImageButton) findViewById(R.id.footer_button);
+        mFooterTextView = (TextView) findViewById(R.id.footer_text);
     }
 
     @Override
@@ -285,7 +292,7 @@ public class SingleMessageActivity extends AppCompatActivity {
             mAttachmentsList.setEnabled(true);
             mDownloadButton.setVisibility(View.GONE);
             if (mAttachmentsClickListener == null) {
-                mAttachmentsClickListener = new RecyclerItemClickListener(SingleMessageActivity.this, mAttachmentsList, new RecyclerItemClickListener.OnItemClickListener() {
+                mAttachmentsClickListener = new RecyclerItemClickListener(mAttachmentsList) {
                     @Override
                     public void onItemClick(View view, int position) {
                         long attachmentId = mAttachmentsAdapter.getItem(position);
@@ -295,12 +302,13 @@ public class SingleMessageActivity extends AppCompatActivity {
                             mMessageAttachmentsOpener.saveAndOpenAttachment(mMessageId, attachmentId);
                         }
                     }
+
                     @Override
                     public void onItemLongPress(View view, int position) {
                         long attachmentId = mAttachmentsAdapter.getItem(position);
                         selectAttachment(attachmentId);
                     }
-                });
+                };
                 mAttachmentsList.addOnItemTouchListener(mAttachmentsClickListener);
             }
         } else {
@@ -327,37 +335,34 @@ public class SingleMessageActivity extends AppCompatActivity {
         return localDateReceived.toString(mFormatterDate);
     }
 
-    private void showFooterContainer(Boolean showFooter) {
-        mFooterDivider.setVisibility(View.VISIBLE);
-        mFooterButton.setVisibility(View.VISIBLE);
+    private void showFooterContainer(boolean footerExpanded) {
+        mOptionalPaddingElement.setVisibility(View.GONE);
+        mFooterContainer.setVisibility(View.VISIBLE);
 
-        if (!showFooter) {
-            mFooterTextView.setVisibility(View.GONE);
-            mFooterButton.setText(SingleMessageActivity.this.getResources().getString(R.string.show_footer));
-
-            mFooterButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    showFooterContainer(true);
-                }
-            });
-        } else {
+        if (footerExpanded) {
             mFooterTextView.setVisibility(View.VISIBLE);
-            mFooterButton.setText(SingleMessageActivity.this.getResources().getString(R.string.hide_footer));
-
-            mFooterButton.setOnClickListener(new View.OnClickListener() {
+            mToogleFooterButton.setImageResource(R.drawable.ic_expand_less_active_button_color_36dp);
+            mToogleFooterButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     showFooterContainer(false);
+                }
+            });
+        } else {
+            mFooterTextView.setVisibility(View.GONE);
+            mToogleFooterButton.setImageResource(R.drawable.ic_expand_more_active_button_color_36dp);
+            mToogleFooterButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showFooterContainer(true);
                 }
             });
         }
     }
 
     private void hideFooterContainer() {
-        mFooterDivider.setVisibility(View.GONE);
-        mFooterTextView.setVisibility(View.GONE);
-        mFooterButton.setVisibility(View.GONE);
+        mOptionalPaddingElement.setVisibility(View.VISIBLE);
+        mFooterContainer.setVisibility(View.GONE);
     }
 
     // CONTEXT MENU

@@ -685,17 +685,13 @@ public class SessionConnector {
     }
 
     @MainThread
-    public void saveDraftForConversation(long conversationId, String message, boolean prepareToSend) {
+    public void saveDraftForSending(long conversationId, @NonNull String message) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
 
-            if (prepareToSend) {
-                // User is done writing. This trims the message before sending
-                mSession.drafts().setText(conversationId, message.trim());
-                mSession.drafts().prepareToSend(conversationId);
-            } else {
-                mSession.drafts().setText(conversationId, message);
-            }
+            // User is done writing. This trims the message before sending
+            mSession.drafts().setText(conversationId, message.trim());
+            mSession.drafts().prepareToSend(conversationId);
         }
     }
 
@@ -713,6 +709,14 @@ public class SessionConnector {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             return mSession.drafts().text(conversationId);
+        }
+    }
+
+    @MainThread
+    public void setDraftText(long conversationId, @NonNull String message) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.drafts().setText(conversationId, message);
         }
     }
 

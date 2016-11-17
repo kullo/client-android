@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.FileProvider;
@@ -17,6 +18,7 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
+import net.kullo.android.application.CacheType;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Debug;
@@ -172,7 +174,9 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
     @Nullable
     private File getTmpFilepathForAttachment(final long messageId, final long attachmentId) {
         String filename = SessionConnector.get().getMessageAttachmentFilename(messageId, attachmentId);
-        final File fileOpenCacheDir = ((KulloApplication) mBaseActivity.getApplication()).fileOpenCacheDir();
+
+        final String subfolder = "attachment_" + messageId + "-" + attachmentId;
+        final File fileOpenCacheDir = ((KulloApplication) mBaseActivity.getApplication()).cacheDir(CacheType.OpenFile, subfolder);
         final File tmpfile = new File(fileOpenCacheDir, filename);
 
         if (mCurrentAction.equals(OpenAction.OPEN) || mCurrentAction.equals(OpenAction.OPEN_WITH)) {
@@ -207,6 +211,7 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
                 .show();
     }
 
+    @MainThread
     private void startSavingFile(long messageId, long attachmentId, final File destination) {
         Log.d(TAG, "Saving file to: " + destination.getAbsolutePath());
         SessionConnector.get().saveMessageAttachment(messageId, attachmentId, destination.getAbsolutePath());
@@ -256,6 +261,7 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
         });
     }
 
+    @MainThread
     private void prepareTmpfileForProcess(final String path) {
         mPendingFiles--;
         File tmpfile = new File(path);

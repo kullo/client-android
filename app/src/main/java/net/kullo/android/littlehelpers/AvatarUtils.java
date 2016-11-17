@@ -9,14 +9,22 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.media.ThumbnailUtils;
+import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import net.kullo.android.R;
+import net.kullo.javautils.RuntimeAssertion;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.List;
 
 public class AvatarUtils {
+    private static final String TAG = "AvatarUtils";
+
     // Suppress default constructor for noninstantiability
     private AvatarUtils() {
         throw new AssertionError();
@@ -184,5 +192,52 @@ public class AvatarUtils {
         double pixelsFactor = Math.min(1.0, (double) maxPixelCount/originalPixelCount);
 
         return Math.sqrt(pixelsFactor);
+    }
+
+    public static Bitmap loadBitmap(@NonNull final Context context,
+                                    @NonNull final Uri bitmapSource,
+                                    final int downsamplingMaxPixelCount,
+                                    final int maxTextureSize) {
+        final int sampleSize = sampleSize(context, bitmapSource, downsamplingMaxPixelCount);
+        Log.d(TAG, "Sample size: " + sampleSize);
+
+        final Bitmap selectedBitmap;
+        InputStream input = null;
+        try {
+            input = context.getContentResolver().openInputStream(bitmapSource);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            RuntimeAssertion.fail("Failed to read bitmap from source");
+        }
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = sampleSize;
+        selectedBitmap = BitmapFactory.decodeStream(input, null, options);
+
+        Log.d(TAG, "Bitmap in memory: "
+                + selectedBitmap.getWidth() + "x" + selectedBitmap.getHeight() + "px"
+                + " (" + selectedBitmap.getByteCount() + " bytes)");
+
+        return resizeBitmapWithLongerSideLimitedTo(
+                maxTextureSize, selectedBitmap);
+    }
+
+    private static int sampleSize(Context context, final Uri bitmapSource, int maxPixelCount) {
+        try {
+            InputStream input = context.getContentResolver().openInputStream(bitmapSource);
+
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeStream(input, null, options);
+
+            Log.d(TAG, options.outWidth + "x" + options.outHeight);
+
+            double scalingFactor = scalingFactorOneDimension(
+                    options.outWidth, options.outHeight, maxPixelCount);
+            return sampleSize(scalingFactor);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return -1;
+        }
     }
 }

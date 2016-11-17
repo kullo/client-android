@@ -6,10 +6,11 @@ http://stackoverflow.com/a/8639921
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:fitsSystemWindows="true"
     android:background="@color/cardview_light_background"
     android:focusableInTouchMode="true"
-    >
+    tools:context=".screens.ComposeActivity">
 
     <include
         android:id="@+id/toolbar"

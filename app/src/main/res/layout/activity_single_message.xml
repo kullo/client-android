@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:focusableInTouchMode="true"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    tools:context=".screens.SingleMessageActivity">
 
     <include
         android:id="@+id/toolbar"
@@ -31,121 +33,155 @@
                 >
 
                 <LinearLayout
-                    style="@style/Widget.CardContent"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                     <LinearLayout
-                        android:orientation="horizontal"
+                        android:id="@+id/main_content"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        >
+                        android:orientation="vertical"
+                        android:paddingTop="@dimen/md_additions_card_padding"
+                        android:paddingLeft="@dimen/md_additions_card_padding"
+                        android:paddingRight="@dimen/md_additions_card_padding">
 
-                        <de.hdodenhof.circleimageview.CircleImageView
-                            android:id="@+id/sender_avatar"
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:layout_alignParentLeft="true"
-                            android:layout_alignParentStart="true"
-                            android:layout_marginRight="16dp"
-                            android:src="@drawable/kullo_settings_avatar"
-                            />
-
-                        <RelativeLayout
+                        <LinearLayout
+                            android:orientation="horizontal"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginBottom="16dp"
                             >
 
-                            <TextView
-                                android:id="@+id/sender_name"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Sender Name"
-                                android:textSize="20sp"
-                                android:textColor="@color/kulloAccentColor"
-                                />
-
-                            <TextView
-                                android:id="@+id/sender_company"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Company Inc."
+                            <de.hdodenhof.circleimageview.CircleImageView
+                                android:id="@+id/sender_avatar"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
                                 android:layout_alignParentLeft="true"
-                                android:layout_below="@+id/sender_name"
-                                android:textSize="12sp"
-                                android:textColor="@color/kulloTextPrimaryColor"
-                                android:layout_toLeftOf="@+id/message_date"
-                                android:layout_toStartOf="@+id/message_date"
-                                android:maxLines="1"
-                                android:ellipsize="end" />
-
-                            <TextView
-                                android:id="@+id/message_date"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="today"
-                                android:layout_alignParentRight="true"
-                                android:layout_alignBottom="@+id/sender_company"
-                                android:textSize="12sp"
-                                android:textColor="@color/kulloTextPrimaryColor"
+                                android:layout_alignParentStart="true"
+                                android:layout_marginRight="16dp"
+                                android:src="@drawable/kullo_settings_avatar"
                                 />
-                        </RelativeLayout>
+
+                            <RelativeLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                >
+
+                                <TextView
+                                    android:id="@+id/sender_name"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Sender Name"
+                                    android:textSize="20sp"
+                                    android:textColor="@color/kulloAccentColor"
+                                    />
+
+                                <TextView
+                                    android:id="@+id/sender_company"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Company Inc."
+                                    android:layout_alignParentLeft="true"
+                                    android:layout_below="@+id/sender_name"
+                                    android:textSize="12sp"
+                                    android:textColor="@color/kulloTextPrimaryColor"
+                                    android:layout_toLeftOf="@+id/message_date"
+                                    android:layout_toStartOf="@+id/message_date"
+                                    android:maxLines="1"
+                                    android:ellipsize="end" />
+
+                                <TextView
+                                    android:id="@+id/message_date"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="today"
+                                    android:layout_alignParentRight="true"
+                                    android:layout_alignBottom="@+id/sender_company"
+                                    android:textSize="12sp"
+                                    android:textColor="@color/kulloTextPrimaryColor"
+                                    />
+                            </RelativeLayout>
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/message_content"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/kulloTextPrimaryColor"
+                            android:autoLink="web"
+                            android:textIsSelectable="true"
+                            />
+
+                        <android.support.v7.widget.RecyclerView
+                            android:id="@+id/attachments_list"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            />
+
+                        <Button
+                            android:id="@+id/download_button"
+                            android:text="@string/download_attachments"
+                            android:textColor="@color/kulloAccentColor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="left"
+                            style="@style/Button.Borderless" />
+
+                        <View
+                            android:id="@+id/optional_padding_element"
+                            android:layout_width="match_parent"
+                            android:layout_height="24dp" />
+
                     </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/message_content"
+                    <LinearLayout
+                        android:id="@+id/footer_container"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textColor="@color/kulloTextPrimaryColor"
-                        android:autoLink="web"
-                        android:textIsSelectable="true"
-                        />
+                        android:orientation="vertical">
 
-                    <android.support.v7.widget.RecyclerView
-                        android:id="@+id/attachments_list"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        />
+                        <!--
+                        actions row
+                        Set height fixed to 52dp (36dp button height + 8dp vertical padding)
+                        -->
+                        <RelativeLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp">
 
-                    <Button
-                        android:id="@+id/download_button"
-                        android:text="@string/download_attachments"
-                        android:textColor="@color/kulloAccentColor"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="left"
-                        style="?android:attr/borderlessButtonStyle"/>
+                            <!-- the 36x36 content area needs to have 16dp right margin, so
+                            the 48x48dp frame gets 10dp right margin -->
+                            <ImageButton
+                                android:id="@+id/footer_button"
+                                android:text=""
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_alignParentEnd="true"
+                                android:layout_marginRight="10dp"
+                                android:layout_centerVertical="true"
+                                android:src="@drawable/ic_expand_more_active_button_color_36dp"
+                                style="@style/Button.Borderless" />
 
-                    <View
-                        android:id="@+id/footer_divider"
-                        style="@style/Divider"
-                        android:layout_marginBottom="16dp"
-                        android:layout_marginTop="16dp"/>
+                        </RelativeLayout>
 
-                    <TextView
-                        android:id="@+id/footer_text"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/kulloTextPrimaryColor"
-                        android:textIsSelectable="true"
-                        />
+                        <TextView
+                            android:id="@+id/footer_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/md_additions_card_padding"
+                            android:layout_marginLeft="@dimen/md_additions_card_padding"
+                            android:layout_marginRight="@dimen/md_additions_card_padding"
+                            android:layout_marginBottom="@dimen/md_additions_card_padding_big"
+                            android:textColor="@color/md_additions_secondary_text"
+                            android:textIsSelectable="true"
+                            android:text="Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.   Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat." />
 
-                    <Button
-                        android:id="@+id/footer_button"
-                        android:text="@string/show_footer"
-                        android:textColor="@color/kulloAccentColor"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="left"
-                        style="?android:attr/borderlessButtonStyle"/>
+                    </LinearLayout>
 
                 </LinearLayout>
 
             </android.support.v7.widget.CardView>
         </LinearLayout>
-
     </ScrollView>
-
-</RelativeLayout>
+</LinearLayout>

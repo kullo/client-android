@@ -3,12 +3,16 @@ set -o errexit -o nounset -o pipefail
 which shellcheck > /dev/null && shellcheck "$0"
 
 function usage() {
-    echo "$0 ICON_NAME COLOR=black SIZE=48"
+    echo "$0 ICON_NAME COLOR SIZE"
+    echo ""
+    echo "ICON_NAME    name of the icon (e.g. ic_expand_more)"
+    echo "COLOR        \"black\" or \"white\""
+    echo "SIZE         18, 24, 36, 48"
     echo ""
     echo "Set env variable MI_ROOT to material icons repository checkout."
 }
 
-function filter_icon_orientation_ltr() {
+function filter_icon_orientation_not_rtl() {
     grep -v '\-ldrtl\-'
 }
 
@@ -64,7 +68,7 @@ for RES in "${RESOLUTIONS[@]}"
 do
     FILE=$(find "$SRC_ROOT" -name "${NAME}_${COLOR}_${SIZE}dp.${FORMAT}" \
             | grep "${OS_PATTERN}" \
-            | filter_icon_orientation_ltr \
+            | filter_icon_orientation_not_rtl \
             | grep "\-$RES")
     DST_FILENAME="${NAME}_${COLOR}_${SIZE}dp.$FORMAT"
 

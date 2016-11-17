@@ -9,11 +9,14 @@ import java.util.List;
 
 public class KulloConstants {
     public static final int REQUEST_CODE_NEW_MESSAGE = 42;
+    public static final int REQUEST_CODE_SEND_MESSAGE_WITH_SHARE = 43;
 
     // Intent keys
     public static final String MESSAGE_ID = "message_id";
     public static final String CONVERSATION_ID = "conversation_id";
     public static final String CONVERSATION_RECIPIENT = "conversation_recipient";
+    public static final String CONVERSATION_ADD_ATTACHMENTS = "conversation_add_attachments";
+    public static final String CONVERSATION_ADD_TEXT = "conversation_add_text";
 
     // shared preferences
     public static final String ACCOUNT_PREFS_PLAIN = "net.kullo.android.SETTINGS";
@@ -75,6 +78,9 @@ public class KulloConstants {
     public static final int BLOCK_SIZE = 6;
 
     public static final String ACTION_SYNC = "net.kullo.action.SYNC";
+
+    // Share receiver
+    public static final int SHARE_TEXT_LIMIT = 10_000; // unicode chars
 
     public static final TextWatcher KULLO_ADDRESS_AT_THIEF = new TextWatcher() {
         public void onTextChanged(CharSequence s, int start, int before, int count) { }

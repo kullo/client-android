@@ -85,8 +85,6 @@ ellipsis (…)
 
     <!-- conversations list -->
     <string name="footer">Impressum</string>
-    <string name="show_footer">Impressum einblenden</string>
-    <string name="hide_footer">Impressum ausblenden</string>
     <string name="action_toggle_message_size">Inflate</string>
     <string name="empty_conversation_title">Neu</string>
     <string name="download_attachments">Herunterladen</string>
@@ -178,6 +176,16 @@ ellipsis (…)
     <string name="organization_opt">Organisation (optional)</string>
     <string name="participant_needed">Mindestens ein Teilnehmer ist nötig</string>
     <string name="compose_error_loading_file">Ausgewählte Datei konnte nicht geladen werden</string>
+
+    <!-- share receiver -->
+    <string name="sharereceiver_title_share_text">Text teilen</string>
+    <string name="sharereceiver_title_share_single_image">Bild teilen</string>
+    <string name="sharereceiver_title_share_images">%d Bilder teilen</string>
+    <string name="sharereceiver_title_share_single_file">Datei teilen</string>
+    <string name="sharereceiver_title_share_files">%d Dateien teilen</string>
+    <string name="sharereceiver_share_to_draft_of_conversation">Teilen mit</string>
+    <string name="sharereceiver_error_copy_file">Datei konnte nicht mit Kullo geteilt werden</string>
+    <string name="sharereceiver_error_copy_files">%d Dateien konnten nicht mit Kullo geteilt werden</string>
 
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>

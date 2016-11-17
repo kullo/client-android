@@ -90,8 +90,6 @@ ellipsis (…)
 
     <!-- conversations list -->
     <string name="footer">Footer</string>
-    <string name="show_footer">Show footer</string>
-    <string name="hide_footer">Hide footer</string>
     <string name="action_toggle_message_size">Inflate</string>
     <string name="empty_conversation_title">New</string>
     <string name="download_attachments">Download</string>
@@ -189,6 +187,16 @@ ellipsis (…)
     <string name="select_file_canceled">Select file canceled</string>
     <string name="no_tmp_dir_found">Cannot find temporary directory</string>
     <string name="compose_error_loading_file">Error loading selected file</string>
+
+    <!-- share receiver -->
+    <string name="sharereceiver_title_share_text">Share text</string>
+    <string name="sharereceiver_title_share_single_image">Share image</string>
+    <string name="sharereceiver_title_share_images">Share %d images</string>
+    <string name="sharereceiver_title_share_single_file">Share file</string>
+    <string name="sharereceiver_title_share_files">Share %d files</string>
+    <string name="sharereceiver_share_to_draft_of_conversation">Share with</string>
+    <string name="sharereceiver_error_copy_file">files could not be shared with Kullo</string>
+    <string name="sharereceiver_error_copy_files">%d files could not be shared with Kullo</string>
 
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>

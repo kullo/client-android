@@ -13,6 +13,7 @@ import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
+import net.kullo.android.application.CacheType;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.observers.listenerobservers.DraftAttachmentsSaveListenerObserver;
@@ -31,7 +32,7 @@ public class DraftAttachmentOpener implements DraftAttachmentsSaveListenerObserv
 
     public void saveAndOpenAttachment(long conversationId, long attachmentId) {
         final String filename = SessionConnector.get().getDraftAttachmentFilename(conversationId, attachmentId);
-        final File fileOpenCacheDir = ((KulloApplication) mBaseActivity.getApplication()).fileOpenCacheDir();
+        final File fileOpenCacheDir = ((KulloApplication) mBaseActivity.getApplication()).cacheDir(CacheType.OpenFile, null);
         final File tmpfile = new File(fileOpenCacheDir, filename);
 
         {

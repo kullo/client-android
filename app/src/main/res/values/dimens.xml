@@ -10,6 +10,7 @@
     <dimen name="md_additions_card_title_big">24sp</dimen>
     <dimen name="md_additions_card_title_small">14sp</dimen>
     <dimen name="md_additions_card_subtitle">14sp</dimen>
+    <dimen name="md_additions_card_supporting_text">14sp</dimen>
     <dimen name="md_additions_card_margin">8dp</dimen>
     <dimen name="md_additions_list_avatar_size">40dp</dimen>
     <dimen name="md_additions_list_padding">16dp</dimen>

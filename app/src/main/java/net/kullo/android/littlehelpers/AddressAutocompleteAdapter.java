@@ -2,6 +2,7 @@
 package net.kullo.android.littlehelpers;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,7 +20,7 @@ import java.util.List;
 
 public class AddressAutocompleteAdapter extends ArrayAdapter<String> implements Filterable {
     private final List<String> mDomains;
-    private LayoutInflater mInflater;
+    private final LayoutInflater mInflater;
 
     private static final String HASH_CHAR = "#";
 
@@ -30,8 +31,9 @@ public class AddressAutocompleteAdapter extends ArrayAdapter<String> implements 
         mDomains = Collections.singletonList(context.getString(R.string.kullo_domain));
     }
 
+    @NonNull
     @Override
-    public View getView(final int position, final View view, final ViewGroup parentView) {
+    public View getView(final int position, final View view, @NonNull final ViewGroup parentView) {
         final TextView newView;
         if (view == null) {
             newView = (TextView) mInflater.inflate(android.R.layout.simple_dropdown_item_1line, parentView, false);
@@ -42,7 +44,7 @@ public class AddressAutocompleteAdapter extends ArrayAdapter<String> implements 
         return newView;
     }
 
-
+    @NonNull
     @Override
     public Filter getFilter() {
         return (new Filter() {

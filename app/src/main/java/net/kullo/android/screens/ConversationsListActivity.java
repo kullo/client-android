@@ -4,7 +4,6 @@ package net.kullo.android.screens;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -40,8 +39,8 @@ import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.ConversationsEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.conversationslist.ConversationsAdapter;
-import net.kullo.android.screens.conversationslist.DividerDecoration;
-import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
+import net.kullo.android.ui.DividerDecoration;
+import net.kullo.android.ui.RecyclerItemClickListener;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
@@ -249,28 +248,26 @@ public class ConversationsListActivity extends AppCompatActivity implements
         int dividerLeftMargin = getResources().getDimensionPixelSize(R.dimen.md_additions_list_divider_margin_left);
         mRecyclerView.addItemDecoration(new DividerDecoration(this, dividerLeftMargin));
 
-        // Add touch listener
-        mRecyclerView.addOnItemTouchListener(new RecyclerItemClickListener(this, mRecyclerView,
-                new RecyclerItemClickListener.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(View view, int position) {
-                        Long conversationId = mAdapter.getItem(position);
+        mRecyclerView.addOnItemTouchListener(new RecyclerItemClickListener(mRecyclerView) {
+            @Override
+            public void onItemClick(View view, int position) {
+                long conversationId = mAdapter.getItem(position);
 
-                        if (mAdapter.isSelectionActive()) {
-                            selectConversation(conversationId);
-                        } else {
-                            Intent intent = new Intent(ConversationsListActivity.this, MessagesListActivity.class);
-                            intent.putExtra(MessagesListActivity.CONVERSATION_ID, conversationId);
+                if (mAdapter.isSelectionActive()) {
+                    selectConversation(conversationId);
+                } else {
+                    Intent intent = new Intent(ConversationsListActivity.this, MessagesListActivity.class);
+                    intent.putExtra(MessagesListActivity.CONVERSATION_ID, conversationId);
+                    startActivity(intent);
+                }
+            }
 
-                            startActivity(intent);
-                        }
-                    }
-                    @Override
-                    public void onItemLongPress(View view, int position) {
-                        Long conversationId = mAdapter.getItem(position);
-                        selectConversation(conversationId);
-                    }
-                }));
+            @Override
+            public void onItemLongPress(View view, int position) {
+                long conversationId = mAdapter.getItem(position);
+                selectConversation(conversationId);
+            }
+        });
     }
 
     private void registerConversationsEventObserver() {

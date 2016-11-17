@@ -5,11 +5,9 @@ import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.TypedArray;
-import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
@@ -26,6 +24,8 @@ import android.widget.Toast;
 import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
+import net.kullo.android.application.CacheType;
+import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
@@ -33,9 +33,9 @@ import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Debug;
 import net.kullo.android.littlehelpers.KulloConstants;
-import net.kullo.android.littlehelpers.NonScrollingLinearLayoutManager;
 import net.kullo.android.littlehelpers.StreamCopy;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.littlehelpers.UriHelpers;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.DraftAttachmentAddedEventObserver;
 import net.kullo.android.observers.eventobservers.DraftAttachmentRemovedEventObserver;
@@ -43,6 +43,7 @@ import net.kullo.android.observers.eventobservers.DraftEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.compose.DraftAttachmentOpener;
 import net.kullo.android.screens.compose.DraftAttachmentsAdapter;
+import net.kullo.android.ui.NonScrollingLinearLayoutManager;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.NetworkError;
@@ -50,6 +51,7 @@ import net.kullo.libkullo.api.SyncProgress;
 
 import java.io.File;
 import java.net.URLConnection;
+import java.util.List;
 
 public class ComposeActivity extends AppCompatActivity {
     private static final String TAG = "ComposeActivity";
@@ -103,12 +105,7 @@ public class ComposeActivity extends AppCompatActivity {
         Ui.setColorStatusBarArrangeHeader(this);
         Ui.setupActionbar(this);
         setTitle(getString(R.string.activity_title_compose));
-
-        mNewMessageText = (EditText) findViewById(R.id.new_message_text);
-        mNewMessageReceivers = (TextView) findViewById(R.id.new_message_receivers);
-
-        mDraftAttachmentsList = (RecyclerView) findViewById(R.id.draft_attachments_list);
-        mDraftAttachmentsList.setLayoutManager(new NonScrollingLinearLayoutManager(this));
+        setupUi();
 
         mDraftAttachmentOpener = new DraftAttachmentOpener(this);
         mDraftAttachmentOpener.registerSaveFinishedListenerObserver();
@@ -146,7 +143,42 @@ public class ComposeActivity extends AppCompatActivity {
             result.task.waitUntilDone();
         }
 
+        handleShares(intent);
+
         GcmConnector.get().fetchAndRegisterToken(this);
+    }
+
+    private void setupUi() {
+        mNewMessageText = (EditText) findViewById(R.id.new_message_text);
+        mNewMessageReceivers = (TextView) findViewById(R.id.new_message_receivers);
+
+        mDraftAttachmentsList = (RecyclerView) findViewById(R.id.draft_attachments_list);
+        mDraftAttachmentsList.setLayoutManager(new NonScrollingLinearLayoutManager(this));
+    }
+
+    private void handleShares(Intent intent) {
+        RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
+
+        if (intent.hasExtra(KulloConstants.CONVERSATION_ADD_ATTACHMENTS)) {
+            List<Uri> files = intent.getParcelableArrayListExtra(KulloConstants.CONVERSATION_ADD_ATTACHMENTS);
+            RuntimeAssertion.require(files != null);
+            for (Uri file : files) {
+                Log.d(TAG, "Add file to draft: " + file);
+                addAttachment(file);
+            }
+        }
+
+        if (intent.hasExtra(KulloConstants.CONVERSATION_ADD_TEXT)) {
+            String text = intent.getStringExtra(KulloConstants.CONVERSATION_ADD_TEXT);
+            RuntimeAssertion.require(text != null);
+
+            String draftText = SessionConnector.get().getDraftText(mConversationId);
+            if (!draftText.trim().isEmpty()) {
+                draftText += "\n";
+            }
+            draftText += text;
+            SessionConnector.get().setDraftText(mConversationId, draftText);
+        }
     }
 
     @Override
@@ -281,6 +313,7 @@ public class ComposeActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case android.R.id.home: // main back button
                 Log.d(TAG, "Main back button clicked");
+                setResult(RESULT_CANCELED);
                 finish(); // this will cause onPause, which saves the draft
                 return true;
             case R.id.action_add_attachment:
@@ -313,10 +346,10 @@ public class ComposeActivity extends AppCompatActivity {
                         .cancelable(false)
                         .show();
 
-                SessionConnector.get().saveDraftForConversation(mConversationId, message, true);
+                SessionConnector.get().saveDraftForSending(mConversationId, message);
                 SessionConnector.get().sendMessages();
             } else {
-                SessionConnector.get().saveDraftForConversation(mConversationId, message, false);
+                SessionConnector.get().setDraftText(mConversationId, message);
             }
         } else {
             SessionConnector.get().clearDraftForConversation(mConversationId);
@@ -418,18 +451,7 @@ public class ComposeActivity extends AppCompatActivity {
                 final Uri selectedFileUri = data.getData();
                 RuntimeAssertion.require(selectedFileUri != null);
                 Log.d(TAG, "Attachment source: " + selectedFileUri);
-
-                final String scheme = selectedFileUri.getScheme();
-                switch (scheme) {
-                    case "file":
-                        handleAttachmentFromFileUri(selectedFileUri);
-                        break;
-                    case "content":
-                        handleAttachmentFromContentUri(selectedFileUri);
-                        break;
-                    default:
-                        RuntimeAssertion.fail("Unrecognized scheme: " + scheme);
-                }
+                addAttachment(selectedFileUri);
             } else if (resultCode == Activity.RESULT_CANCELED){
                 Toast.makeText(this, R.string.select_file_canceled, Toast.LENGTH_SHORT).show();
             } else {
@@ -446,7 +468,21 @@ public class ComposeActivity extends AppCompatActivity {
         else return "application/octet-stream";
     }
 
-    private void handleAttachmentFromFileUri(final Uri selectedFileUri) {
+    private void addAttachment(@NonNull final Uri selectedFileUri) {
+        final String scheme = selectedFileUri.getScheme();
+        switch (scheme) {
+            case "file":
+                addAttachmentFromFileUri(selectedFileUri);
+                break;
+            case "content":
+                addAttachmentFromContentUri(selectedFileUri);
+                break;
+            default:
+                RuntimeAssertion.fail("Unrecognized scheme: " + scheme);
+        }
+    }
+
+    private void addAttachmentFromFileUri(@NonNull final Uri selectedFileUri) {
         final String guessedMimeType = URLConnection.guessContentTypeFromName(selectedFileUri.toString());
         final String mimeType = mimeTypeOrFallback(guessedMimeType);
 
@@ -454,27 +490,12 @@ public class ComposeActivity extends AppCompatActivity {
         task.waitUntilDone();
     }
 
-    private void handleAttachmentFromContentUri(final Uri selectedFileUri) {
+    private void addAttachmentFromContentUri(@NonNull final Uri selectedFileUri) {
         final String mimeType = mimeTypeOrFallback(getContentResolver().getType(selectedFileUri));
 
-        // copy file in known location for uploading
-        String tmpFilename = "tmp.tmp"; // default filename if original can't be retrieved
-
-        // Get filename from stream
-        Cursor fileInfoCursor = getContentResolver().query(selectedFileUri, null, null, null, null);
-        if (fileInfoCursor != null) {
-            fileInfoCursor.moveToFirst();
-            int nameIndex = fileInfoCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-            if (nameIndex != -1) {
-                tmpFilename = fileInfoCursor.getString(nameIndex);
-            }
-            fileInfoCursor.close();
-        }
-
-        File appCacheDir = getCacheDir();
-        RuntimeAssertion.require(appCacheDir != null);
-
-        final String tmpFilePath = appCacheDir.getPath() + File.separatorChar + tmpFilename;
+        String tmpFilename = UriHelpers.getFilename(this, selectedFileUri, "tmp.tmp");
+        File cacheDir = ((KulloApplication) getApplication()).cacheDir(CacheType.AddAttachment, null);
+        final String tmpFilePath = (new File(cacheDir, tmpFilename)).getPath();
         Log.d(TAG, "Tmp file path before adding to DB: " + tmpFilePath);
 
         if (StreamCopy.copyToPath(this, selectedFileUri, tmpFilePath)) {

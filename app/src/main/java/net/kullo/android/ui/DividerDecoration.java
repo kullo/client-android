@@ -1,5 +1,5 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
-package net.kullo.android.screens.conversationslist;
+package net.kullo.android.ui;
 
 import android.content.Context;
 import android.content.res.TypedArray;

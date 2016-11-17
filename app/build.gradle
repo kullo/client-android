@@ -14,8 +14,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 15
         targetSdkVersion TARGET_SDK_VERSION
-        versionCode 3801
-        versionName "38"
+        versionCode 3903
+        versionName "39"
 
         testInstrumentationRunner "android.test.InstrumentationTestRunner"
     }
@@ -60,7 +60,7 @@ dependencies {
     // At the moment, the versions match.
     compile 'com.afollestad.material-dialogs:core:0.9.0.2'
 
-    compile "com.google.android.gms:play-services-gcm:9.6.0"
+    compile "com.google.android.gms:play-services-gcm:9.6.1"
 
     compile project(':libkullo')
     compile project(':javautils')

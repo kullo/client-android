@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import net.danlew.android.joda.JodaTimeAndroid;
@@ -17,6 +18,7 @@ import net.kullo.android.kulloapi.ClientConnector;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.littlehelpers.CiStringComparator;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.LibKullo;
 
 import org.joda.time.format.DateTimeFormat;
@@ -120,23 +122,44 @@ public class KulloApplication extends Application
     }
 
     @NonNull
-    public File fileOpenCacheDir() {
-        return cacheDirWithSubfolder("openfile");
+    public File cacheDir(final CacheType type, @Nullable String customSubfolderName) {
+        final String typeSubfolderName;
+        switch (type) {
+            case AddAttachment:
+                typeSubfolderName = "add_attachment"; break;
+            case Capture:
+                typeSubfolderName = "capture"; break;
+            case OpenFile:
+                typeSubfolderName = "openfile"; break;
+            case ReceivedShares:
+                typeSubfolderName = "received_shares"; break;
+            default:
+                typeSubfolderName = "";
+                RuntimeAssertion.fail("Unhandled cache type");
+        }
+        return cacheDirWithSubfolder(typeSubfolderName, customSubfolderName);
     }
 
     @NonNull
-    public File captureCacheDir() {
-        return cacheDirWithSubfolder("capture");
-    }
-
-    @NonNull
-    private File cacheDirWithSubfolder(@NonNull final String subfolderName) {
+    private File cacheDirWithSubfolder(@NonNull final String subfolderName,
+                                       @Nullable final String subfolder2Name) {
         final File fileOpenCacheDir = new File(getCacheDir(), subfolderName);
-        if (!fileOpenCacheDir.isDirectory()) {
-            boolean created = fileOpenCacheDir.mkdir();
+        ensureDirExists(fileOpenCacheDir);
+
+        if (subfolder2Name == null) {
+            return fileOpenCacheDir;
+        } else {
+            final File dir = new File(fileOpenCacheDir, subfolder2Name);
+            ensureDirExists(dir);
+            return dir;
+        }
+    }
+
+    private void ensureDirExists(@NonNull final File dir) {
+        if (!dir.isDirectory()) {
+            boolean created = dir.mkdir();
             if (!created) throw new RuntimeException("Did not create cache directory");
         }
-        return fileOpenCacheDir;
     }
 
     public boolean canOpenFileType(File file, String mimeType) {

@@ -17,7 +17,7 @@
     Used for status bar background and app switcher.
     That is 91 % of the brightness of the main orange and has a contrast to white
     of more than 3 (3.0619729)
-     -->
+    -->
     <color name="kulloPrimaryDarkColor">#D38002</color>
     <color name="kulloAccentColor">@color/kulloTurquoise</color>
     <color name="kulloDrawerBackground">@color/kulloBackgroundLight</color>
@@ -35,5 +35,16 @@
     <color name="onKulloBackgroundTextColorSecondary">#D9585759</color><!-- 85 % (=D9) Kullo gray -->
     <color name="onKulloBackgroundTextColorHint">#61000000</color><!-- 38 % (=61) -->
 
+    <!--
+    "Icons and other elements"
+    https://material.google.com/style/color.html#color-text-background-colors
+    -->
+    <color name="md_additions_active_button">#8A000000</color><!-- 54 % (=8A) -->
+    <color name="md_additions_inactive_button">#61000000</color><!-- 38 % (=61) -->
 
+    <color name="md_additions_primary_text">#DE000000</color><!-- 87 % (=DE) -->
+    <color name="md_additions_secondary_text">#8a000000</color><!-- 54 % (=8A) -->
+    <color name="md_additions_disabled_text">#61000000</color><!-- 38 % (=61) -->
+    <color name="md_additions_hint_text">#61000000</color><!-- 38 % (=61) -->
+    <color name="md_additions_divider">#1F000000</color><!-- 12 % (=1F) -->
 </resources>

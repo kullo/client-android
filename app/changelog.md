@@ -1,6 +1,12 @@
 Kullo for Android
 -----------------
 
+## v39 (2016-10-28)
+
+ * Add share receiver
+ * Fix sharing of different attachments with the same filename
+ * Add missing filename extensions when attaching media files
+
 ## v38 (2016-10-07)
 
  * Handle several permission issues when selecting an avatar

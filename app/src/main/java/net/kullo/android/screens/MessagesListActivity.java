@@ -38,8 +38,8 @@ import net.kullo.android.observers.eventobservers.MessageAddedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageStateEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
-import net.kullo.android.screens.conversationslist.DividerDecoration;
-import net.kullo.android.screens.conversationslist.RecyclerItemClickListener;
+import net.kullo.android.ui.DividerDecoration;
+import net.kullo.android.ui.RecyclerItemClickListener;
 import net.kullo.android.screens.messageslist.MessagesAdapter;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
@@ -291,28 +291,26 @@ public class MessagesListActivity extends AppCompatActivity {
         });
         mMessagesList.setAdapter(mMessagesAdapter);
 
-        // Add touch listener
-        mMessagesList.addOnItemTouchListener(new RecyclerItemClickListener(MessagesListActivity.this, mMessagesList,
-                new RecyclerItemClickListener.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(View view, int position) {
-                        long messageId = mMessagesAdapter.getItem(position);
+        mMessagesList.addOnItemTouchListener(new RecyclerItemClickListener(mMessagesList) {
+            @Override
+            public void onItemClick(View view, int position) {
+                long messageId = mMessagesAdapter.getItem(position);
 
-                        if (mMessagesAdapter.isSelectionActive()) {
-                            selectMessage(messageId);
-                        } else {
-                            Intent intent = new Intent(MessagesListActivity.this, SingleMessageActivity.class);
-                            intent.putExtra(KulloConstants.MESSAGE_ID, messageId);
-                            startActivity(intent);
-                        }
-                    }
+                if (mMessagesAdapter.isSelectionActive()) {
+                    selectMessage(messageId);
+                } else {
+                    Intent intent = new Intent(MessagesListActivity.this, SingleMessageActivity.class);
+                    intent.putExtra(KulloConstants.MESSAGE_ID, messageId);
+                    startActivity(intent);
+                }
+            }
 
-                    @Override
-                    public void onItemLongPress(View view, int position) {
-                        long messageId = mMessagesAdapter.getItem(position);
-                        selectMessage(messageId);
-                    }
-                }));
+            @Override
+            public void onItemLongPress(View view, int position) {
+                long messageId = mMessagesAdapter.getItem(position);
+                selectMessage(messageId);
+            }
+        });
 
         mConversationEmptyLabel = (TextView) findViewById(R.id.empty_list_label);
         updateEmptyLabel();

@@ -1,7 +1,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="net.kullo.android.screens.AboutActivity">
+    tools:context=".screens.AboutActivity">
 
     <include
         android:id="@+id/toolbar"

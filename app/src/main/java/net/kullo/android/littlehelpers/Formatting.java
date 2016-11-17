@@ -1,18 +1,28 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.littlehelpers;
 
+import java.util.Locale;
+
 public class Formatting {
     public static String filesizeHuman(long bytes) {
-        if (bytes > 8000000)
-            return String.format("%.0f MB", bytes / 1000000.0);
-        else if (bytes > 1000000)
-            return String.format("%.1f MB", bytes / 1000000.0);
-        else if (bytes > 8000)
-            return String.format("%.0f kB", bytes / 1000.0);
-        else if (bytes > 1000)
-            return String.format("%.1f kB", bytes / 1000.0);
+        // Use binary multiplier 1024 here to avoid having a "102 MB" file in Kullo
+        // indicating that files greater that 100 megabytes can be sent.
+        // Use unit titles "MB" and "KB" known from Windows Explorer.
+        final int MEGA = 1024*1024;
+        final int KILO = 1024;
+
+        Locale locale = Locale.getDefault();
+
+        if (bytes >= 80*MEGA)
+            return String.format(locale, "%.0f MB", (float) bytes / MEGA);
+        else if (bytes >= MEGA)
+            return String.format(locale, "%.1f MB", (float) bytes / MEGA);
+        else if (bytes >= 8*KILO)
+            return String.format(locale, "%.0f KB", (float) bytes / KILO);
+        else if (bytes >= KILO)
+            return String.format(locale, "%.1f KB", (float) bytes / KILO);
         else
-            return String.format("%d  Bytes", bytes);
+            return String.format(locale, "%d Bytes", bytes);
     }
 
     private Formatting() {}

@@ -4,7 +4,6 @@ package net.kullo.android.screens;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,9 +26,6 @@ import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.javautils.RuntimeAssertion;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-
 public class CropImageActivity extends AppCompatActivity {
     public static final String INPUT_METHOD = "InputMethod";
     public static final String CAMERA_INPUT = "Camera";
@@ -50,8 +46,8 @@ public class CropImageActivity extends AppCompatActivity {
         Ui.setupActionbar(this);
         Ui.setColorStatusBarArrangeHeader(this);
 
-        mPrepareImageProgressIndicator = findViewById(R.id.prepareImageProgressIndicator);
-        mCropImageView = (CropImageView)findViewById(R.id.cropImageView);
+        mPrepareImageProgressIndicator = findViewById(R.id.prepare_image_progress_indicator);
+        mCropImageView = (CropImageView)findViewById(R.id.crop_image_view);
 
         final Intent intent = getIntent();
         mBitmapSource = Uri.parse(intent.getStringExtra(BITMAP_INPUT_URI));
@@ -141,34 +137,15 @@ public class CropImageActivity extends AppCompatActivity {
             }
 
             protected Bitmap doInBackground(Void... params) {
-                final int sampleSize = sampleSize(mBitmapSource, KulloConstants.AVATAR_PREVIEW_MAX_PIXEL_COUNT);
-                Log.d(TAG, "Sample size: " + sampleSize);
-
-                final Bitmap selectedBitmap;
-                InputStream input = null;
-                try {
-                    input = getContentResolver().openInputStream(mBitmapSource);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                    RuntimeAssertion.fail("Failed to read bitmap from source");
-                }
-
-                BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inSampleSize = sampleSize;
-                selectedBitmap = BitmapFactory.decodeStream(input, null, options);
-
-                Log.d(TAG, "Bitmap in memory: "
-                        + selectedBitmap.getWidth() + "x" + selectedBitmap.getHeight() + "px"
-                        + " (" + selectedBitmap.getByteCount() + " bytes)");
-
                 // Resize to fit the minimal GL_MAX_TEXTURE_SIZE: 2048x2048
                 // The value of GL_MAX_TEXTURE_SIZE might be higher (e.g. 4096x496 on the Motorola
                 // Moto G 2. Gen), but 2048 is always guaranteed and it is not trivial to query the
                 // actual value of GL_MAX_TEXTURE_SIZE without an openGL context.
                 int maxTextureSize = 2048;
                 Log.d(TAG, "Resizing to max texture size " + maxTextureSize);
-                return AvatarUtils.resizeBitmapWithLongerSideLimitedTo(
-                        maxTextureSize, selectedBitmap);
+
+                return AvatarUtils.loadBitmap(CropImageActivity.this, mBitmapSource,
+                        KulloConstants.AVATAR_PREVIEW_MAX_PIXEL_COUNT, maxTextureSize);
             }
 
             protected void onPostExecute(Bitmap resizedBitmap) {
@@ -178,25 +155,6 @@ public class CropImageActivity extends AppCompatActivity {
                 mCropImageView.setImageBitmap(resizedBitmap);
             }
         }.execute();
-    }
-
-    private int sampleSize(final Uri bitmapSource, int maxPixelCount) {
-        try {
-            InputStream input = getContentResolver().openInputStream(bitmapSource);
-
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inJustDecodeBounds = true;
-            BitmapFactory.decodeStream(input, null, options);
-
-            Log.d(TAG, options.outWidth + "x" + options.outHeight);
-
-            double scalingFactor = AvatarUtils.scalingFactorOneDimension(
-                    options.outWidth, options.outHeight, maxPixelCount);
-            return AvatarUtils.sampleSize(scalingFactor);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return -1;
-        }
     }
 
     private void storeCroppedBitmap() {

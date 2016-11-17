@@ -24,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import net.kullo.android.R;
+import net.kullo.android.application.CacheType;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
@@ -189,7 +190,7 @@ public class SettingsActivity extends AppCompatActivity {
         extraIntents.add(clearIntentOption);
 
         // Extras: Cameras
-        final File cameraOutputDir = ((KulloApplication) getApplication()).captureCacheDir();
+        final File cameraOutputDir = ((KulloApplication) getApplication()).cacheDir(CacheType.Capture, null);
         final File cameraOutputFile = new File(cameraOutputDir, "img_" + System.currentTimeMillis() + ".jpg");
         mCameraOutputFileUri = FileProvider.getUriForFile(this, KulloApplication.ID, cameraOutputFile);
         Log.d(TAG, "Camera output file: " + mCameraOutputFileUri);

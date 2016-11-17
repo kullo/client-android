@@ -1,5 +1,5 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
-package net.kullo.android.littlehelpers;
+package net.kullo.android.ui;
 
 import android.content.Context;
 import android.graphics.Rect;

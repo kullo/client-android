@@ -7,10 +7,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class ResponseListener {
     /**
-     * Returns the progress made on upload and download, measured in bytes. The
-     * request can be canceled by returning the appropriate code.
+     * Called when there's progress made on upload or download.
+     * The request can be canceled by returning the appropriate code.
      */
-    public abstract ProgressResult progress(long uploadTransferred, long uploadTotal, long downloadTransferred, long downloadTotal);
+    public abstract ProgressResult progressed(TransferProgress progress);
 
     public abstract void dataReceived(byte[] data);
 
@@ -38,12 +38,12 @@ public abstract class ResponseListener {
         }
 
         @Override
-        public ProgressResult progress(long uploadTransferred, long uploadTotal, long downloadTransferred, long downloadTotal)
+        public ProgressResult progressed(TransferProgress progress)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_progress(this.nativeRef, uploadTransferred, uploadTotal, downloadTransferred, downloadTotal);
+            return native_progressed(this.nativeRef, progress);
         }
-        private native ProgressResult native_progress(long _nativeRef, long uploadTransferred, long uploadTotal, long downloadTransferred, long downloadTotal);
+        private native ProgressResult native_progressed(long _nativeRef, TransferProgress progress);
 
         @Override
         public void dataReceived(byte[] data)

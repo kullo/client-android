@@ -4,6 +4,8 @@
 package net.kullo.libkullo.api;
 
 public enum LocalError {
+    /** File is too big */
+    FILETOOBIG,
     /** Couldn't read or write to file */
     FILESYSTEM,
     /** Any other error */

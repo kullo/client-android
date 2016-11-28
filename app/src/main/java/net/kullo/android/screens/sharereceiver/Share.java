@@ -6,8 +6,8 @@ import android.net.Uri;
 import android.support.annotation.Nullable;
 
 public class Share {
-    public Uri uri;
+    public Uri cacheUri;
     public long size;
     public String filename;
-    @Nullable public Bitmap preview;
+    @Nullable public Uri previewUri;
 }

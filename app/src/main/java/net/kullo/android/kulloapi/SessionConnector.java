@@ -47,6 +47,8 @@ import net.kullo.libkullo.api.Conversations;
 import net.kullo.libkullo.api.DateTime;
 import net.kullo.libkullo.api.DraftAttachmentsAddListener;
 import net.kullo.libkullo.api.DraftAttachmentsSaveToListener;
+import net.kullo.libkullo.api.DraftPart;
+import net.kullo.libkullo.api.DraftState;
 import net.kullo.libkullo.api.Event;
 import net.kullo.libkullo.api.EventType;
 import net.kullo.libkullo.api.InternalEvent;
@@ -275,6 +277,11 @@ public class SessionConnector {
             }
         }, new ClientCreateSessionListener() {
             private final String TAG = "ClientCreateSessionList"; // max 23 chars
+
+            @Override
+            public void migrationStarted(Address address) {
+                //TODO give user feedback
+            }
 
             @Override
             public void finished(final Session session) {
@@ -544,9 +551,10 @@ public class SessionConnector {
         }
 
         @Override
-        public void draftAttachmentsTooBig(long convId) {
+        public void draftPartTooBig(long convId, DraftPart part, long currentSize, long maxSize) {
             synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
                 for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                    //TODO generalize to pass on part
                     ((SyncerListenerObserver) observer).draftAttachmentsTooBig(convId);
                 }
             }
@@ -705,6 +713,15 @@ public class SessionConnector {
 
     @NonNull
     @MainThread
+    public DraftState getDraftState(long conversationId) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.drafts().state(conversationId);
+        }
+    }
+
+    @NonNull
+    @MainThread
     public String getDraftText(long conversationId) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
@@ -743,6 +760,11 @@ public class SessionConnector {
         RuntimeAssertion.require(filePath != null);
 
         AsyncTask task = mSession.draftAttachments().addAsync(conversationId, filePath, mimeType, new DraftAttachmentsAddListener() {
+            @Override
+            public void progressed(long convId, long attId, long bytesProcessed, long bytesTotal) {
+
+            }
+
             @Override
             public void finished(long convId, long attId, String path) {
                 synchronized (mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {

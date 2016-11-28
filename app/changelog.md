@@ -1,6 +1,19 @@
 Kullo for Android
 -----------------
 
+## v40 (2016-11-25)
+
+ * Improved share receiver
+ * Show upload progress when sending a message
+ * Clean cache dir on app start
+ * Fix closing of compose view when receiving a message
+
+### Components
+
+ * Update libkullo to v57
+ * Update SmartSqlite to v16
+ * Update Botan to 1.11.33
+
 ## v39 (2016-10-28)
 
  * Add share receiver

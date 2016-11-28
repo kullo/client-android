@@ -6,4 +6,5 @@ public enum CacheType {
     Capture,
     OpenFile,
     ReceivedShares,
+    ReceivedSharePreviews,
 }

@@ -5,6 +5,6 @@
     and http://stackoverflow.com/questions/35492259/lint-error-on-okio
     -->
     <issue id="InvalidPackage">
-        <ignore regexp="okio-1.6.0.jar"/>
+        <ignore regexp="okio-.*\.jar"/>
     </issue>
 </lint>

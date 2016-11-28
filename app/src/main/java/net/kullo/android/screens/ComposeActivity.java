@@ -4,11 +4,10 @@ package net.kullo.android.screens;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.TypedArray;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -58,18 +57,20 @@ public class ComposeActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_ATTACH_FILE = 1;
 
     private long mConversationId;
-    private EditText mNewMessageText;
-    private TextView mNewMessageReceivers;
-    private RecyclerView mDraftAttachmentsList;
-    private MaterialDialog mProgressSync;
+
+    private View mComposeFrame;
+    private LinearLayout mComposeLayout;
+    private View mComposeHeader;
+    private TextView mComposeReceivers;
+    private EditText mComposeText;
+    private RecyclerView mAttachmentsList;
+    @Nullable private MaterialDialog mProgressSync;
     private DraftEventObserver mDraftEventObserver;
     private SyncerListenerObserver mSyncerListenerObserver;
     private DraftAttachmentsAdapter mDraftAttachmentsAdapter;
     private DraftAttachmentOpener mDraftAttachmentOpener;
 
-    // Android API < 16 hack because View.getMinimumHeight is missing
-    private int currentMessageTextInputMinimumHeight = -1;
-
+    private boolean mSendingTriggered = false;
     private Pair<Integer, Integer> mStoredSelection = null;
 
     @Override
@@ -110,7 +111,7 @@ public class ComposeActivity extends AppCompatActivity {
         mDraftAttachmentOpener = new DraftAttachmentOpener(this);
         mDraftAttachmentOpener.registerSaveFinishedListenerObserver();
         mDraftAttachmentsAdapter = new DraftAttachmentsAdapter(this, mConversationId, mDraftAttachmentOpener);
-        mDraftAttachmentsList.setAdapter(mDraftAttachmentsAdapter);
+        mAttachmentsList.setAdapter(mDraftAttachmentsAdapter);
 
         SessionConnector.get().addEventObserver(DraftAttachmentAddedEventObserver.class, new DraftAttachmentAddedEventObserver() {
             public void draftAttachmentAdded(long conversationId, long attachmentId) {
@@ -129,7 +130,7 @@ public class ComposeActivity extends AppCompatActivity {
         });
 
         // resize edit window when attachments added or removed
-        mDraftAttachmentsList.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+        mAttachmentsList.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
             @Override
             public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
                 adaptLayoutToAttachmentsListSize();
@@ -149,11 +150,14 @@ public class ComposeActivity extends AppCompatActivity {
     }
 
     private void setupUi() {
-        mNewMessageText = (EditText) findViewById(R.id.new_message_text);
-        mNewMessageReceivers = (TextView) findViewById(R.id.new_message_receivers);
+        mComposeFrame = findViewById(R.id.compose_frame);
+        mComposeLayout = (LinearLayout) findViewById(R.id.compose_layout);
+        mComposeHeader = findViewById(R.id.compose_header);
+        mComposeReceivers = (TextView) findViewById(R.id.compose_receivers);
+        mComposeText = (EditText) findViewById(R.id.compose_text);
 
-        mDraftAttachmentsList = (RecyclerView) findViewById(R.id.draft_attachments_list);
-        mDraftAttachmentsList.setLayoutManager(new NonScrollingLinearLayoutManager(this));
+        mAttachmentsList = (RecyclerView) findViewById(R.id.attachments_list);
+        mAttachmentsList.setLayoutManager(new NonScrollingLinearLayoutManager(this));
     }
 
     private void handleShares(Intent intent) {
@@ -182,12 +186,6 @@ public class ComposeActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        GcmConnector.get().removeAllNotifications(this);
-    }
-
-    @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
 
@@ -201,28 +199,18 @@ public class ComposeActivity extends AppCompatActivity {
         // touching the whole space. This must be done after we set recipients and know the
         // final header size.
         // Those updates must converge to avoid endless recursion
-        int frameHeight = findViewById(R.id.new_message_frame).getHeight();
-        int headerHeight = findViewById(R.id.new_message_header).getHeight();
-
-        // Note LinearLayout#getDividerDrawable requires API 16
-        int[] attrs = new int[]{ android.R.attr.listDivider };
-        Drawable divider;
-        {
-            final TypedArray a = this.obtainStyledAttributes(attrs);
-            divider = a.getDrawable(0);
-            a.recycle();
-        }
-        RuntimeAssertion.require(divider != null);
-        int dividerHeight = divider.getIntrinsicHeight();
+        int frameHeightPx = mComposeFrame.getHeight();
+        int headerHeightPx = mComposeHeader.getHeight();
+        int dividerHeightPx = mComposeLayout.getDividerDrawable().getIntrinsicHeight();
 
         // Attachments list
         if (mDraftAttachmentsAdapter.getItemCount() == 0) {
-            if (mDraftAttachmentsList.getVisibility() != View.GONE) {
-                mDraftAttachmentsList.setVisibility(View.GONE);
+            if (mAttachmentsList.getVisibility() != View.GONE) {
+                mAttachmentsList.setVisibility(View.GONE);
             }
         } else {
-            if (mDraftAttachmentsList.getVisibility() != View.VISIBLE) {
-                mDraftAttachmentsList.setVisibility(View.VISIBLE);
+            if (mAttachmentsList.getVisibility() != View.VISIBLE) {
+                mAttachmentsList.setVisibility(View.VISIBLE);
             }
         }
 
@@ -230,22 +218,21 @@ public class ComposeActivity extends AppCompatActivity {
         int attachmentListHeight = 0;
         int extraDividerHeight = 0;
         if (mDraftAttachmentsAdapter.getItemCount() > 0) {
-            attachmentListHeight = mDraftAttachmentsList.getHeight()
-                + ((LinearLayout.LayoutParams) mDraftAttachmentsList.getLayoutParams()).topMargin
-                + ((LinearLayout.LayoutParams) mDraftAttachmentsList.getLayoutParams()).bottomMargin;
-            extraDividerHeight = dividerHeight;
-            if (attachmentListHeight > frameHeight / 2) {
+            attachmentListHeight = mAttachmentsList.getHeight()
+                + ((LinearLayout.LayoutParams) mAttachmentsList.getLayoutParams()).topMargin
+                + ((LinearLayout.LayoutParams) mAttachmentsList.getLayoutParams()).bottomMargin;
+            extraDividerHeight = dividerHeightPx;
+            if (attachmentListHeight > frameHeightPx / 2) {
                 // prevent attachment list to take over the whole view (user will have to scroll down past this point)
-                attachmentListHeight = frameHeight / 2;
+                attachmentListHeight = frameHeightPx / 2;
             }
         }
 
         //Log.d(TAG, "frame: " + frameHeight + ", header: " + headerHeight + ", divider: " + dividerHeight + ", attachments: " + attachmentListHeight + " + " + extraDividerHeight);
 
-        int newMinimumHeight = frameHeight - headerHeight - dividerHeight - attachmentListHeight - extraDividerHeight;
-        if (currentMessageTextInputMinimumHeight != newMinimumHeight) {
-            mNewMessageText.setMinimumHeight(newMinimumHeight);
-            currentMessageTextInputMinimumHeight = newMinimumHeight;
+        int newMinimumHeight = frameHeightPx - headerHeightPx - dividerHeightPx - attachmentListHeight - extraDividerHeight;
+        if (mComposeText.getMinimumHeight() != newMinimumHeight) {
+            mComposeText.setMinimumHeight(newMinimumHeight);
         }
     }
 
@@ -253,7 +240,7 @@ public class ComposeActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        mNewMessageReceivers.setText(SessionConnector.get().getConversationNameOrPlaceHolder(mConversationId));
+        mComposeReceivers.setText(SessionConnector.get().getConversationNameOrPlaceHolder(mConversationId));
 
         updateDraftTextFromStorage();
         restoreSelection();
@@ -266,7 +253,7 @@ public class ComposeActivity extends AppCompatActivity {
 
             @Override
             public void draftTextChanged(long conversationId) {
-                mNewMessageText.setText(SessionConnector.get().getDraftText(conversationId));
+                mComposeText.setText(SessionConnector.get().getDraftText(conversationId));
             }
         };
         SessionConnector.get().addEventObserver(
@@ -275,12 +262,28 @@ public class ComposeActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_CODE_ATTACH_FILE) {
+            if (resultCode == Activity.RESULT_OK) {
+                RuntimeAssertion.require(data != null);
+                final Uri selectedFileUri = data.getData();
+                RuntimeAssertion.require(selectedFileUri != null);
+                Log.d(TAG, "Attachment source: " + selectedFileUri);
+                addAttachment(selectedFileUri);
+            } else if (resultCode == Activity.RESULT_CANCELED){
+                Toast.makeText(this, R.string.select_file_canceled, Toast.LENGTH_SHORT).show();
+            } else {
+                RuntimeAssertion.fail("Unknown result code");
+            }
+        } else {
+            RuntimeAssertion.fail("Unknown request code: " + requestCode);
+        }
+    }
 
-        SessionConnector.get().removeEventObserver(
-                DraftEventObserver.class,
-                mDraftEventObserver);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        GcmConnector.get().removeAllNotifications(this);
     }
 
     @Override
@@ -290,6 +293,14 @@ public class ComposeActivity extends AppCompatActivity {
         saveDraft(false);
         rememberSelection();
         Log.d(TAG, "Activity paused. Draft saved.");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        SessionConnector.get().removeEventObserver(
+                DraftEventObserver.class,
+                mDraftEventObserver);
     }
 
     @Override
@@ -304,7 +315,7 @@ public class ComposeActivity extends AppCompatActivity {
         //set old draft text, if there is any
         final String draftText = SessionConnector.get().getDraftText(mConversationId);
         if (!draftText.isEmpty()) {
-            mNewMessageText.setText(draftText);
+            mComposeText.setText(draftText);
         }
     }
 
@@ -320,7 +331,7 @@ public class ComposeActivity extends AppCompatActivity {
                 selectAttachmentIntent();
                 return true;
             case R.id.action_send:
-                saveDraft(true);
+                send();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -333,29 +344,35 @@ public class ComposeActivity extends AppCompatActivity {
         return true;
     }
 
-    private void saveDraft(boolean sendDraft) {
-        String message = mNewMessageText.getText().toString();
+    private boolean hasContent() {
+        String message = mComposeText.getText().toString();
+        return !message.isEmpty() || mDraftAttachmentsAdapter.getItemCount() > 0;
+    }
 
-        if (!message.isEmpty() || mDraftAttachmentsAdapter.getItemCount() > 0) {
-            if (sendDraft) {
-                //show waiting dialog
-                mProgressSync = new MaterialDialog.Builder(this)
-                        .title(R.string.progress_send)
-                        .content(R.string.please_wait)
-                        .progress(true, 0)
-                        .cancelable(false)
-                        .show();
+    private void send() {
+        if (hasContent()) {
+            mSendingTriggered = true;
 
-                SessionConnector.get().saveDraftForSending(mConversationId, message);
-                SessionConnector.get().sendMessages();
-            } else {
-                SessionConnector.get().setDraftText(mConversationId, message);
-            }
-        } else {
-            SessionConnector.get().clearDraftForConversation(mConversationId);
+            mProgressSync = new MaterialDialog.Builder(this)
+                    .title(R.string.progress_send)
+                    .content(R.string.please_wait)
+                    .progress(false, 100)
+                    .cancelable(false)
+                    .show();
+
+            saveDraft(true);
+            SessionConnector.get().sendMessages();
         }
+        // otherwise ignore click
+    }
 
-        setResult(RESULT_OK);
+    private void saveDraft(boolean sendDraft) {
+        String message = mComposeText.getText().toString();
+        if (sendDraft) {
+            SessionConnector.get().saveDraftForSending(mConversationId, message);
+        } else {
+            SessionConnector.get().setDraftText(mConversationId, message);
+        }
     }
 
     private void registerSyncFinishedListenerObserver() {
@@ -375,7 +392,22 @@ public class ComposeActivity extends AppCompatActivity {
             }
 
             @Override
-            public void progressed(SyncProgress progress) {
+            public void progressed(final SyncProgress progress) {
+                if (progress.getOutgoingMessagesTotalBytes() != 0) {
+                    // only update progress bar when information is available
+                    // to avoid a 100% -> 0% step when a download sync is
+                    // processed before the dialog is closed
+                    final int percentages = Math.min(100,
+                            (int) ((100 * progress.getOutgoingMessagesUploadedBytes()) / progress.getOutgoingMessagesTotalBytes()));
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mProgressSync != null) {
+                                mProgressSync.setProgress(percentages);
+                            }
+                        }
+                    });
+                }
             }
 
             @Override
@@ -383,10 +415,14 @@ public class ComposeActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (mProgressSync != null) {
-                            mProgressSync.dismiss();
+                        if (mSendingTriggered) {
+                            if (mProgressSync != null) {
+                                mProgressSync.dismiss();
+                            }
+
+                            setResult(RESULT_OK);
+                            finish();
                         }
-                        finish();
                     }
                 });
             }
@@ -419,13 +455,13 @@ public class ComposeActivity extends AppCompatActivity {
     }
 
     private void rememberSelection() {
-        mStoredSelection = new Pair<>(mNewMessageText.getSelectionStart(), mNewMessageText.getSelectionEnd());
+        mStoredSelection = new Pair<>(mComposeText.getSelectionStart(), mComposeText.getSelectionEnd());
     }
 
     private void restoreSelection() {
         if (mStoredSelection != null) {
-            int textLength = mNewMessageText.getText().length();
-            mNewMessageText.setSelection(
+            int textLength = mComposeText.getText().length();
+            mComposeText.setSelection(
                     Math.min(textLength, mStoredSelection.first),
                     Math.min(textLength, mStoredSelection.second));
         }
@@ -441,25 +477,6 @@ public class ComposeActivity extends AppCompatActivity {
         fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
         fileIntent.setAction(Intent.ACTION_GET_CONTENT);
         startActivityForResult(fileIntent, REQUEST_CODE_ATTACH_FILE);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE_ATTACH_FILE) {
-            if (resultCode == Activity.RESULT_OK) {
-                RuntimeAssertion.require(data != null);
-                final Uri selectedFileUri = data.getData();
-                RuntimeAssertion.require(selectedFileUri != null);
-                Log.d(TAG, "Attachment source: " + selectedFileUri);
-                addAttachment(selectedFileUri);
-            } else if (resultCode == Activity.RESULT_CANCELED){
-                Toast.makeText(this, R.string.select_file_canceled, Toast.LENGTH_SHORT).show();
-            } else {
-                RuntimeAssertion.fail("Unknown result code");
-            }
-        } else {
-            RuntimeAssertion.fail("Unknown request code: " + requestCode);
-        }
     }
 
     @NonNull

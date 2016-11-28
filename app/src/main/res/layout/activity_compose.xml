@@ -20,14 +20,14 @@ http://stackoverflow.com/a/8639921
         />
 
     <ScrollView
-        android:id="@+id/new_message_frame"
+        android:id="@+id/compose_frame"
         android:layout_below="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         >
 
         <LinearLayout
-            android:id="@+id/new_message_frame_content"
+            android:id="@+id/compose_layout"
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -35,13 +35,13 @@ http://stackoverflow.com/a/8639921
             android:showDividers="middle">
 
             <RelativeLayout
-                android:id="@+id/new_message_header"
+                android:id="@+id/compose_header"
                 android:orientation="horizontal"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
                 <EditText
-                    android:id="@+id/new_message_receivers_label"
+                    android:id="@+id/compose_receivers_label"
                     android:layout_height="wrap_content"
                     android:layout_width="wrap_content"
                     android:background="@null"
@@ -58,8 +58,8 @@ http://stackoverflow.com/a/8639921
                     />
 
                 <TextView
-                    android:id="@+id/new_message_receivers"
-                    android:layout_toRightOf="@+id/new_message_receivers_label"
+                    android:id="@+id/compose_receivers"
+                    android:layout_toRightOf="@+id/compose_receivers_label"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="?listPreferredItemHeight"
@@ -73,7 +73,7 @@ http://stackoverflow.com/a/8639921
             </RelativeLayout>
 
             <EditText
-                android:id="@+id/new_message_text"
+                android:id="@+id/compose_text"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:background="@null"
@@ -90,7 +90,7 @@ http://stackoverflow.com/a/8639921
                 />
 
             <android.support.v7.widget.RecyclerView
-                android:id="@+id/draft_attachments_list"
+                android:id="@+id/attachments_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"

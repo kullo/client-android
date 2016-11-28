@@ -7,8 +7,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloIdsAdapter;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Formatting;
 
 public class DraftAttachmentsAdapter extends KulloIdsAdapter<DraftAttachmentsViewHolder> {

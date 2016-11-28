@@ -6,10 +6,14 @@ import net.kullo.libkullo.http.HttpClientFactory;
 
 import java.util.HashMap;
 
+import okhttp3.OkHttpClient;
+
 public class HttpClientFactoryImpl extends HttpClientFactory {
+    private final OkHttpClient mClient = new OkHttpClient();
+
     @Override
     public HttpClient createHttpClient() {
-        return new HttpClientImpl();
+        return new HttpClientImpl(mClient);
     }
 
     @Override

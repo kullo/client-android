@@ -3,10 +3,10 @@ package net.kullo.libkullo.internal.okhttp;
 
 import android.util.Log;
 
-import com.squareup.okhttp.Headers;
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.RequestBody;
+import okhttp3.Headers;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 
 import net.kullo.libkullo.http.HttpClient;
 import net.kullo.libkullo.http.HttpHeader;
@@ -17,6 +17,7 @@ import net.kullo.libkullo.http.RequestListener;
 import net.kullo.libkullo.http.Response;
 import net.kullo.libkullo.http.ResponseError;
 import net.kullo.libkullo.http.ResponseListener;
+import net.kullo.libkullo.http.TransferProgress;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,21 +32,27 @@ public class HttpClientImpl extends HttpClient {
     private static final String TAG = "HttpClientImpl";
     private static final int BUFFER_SIZE = 64 * 1024; // bytes
 
-    private final OkHttpClient mClient = new OkHttpClient();
+    private final OkHttpClient mClient;
+
+    public HttpClientImpl(OkHttpClient client) {
+        super();
+        mClient = client;
+    }
 
     @Override
     public Response sendRequest(Request request, int timeoutMs, final RequestListener requestListener, ResponseListener responseListener) {
         if (timeoutMs < 0) throw new IllegalArgumentException("timeout must be >= 0");
 
-        com.squareup.okhttp.Request.Builder requestBuilder = new com.squareup.okhttp.Request.Builder();
+        okhttp3.Request.Builder requestBuilder = new okhttp3.Request.Builder();
 
-        // make a (shallow) clone of the client instance to customize client settings per request
-        final OkHttpClient configuredClient = mClient.clone();
+        // customize client settings per request
+        final OkHttpClient.Builder clientBuilder = mClient.newBuilder();
 
         // set timeouts
-        configuredClient.setConnectTimeout(timeoutMs, TimeUnit.MILLISECONDS);
-        configuredClient.setReadTimeout(timeoutMs, TimeUnit.MILLISECONDS);
-        configuredClient.setWriteTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+        clientBuilder.connectTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+        clientBuilder.readTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+        clientBuilder.writeTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+        OkHttpClient client = clientBuilder.build();
 
         // prepare progress reporting
         final Progress progress = new Progress(responseListener);
@@ -56,11 +63,16 @@ public class HttpClientImpl extends HttpClient {
         // set request headers
         String contentType = "text/plain";
         for (HttpHeader header : request.getHeaders()) {
-            requestBuilder.addHeader(header.getKey(), header.getValue());
+            requestBuilder.header(header.getKey(), header.getValue());
 
-            if (header.getKey().equalsIgnoreCase("content-type"))
-            {
+            if (header.getKey().equalsIgnoreCase("content-type")) {
                 contentType = header.getValue();
+            } else if (header.getKey().equalsIgnoreCase("content-length")) {
+                try {
+                    progress.setTxTotal(Long.valueOf(header.getValue()));
+                } catch (NumberFormatException e) {
+                    Log.w(TAG, "Couldn't parse Content-Length header: " + header.getValue());
+                }
             }
         }
 
@@ -92,15 +104,15 @@ public class HttpClientImpl extends HttpClient {
         requestBuilder.method(getRequestMethodString(request.getMethod()), requestBody);
 
         // build request
-        com.squareup.okhttp.Request httpRequest = requestBuilder.build();
+        okhttp3.Request httpRequest = requestBuilder.build();
 
         // execute request
         ArrayList<HttpHeader> responseHeaders = new ArrayList<>();
-        com.squareup.okhttp.Response response;
+        okhttp3.Response response;
         InputStream responseBody = null;
         try {
-            progress.throwIfCanceled();
-            response = configuredClient.newCall(httpRequest).execute();
+            progress.update();
+            response = client.newCall(httpRequest).execute();
 
             // read response headers
             Headers headers = response.headers();
@@ -109,6 +121,7 @@ public class HttpClientImpl extends HttpClient {
             }
 
             // read response body
+            progress.setRxTotal(response.body().contentLength());
             responseBody = response.body().byteStream();
             byte[] inBuf = new byte[BUFFER_SIZE];
             int bytesReceived;
@@ -174,29 +187,37 @@ public class HttpClientImpl extends HttpClient {
             this.responseListener = responseListener;
         }
 
+        public void setTxTotal(long value) {
+            txTotal = Math.max(value, 0);
+        }
+
+        public void setRxTotal(long value) {
+            rxTotal = Math.max(value, 0);
+        }
+
         public void addToTx(int deltaTx) throws RequestCanceled {
             txCurrent += deltaTx;
-            txTotal = Math.max(txTotal, txCurrent);
             updateAndCheckCanceled();
         }
 
         public void addToRx(int deltaRx) throws RequestCanceled {
             rxCurrent += deltaRx;
-            rxTotal = Math.max(rxTotal, rxCurrent);
             updateAndCheckCanceled();
         }
 
-        public void throwIfCanceled() throws RequestCanceled {
+        public void update() throws RequestCanceled {
             updateAndCheckCanceled();
         }
 
         private void updateAndCheckCanceled() throws RequestCanceled {
-            if (responseListener.progress(txCurrent, txTotal, rxCurrent, rxTotal) == ProgressResult.CANCEL) {
+            if (responseListener.progressed(
+                    new TransferProgress(txCurrent, txTotal, rxCurrent, rxTotal))
+                    == ProgressResult.CANCEL) {
                 throw new RequestCanceled();
             }
         }
 
-        private ResponseListener responseListener;
+        private final ResponseListener responseListener;
         private long txCurrent = 0, txTotal = 0, rxCurrent = 0, rxTotal = 0;
     }
 }

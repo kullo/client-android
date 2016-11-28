@@ -437,7 +437,7 @@ public class MessagesListActivity extends AppCompatActivity {
                         mSwipeLayout.setRefreshing(false);
 
                         if (KulloUtils.showSyncProgressAsBar(progress)) {
-                            int percent = Math.round(100 * ((float) progress.getCountProcessed() / progress.getCountTotal()));
+                            int percent = Math.round(100 * ((float) progress.getIncomingMessagesProcessed() / progress.getIncomingMessagesTotal()));
                             mProgressBarIndeterminate.setVisibility(View.GONE);
                             mProgressBarDeterminate.setVisibility(View.VISIBLE);
                             mProgressBarDeterminate.setProgress(percent);

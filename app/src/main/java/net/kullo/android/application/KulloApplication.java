@@ -58,10 +58,11 @@ public class KulloApplication extends Application
         deleteObsoletePreferences();
         migratePreferences(getSharedPreferences(KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE));
 
-        cleanExternalFilesDir();
+        cleanExternalFilesDirAsync();
+        cleanCacheDirAsync();
     }
 
-    private void cleanExternalFilesDir() {
+    private void cleanExternalFilesDirAsync() {
         // Cleans the entire app-specific external files dir. This was used before
         // version 35 (released 2016-08-03) as temporary storage when handling attachments.
         // We currently do not use this directory. Database is in internal files (getFilesDir())
@@ -72,7 +73,7 @@ public class KulloApplication extends Application
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    cleanDirectory(appExternal);
+                    cleanDirectory(appExternal, null);
                 }
             }).run();
         } else {
@@ -80,22 +81,57 @@ public class KulloApplication extends Application
         }
     }
 
-    private void cleanDirectory(@NonNull File path) {
-        for (File entry : path.listFiles()) {
-            if (entry.isDirectory()) {
-                cleanDirectory(entry);
+    private void cleanCacheDirAsync() {
+        // Cleans all known cache directories on app start
+        //
+        // Note: This never removes files created by the current app run
+        // since it runs too early for files to become 5 minutes old.
+        final int MIN_AGE_SEC = 300; /* 5 minutes */
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (CacheType type : CacheType.values()) {
+                    final File cacheDir = cacheDir(type, null);
+                    Log.d(TAG, "Cleaning " + cacheDir.getAbsolutePath() + " ...");
+                    cleanDirectory(cacheDir, MIN_AGE_SEC);
+                }
+            }
+        }).run();
+    }
 
-                // directory should be empty now
-                if (entry.delete()) {
-                    Log.d(TAG, "Successfully removed directory " + entry.getAbsolutePath());
+    private void cleanDirectory(@NonNull File path, @Nullable Integer minAgeSec) {
+        boolean tooYoung = false;
+        long ageSec = 0;
+
+        for (File entry : path.listFiles()) {
+            if (minAgeSec != null) {
+                ageSec = (System.currentTimeMillis()-entry.lastModified()) / 1000;
+                tooYoung = ageSec < minAgeSec;
+            }
+
+            if (entry.isDirectory()) {
+                cleanDirectory(entry, minAgeSec);
+
+                // directory might be empty now or still includes young files
+
+                if (!tooYoung) {
+                    if (entry.delete()) {
+                        Log.d(TAG, "Successfully removed directory " + entry.getAbsolutePath());
+                    } else {
+                        Log.d(TAG, "Could not delete directory " + entry.getAbsolutePath());
+                    }
                 } else {
-                    Log.e(TAG, "Error deleting directory " + entry.getAbsolutePath());
+                    Log.d(TAG, "Entry " + entry.getAbsolutePath() + " is too young (" + ageSec + ")");
                 }
             } else if (entry.isFile()) {
-                if (entry.delete()) {
-                    Log.d(TAG, "Successfully removed " + entry.getAbsolutePath());
+                if (!tooYoung) {
+                    if (entry.delete()) {
+                        Log.d(TAG, "Successfully removed " + entry.getAbsolutePath());
+                    } else {
+                        Log.e(TAG, "Error deleting " + entry.getAbsolutePath());
+                    }
                 } else {
-                    Log.e(TAG, "Error deleting " + entry.getAbsolutePath());
+                    Log.d(TAG, "Entry " + entry.getAbsolutePath() + " is too young (" + ageSec + ")");
                 }
             }
         }
@@ -133,6 +169,8 @@ public class KulloApplication extends Application
                 typeSubfolderName = "openfile"; break;
             case ReceivedShares:
                 typeSubfolderName = "received_shares"; break;
+            case ReceivedSharePreviews:
+                typeSubfolderName = "received_share_previews"; break;
             default:
                 typeSubfolderName = "";
                 RuntimeAssertion.fail("Unhandled cache type");

@@ -2,12 +2,12 @@
 package net.kullo.android.screens;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -41,11 +41,11 @@ import net.kullo.android.ui.RecyclerItemClickListener;
 import net.kullo.javautils.RuntimeAssertion;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
 public class ShareReceiverActivity extends AppCompatActivity {
     private static String TAG = "ShareReceiverActivity";
@@ -53,7 +53,10 @@ public class ShareReceiverActivity extends AppCompatActivity {
     // Preview
     private FilesAdapter mFilesAdapter;
     private ImagesPreviewAdapter mImagesPreviewAdapter;
-    private MaterialProgressBar mReadFilesProgressIndicator;
+
+    private View mMainScrollView;
+    private View mReadFilesLoadingIndicator;
+    private View mGeneratePreviewsLoadingIndicator;
     private RecyclerView mPreviewContainerFiles;
     private RecyclerView mPreviewContainerMultipleImages;
     private View mPreviewContainerSingleImage;
@@ -221,8 +224,13 @@ public class ShareReceiverActivity extends AppCompatActivity {
     }
 
     private void setupUi() {
-        mReadFilesProgressIndicator = (MaterialProgressBar) findViewById(R.id.read_files_progress_indicator);
-        RuntimeAssertion.require(mReadFilesProgressIndicator != null);
+        mReadFilesLoadingIndicator = findViewById(R.id.read_files_loading_indicator);
+        RuntimeAssertion.require(mReadFilesLoadingIndicator != null);
+        mMainScrollView = findViewById(R.id.main_scroll_view);
+        RuntimeAssertion.require(mMainScrollView != null);
+
+        mGeneratePreviewsLoadingIndicator = findViewById(R.id.generate_previews_loading_indicator);
+        RuntimeAssertion.require(mGeneratePreviewsLoadingIndicator != null);
         mPreviewContainerMultipleImages = (RecyclerView) findViewById(R.id.preview_container_multiple_images);
         RuntimeAssertion.require(mPreviewContainerMultipleImages != null);
         mPreviewContainerFiles = (RecyclerView) findViewById(R.id.preview_container_files);
@@ -287,7 +295,7 @@ public class ShareReceiverActivity extends AppCompatActivity {
     private ArrayList<Uri> getShareUris(@NonNull final List<Share> shares) {
         ArrayList<Uri> out = new ArrayList<>(shares.size());
         for (Share share : shares) {
-            out.add(share.uri);
+            out.add(share.cacheUri);
         }
         return out;
     }
@@ -302,44 +310,68 @@ public class ShareReceiverActivity extends AppCompatActivity {
         Log.d(TAG, "Got text: " + sharedText);
         mReadyShareText = sharedText;
         mTextView.setText(sharedText);
+        showMainScrollView();
     }
 
     private void handleSendSingleImage(@NonNull final Uri imageUri) {
-        handleFiles(Collections.singletonList(imageUri), true, new Runnable() {
+        readFiles(Collections.singletonList(imageUri), new Runnable() {
             @Override
             public void run() {
-                // Get data
-                Share share = mReadyShares.get(0);
-                final String imageMetaText = String.format("%s (%s)",
-                        share.filename, Formatting.filesizeHuman(share.size));
+                showMainScrollView();
+                showGeneratePreviewsLoadingIndicator();
 
-                // Set data
-                mSingleImageView.setImageBitmap(share.preview);
-                mSingleImageMetaText.setText(imageMetaText);
+                generatePreviews(true, new Runnable() {
+                    @Override
+                    public void run() {
+                        hideGeneratePreviewsLoadingIndicator();
 
-                // Layout
-                mPreviewContainerSingleImage.setVisibility(View.VISIBLE);
+                        Share share = mReadyShares.get(0);
+
+                        // Get image meta
+                        final String imageMetaText = String.format("%s (%s)",
+                                share.filename, Formatting.filesizeHuman(share.size));
+                        mSingleImageMetaText.setText(imageMetaText);
+
+                        // Set preview
+                        mSingleImageView.setImageURI(share.previewUri);
+
+                        // Layout
+                        mPreviewContainerSingleImage.setVisibility(View.VISIBLE);
+                    }
+                });
             }
         });
     }
 
     private void handleSendMultipleImages(@NonNull final List<Uri> imageUris) {
         setupImagesPreviewAdapter();
-        handleFiles(imageUris, false, new Runnable() {
+        readFiles(imageUris, new Runnable() {
             @Override
             public void run() {
-                for (Share share : mReadyShares) {
-                    mImagesPreviewAdapter.add(share);
-                }
+                showMainScrollView();
+                showGeneratePreviewsLoadingIndicator();
+
+                generatePreviews(false, new Runnable() {
+                    @Override
+                    public void run() {
+                        hideGeneratePreviewsLoadingIndicator();
+
+                        for (Share share : mReadyShares) {
+                            mImagesPreviewAdapter.add(share);
+                        }
+                    }
+                });
             }
         });
     }
 
     private void handleSendFiles(@NonNull final List<Uri> fileUris) {
         setupFilesAdapter();
-        handleFiles(fileUris, null, new Runnable() {
+        readFiles(fileUris, new Runnable() {
             @Override
             public void run() {
+                showMainScrollView();
+
                 for (Share share : mReadyShares) {
                     mFilesAdapter.add(share);
                 }
@@ -355,7 +387,7 @@ public class ShareReceiverActivity extends AppCompatActivity {
         llm.setOrientation(LinearLayoutManager.HORIZONTAL);
         mPreviewContainerMultipleImages.setLayoutManager(llm);
 
-        mImagesPreviewAdapter = new ImagesPreviewAdapter();
+        mImagesPreviewAdapter = new ImagesPreviewAdapter(this);
         mPreviewContainerMultipleImages.setAdapter(mImagesPreviewAdapter);
     }
 
@@ -371,9 +403,8 @@ public class ShareReceiverActivity extends AppCompatActivity {
         mPreviewContainerFiles.setAdapter(mFilesAdapter);
     }
 
-    private void handleFiles(@NonNull final List<Uri> fileUris,
-                             @Nullable final Boolean highResolutionPreviews,
-                             final Runnable successCallback) {
+    private void readFiles(@NonNull final List<Uri> fileUris,
+                           @Nullable final Runnable successCallback) {
         Log.d(TAG, "Handle incoming shares: " + fileUris);
 
         new AsyncTask<Uri, Void, List<Share>>() {
@@ -382,7 +413,6 @@ public class ShareReceiverActivity extends AppCompatActivity {
             @Override
             protected void onPreExecute() {
                 super.onPreExecute();
-                mReadFilesProgressIndicator.setVisibility(View.VISIBLE);
                 Log.d(TAG, "Start copying files ...");
             }
 
@@ -401,21 +431,11 @@ public class ShareReceiverActivity extends AppCompatActivity {
                         Log.e(TAG, "Error copying file");
                         mReadErrorCount++;
                     } else {
-                        Share prev = new Share();
-                        prev.uri = Uri.fromFile(targetFile);
-                        prev.filename = targetFilename;
-                        prev.size = targetFile.length();
-                        if (highResolutionPreviews != null) {
-                            // Split both cases into separate code branches to debug OOM crashes
-                            if (highResolutionPreviews) {
-                                prev.preview = AvatarUtils.loadBitmap(ShareReceiverActivity.this,
-                                        prev.uri, 6_000_000, 2048);
-                            } else {
-                                prev.preview = AvatarUtils.loadBitmap(ShareReceiverActivity.this,
-                                        prev.uri, 3_000_000, 2048);
-                            }
-                        }
-                        out.add(prev);
+                        Share share = new Share();
+                        share.cacheUri = Uri.fromFile(targetFile);
+                        share.filename = targetFilename;
+                        share.size = targetFile.length();
+                        out.add(share);
                     }
                 }
                 return out;
@@ -427,8 +447,6 @@ public class ShareReceiverActivity extends AppCompatActivity {
                 Log.d(TAG, "Done copying files");
 
                 mReadyShares = new ArrayList<>(shares);
-
-                mReadFilesProgressIndicator.setVisibility(View.GONE);
 
                 if (mReadErrorCount != 0) {
                     final String errorText = (mReadErrorCount == 1)
@@ -448,5 +466,67 @@ public class ShareReceiverActivity extends AppCompatActivity {
                 }
             }
         }.execute(fileUris.toArray(new Uri[fileUris.size()]));
+    }
+
+    private void showMainScrollView() {
+        mReadFilesLoadingIndicator.setVisibility(View.GONE);
+        mMainScrollView.setVisibility(View.VISIBLE);
+    }
+
+    private void showGeneratePreviewsLoadingIndicator() {
+        mGeneratePreviewsLoadingIndicator.setVisibility(View.VISIBLE);
+    }
+
+    private void hideGeneratePreviewsLoadingIndicator() {
+        mGeneratePreviewsLoadingIndicator.setVisibility(View.GONE);
+    }
+
+    private void generatePreviews(final boolean highResolutionPreviews,
+                                  @Nullable final Runnable successCallback) {
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                for (int index = 0; index < mReadyShares.size(); ++index) {
+                    Log.d(TAG, "Generating preview for share at index " + index + " ...");
+                    Share share = mReadyShares.get(index);
+
+                    if (share.size > 1_048_576 /* 1 MiB */) {
+                        Bitmap bmp;
+                        // Split both cases into separate code branches
+                        // to debug OOM crashes
+                        if (highResolutionPreviews) {
+                            bmp = AvatarUtils.loadBitmap(
+                                    ShareReceiverActivity.this,
+                                    share.cacheUri, 6_000_000, 2048);
+                        } else {
+                            bmp = AvatarUtils.loadBitmap(
+                                    ShareReceiverActivity.this,
+                                    share.cacheUri, 3_000_000, 2048);
+                        }
+
+                        try {
+                            final File outputDir = ((KulloApplication) getApplication()).cacheDir(CacheType.ReceivedSharePreviews, null);
+                            final File outputFile = File.createTempFile("prev", ".jpg", outputDir);
+                            final FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
+                            bmp.compress(Bitmap.CompressFormat.JPEG, 85, fileOutputStream);
+                            share.previewUri = Uri.fromFile(outputFile);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            // ignore
+                        }
+                    } else {
+                        share.previewUri = share.cacheUri;
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                if (successCallback != null) {
+                    successCallback.run();
+                }
+            }
+        }.execute();
     }
 }

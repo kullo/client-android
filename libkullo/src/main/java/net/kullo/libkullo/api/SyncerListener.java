@@ -9,10 +9,10 @@ public abstract class SyncerListener {
     public abstract void started();
 
     /**
-     * Called when the attachments of a draft that should be sent are too big.
+     * Called when a part of a draft that should be sent is too big.
      * The syncer will continue syncing the other requested items.
      */
-    public abstract void draftAttachmentsTooBig(long convId);
+    public abstract void draftPartTooBig(long convId, DraftPart part, long currentSize, long maxSize);
 
     /** Called to inform about the progress of the current sync */
     public abstract void progressed(SyncProgress progress);

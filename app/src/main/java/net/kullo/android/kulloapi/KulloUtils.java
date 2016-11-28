@@ -56,8 +56,8 @@ public class KulloUtils {
     }
 
     public static boolean showSyncProgressAsBar(final SyncProgress progress) {
-        return progress.getCountTotal() > 3 &&
-                (100.0 * progress.getCountProcessed() / progress.getCountTotal()) >= 5.0;
+        return progress.getIncomingMessagesTotal() > 3 &&
+                (100.0 * progress.getIncomingMessagesProcessed() / progress.getIncomingMessagesTotal()) >= 5.0;
     }
 
     public static boolean isValidKulloAddress(String address) {

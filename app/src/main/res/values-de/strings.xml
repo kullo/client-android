@@ -32,6 +32,8 @@ ellipsis (…)
     <string name="action_sync">Synchronisieren</string>
     <string name="action_finish">Fertigstellen</string>
     <string name="action_done">Fertig</string>
+    <string name="action_login">Einloggen</string>
+    <string name="action_register">Registrieren</string>
 
     <!-- error messages -->
     <string name="network_error_title">Netzwerkfehler</string>
@@ -47,11 +49,11 @@ ellipsis (…)
     <!-- login -->
     <string name="login_error_address_invalid">Ungültige Kullo-Adresse</string>
     <string name="login_error_masterkey_block_invalid">Ungültig</string>
-    <string name="progress_login">Einloggen</string>
-    <string name="login">Einloggen</string>
-    <string name="register">Registrieren</string>
-    <string name="error_login_failed_title">Anmeldung fehlgeschlagen</string>
-    <string name="error_login_failed_description">Ungültige Kombination aus Kullo-Adresse und MasterKey.</string>
+    <string name="login_error_failed_title">Anmeldung fehlgeschlagen</string>
+    <string name="login_error_failed_description">Ungültige Kombination aus Kullo-Adresse und MasterKey.</string>
+    <string name="create_session_progress_login_title">Einloggen</string>
+    <string name="create_session_please_wait">@string/please_wait</string>
+    <string name="create_session_migrating">Optimiere Postfach …</string>
 
     <!-- logout -->
     <string name="leaving_inbox_title">Verlasse Posteingang …</string>
@@ -66,11 +68,11 @@ ellipsis (…)
     <string name="choose_address_title">Wähle deine Kullo-Adresse</string>
     <string name="choose_address_username_placeholder">Benutzername</string>
     <string name="choose_address_valid_address_instructions">Du kannst Buchstaben und Ziffern benutzen. Außerdem kannst du . oder - oder _ benutzen, um deine Adresse zu unterteilen.</string>
-    <string name="choose_address_username_is_empty">Darf nicht leer sein</string>
     <string name="choose_address_address_blocked">Adresse gesperrt</string>
     <string name="choose_address_address_already_exists">Adresse existiert bereits</string>
     <string name="choose_address_address_is_invalid">Ungültiges Adressformat</string>
     <string name="choose_address_challenge_needed">Diese Adresse kann nicht ohne Challenge registriert werden. Challenges werden auf Kullo für Android derzeit nicht unterstützt.</string>
+    <string name="registration_terms_of_service">Ich akzeptiere die &lt;a href=&quot;%1$s&quot;&gt;Allgemeinen Geschäftsbedingungen&lt;/a&gt;</string>
     <string name="could_not_start_registration">Registrierung fehlgeschlagen</string>
 
     <!-- nav drawer -->
@@ -176,6 +178,12 @@ ellipsis (…)
     <string name="organization_opt">Organisation (optional)</string>
     <string name="participant_needed">Mindestens ein Teilnehmer ist nötig</string>
     <string name="compose_error_loading_file">Ausgewählte Datei konnte nicht geladen werden</string>
+    <string name="compose_scale_image_title">Bild verkleinern</string>
+    <string name="compose_scale_images_title">Bilder verkleinern</string>
+    <string name="compose_scale_option_xmegapixel">%d Megapixel</string>
+    <string name="compose_scale_option_unchanged">Originaldatei</string>
+    <string name="compose_scale_progress_title">Skalieren</string>
+    <string name="compose_scale_progress_description">Bilder werden verkleinert …</string>
 
     <!-- share receiver -->
     <string name="sharereceiver_title_share_text">Text teilen</string>
@@ -186,6 +194,7 @@ ellipsis (…)
     <string name="sharereceiver_share_to_draft_of_conversation">Teilen mit</string>
     <string name="sharereceiver_error_copy_file">Datei konnte nicht mit Kullo geteilt werden</string>
     <string name="sharereceiver_error_copy_files">%d Dateien konnten nicht mit Kullo geteilt werden</string>
+    <string name="sharereceiver_error_missing_permission_storage">Fehlende App-Berechtigung für Kullo: Speicher</string>
 
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>

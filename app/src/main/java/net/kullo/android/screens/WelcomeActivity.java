@@ -3,10 +3,10 @@ package net.kullo.android.screens;
 
 import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -26,7 +26,6 @@ import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.LocalError;
-import net.kullo.libkullo.api.NetworkError;
 
 import java.util.ArrayList;
 
@@ -43,7 +42,8 @@ public class WelcomeActivity extends AppCompatActivity {
     private static final String TAG = "WelcomeActivity";
 
     private RelativeLayout mLayoutContent;
-    private MaterialDialog mCreatingSessionDialog;
+    private @Nullable MaterialDialog mCreatingSessionDialog;
+    private @Nullable MaterialDialog mMigratingDialog;
     private ClientCreateSessionListenerObserver mClientCreateSessionListenerObserver;
 
     //LIFECYCLE
@@ -59,9 +59,9 @@ public class WelcomeActivity extends AppCompatActivity {
         mLayoutContent = (RelativeLayout) findViewById(R.id.content);
         connectButtons();
 
-        // call registerCreateSessionListenerObserver before checkForStoredCredentialsAndCreateSession
+        // call registerListenerObservers() before checkForStoredCredentialsAndCreateSession()
         // to ensure existing login information cause an activity switch to ConversationsListActivity
-        registerCreateSessionListenerObserver();
+        registerListenerObservers();
     }
 
     @Override
@@ -91,16 +91,18 @@ public class WelcomeActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
 
-        if (mCreatingSessionDialog != null) {
-            mCreatingSessionDialog.dismiss();
-        }
+        if (mCreatingSessionDialog != null) mCreatingSessionDialog.dismiss();
+        mCreatingSessionDialog = null;
+
+        if (mMigratingDialog != null) mMigratingDialog.dismiss();
+        mMigratingDialog = null;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "Destroying a welcome activity");
-        unregisterCreateSessionListenerObserver();
+        unregisterObservers();
     }
 
     private void connectButtons() {
@@ -163,8 +165,26 @@ public class WelcomeActivity extends AppCompatActivity {
 
     //API
 
-    private void registerCreateSessionListenerObserver() {
+    private void registerListenerObservers() {
         mClientCreateSessionListenerObserver = new ClientCreateSessionListenerObserver() {
+            @Override
+            public void migrationStarted() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mCreatingSessionDialog != null) mCreatingSessionDialog.dismiss();
+                        mCreatingSessionDialog = null;
+
+                        mMigratingDialog = new MaterialDialog.Builder(WelcomeActivity.this)
+                                .title(R.string.create_session_progress_login_title)
+                                .content(R.string.create_session_migrating)
+                                .progress(true, 0)
+                                .cancelable(false)
+                                .show();
+                    }
+                });
+            }
+
             @Override
             public void finished() {
                 runOnUiThread(new Runnable() {
@@ -177,55 +197,14 @@ public class WelcomeActivity extends AppCompatActivity {
             }
 
             @Override
-            public void loginFailed() {
+            public void error(final LocalError error) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (mCreatingSessionDialog != null) {
-                            mCreatingSessionDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                public void onDismiss(DialogInterface dialog) {
-                                    new MaterialDialog.Builder(WelcomeActivity.this)
-                                            .title(R.string.error_login_failed_title)
-                                            .content(R.string.error_login_failed_description)
-                                            .neutralText(R.string.ok)
-                                            .cancelable(false)
-                                            .show();
-                                }});
+                        if (mCreatingSessionDialog != null) mCreatingSessionDialog.dismiss();
+                        mCreatingSessionDialog = null;
 
-                            mCreatingSessionDialog.dismiss();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void networkError(final NetworkError error) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mCreatingSessionDialog != null) {
-                            mCreatingSessionDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                public void onDismiss(DialogInterface dialog) {
-                                    DialogMaker.makeForNetworkError(WelcomeActivity.this, error).show();
-                                }});
-                            mCreatingSessionDialog.dismiss();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void localError(final LocalError error) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mCreatingSessionDialog != null) {
-                            mCreatingSessionDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                public void onDismiss(DialogInterface dialog) {
-                                    DialogMaker.makeForLocalError(WelcomeActivity.this, error).show();
-                                }});
-                            mCreatingSessionDialog.dismiss();
-                        }
+                        DialogMaker.makeForLocalError(WelcomeActivity.this, error).show();
                     }
                 });
             }
@@ -235,7 +214,7 @@ public class WelcomeActivity extends AppCompatActivity {
                 mClientCreateSessionListenerObserver);
     }
 
-    private void unregisterCreateSessionListenerObserver() {
+    private void unregisterObservers() {
         RuntimeAssertion.require(mClientCreateSessionListenerObserver != null);
         SessionConnector.get().removeListenerObserver(
                 ClientCreateSessionListenerObserver.class,
@@ -246,7 +225,6 @@ public class WelcomeActivity extends AppCompatActivity {
 
     private boolean checkForStoredCredentialsAndCreateSession() {
         Credentials credentials = SessionConnector.get().loadStoredCredentials(this);
-
         if (credentials == null) {
             Log.d(TAG, "No stored Kullo user settings found");
             return false;
@@ -254,10 +232,9 @@ public class WelcomeActivity extends AppCompatActivity {
 
         Log.d(TAG, "Stored Kullo address: " + credentials.getAddress().toString());
 
-        //show waiting dialog
         mCreatingSessionDialog = new MaterialDialog.Builder(this)
-                .title(R.string.progress_login)
-                .content(R.string.please_wait)
+                .title(R.string.create_session_progress_login_title)
+                .content(R.string.create_session_please_wait)
                 .progress(true, 0)
                 .cancelable(false)
                 .show();

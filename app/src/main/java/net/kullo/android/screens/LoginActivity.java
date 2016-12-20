@@ -1,10 +1,10 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
@@ -15,7 +15,6 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.afollestad.materialdialogs.MaterialDialog;
@@ -27,6 +26,7 @@ import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
+import net.kullo.android.observers.listenerobservers.ClientCheckCredentialsListenerObserver;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
@@ -50,14 +50,15 @@ import java.util.List;
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
 
-    private RelativeLayout mLayoutContent;
     private TextInputLayout mKulloAddressTextInputLayout;
     private EditText mKulloAddressEditText;
     private List<TextInputLayout> mMasterKeyBlocksTextInputLayout;
     private List<EditText> mMasterKeyBlocksEditText;
-    private MaterialDialog mCreatingSessionDialog;
+    private @Nullable MaterialDialog mCreatingSessionDialog;
+    private @Nullable MaterialDialog mMigratingDialog;
     private ClientCreateSessionListenerObserver mClientCreateSessionListenerObserver;
-    private boolean mPreserveStatus;
+    private ClientCheckCredentialsListenerObserver mClientCheckCredentialsListenerObserver;
+    private boolean mSaveCurrentFormInputToPersistentStorage;
 
     //LIFECYCLE
 
@@ -72,9 +73,9 @@ public class LoginActivity extends AppCompatActivity {
 
         // Activity started for user to type in MasterKey
 
-        registerCreateSessionListenerObserver();
+        registerListenerObservers();
         Ui.setColorStatusBarArrangeHeader(this);
-        mPreserveStatus = true;
+        mSaveCurrentFormInputToPersistentStorage = true;
         connectLayout();
     }
 
@@ -102,7 +103,7 @@ public class LoginActivity extends AppCompatActivity {
 
         SharedPreferences.Editor preferencesEditor = getPreferences(MODE_PRIVATE).edit();
 
-        if (mPreserveStatus) {
+        if (mSaveCurrentFormInputToPersistentStorage) {
             preferencesEditor.putString(KulloConstants.ACTIVE_USER, mKulloAddressEditText.getText().toString());
 
             for (int i = 0 ; i < mMasterKeyBlocksEditText.size() ; i++) {
@@ -119,16 +120,18 @@ public class LoginActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
 
-        if (mCreatingSessionDialog != null) {
-            mCreatingSessionDialog.dismiss();
-        }
+        if (mCreatingSessionDialog != null) mCreatingSessionDialog.dismiss();
+        mCreatingSessionDialog = null;
+
+        if (mMigratingDialog != null) mMigratingDialog.dismiss();
+        mMigratingDialog = null;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "Destroying a login activity");
-        unregisterCreateSessionListenerObserver();
+        unregisterListenerObservers();
     }
 
     @Override
@@ -141,7 +144,6 @@ public class LoginActivity extends AppCompatActivity {
 
     //LAYOUT
     private void setupLayout() {
-        mLayoutContent = (RelativeLayout) findViewById(R.id.content);
         mKulloAddressTextInputLayout = (TextInputLayout) findViewById(R.id.edit_kullo_address);
         mMasterKeyBlocksTextInputLayout = new ArrayList<>(Arrays.asList(
                 (TextInputLayout) findViewById(R.id.edit_block_a),
@@ -207,7 +209,7 @@ public class LoginActivity extends AppCompatActivity {
         connectButtons();
         connectTextInputFields();
         configureEditFieldsToSwitchToNextIfFilled();
-        setDomainAutocompletion();
+        setupAddressAutocompletion();
     }
 
     private void connectButtons() {
@@ -258,8 +260,9 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    private void setDomainAutocompletion() {
-        AutoCompleteTextView textView = (AutoCompleteTextView)mKulloAddressTextInputLayout.getEditText();
+    private void setupAddressAutocompletion() {
+        AutoCompleteTextView textView = (AutoCompleteTextView) mKulloAddressTextInputLayout.getEditText();
+        RuntimeAssertion.require(textView != null);
         textView.setAdapter(new AddressAutocompleteAdapter(this));
     }
 
@@ -321,7 +324,7 @@ public class LoginActivity extends AppCompatActivity {
 
             // Show waiting dialog (e.g. for long database migration)
             mCreatingSessionDialog = new MaterialDialog.Builder(this)
-                    .title(R.string.progress_login)
+                    .title(R.string.create_session_progress_login_title)
                     .content(R.string.please_wait)
                     .progress(true, 0)
                     .cancelable(false)
@@ -333,14 +336,32 @@ public class LoginActivity extends AppCompatActivity {
 
     //API
 
-    private void registerCreateSessionListenerObserver() {
+    private void registerListenerObservers() {
         mClientCreateSessionListenerObserver = new ClientCreateSessionListenerObserver() {
+            @Override
+            public void migrationStarted() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mCreatingSessionDialog != null) mCreatingSessionDialog.dismiss();
+                        mCreatingSessionDialog = null;
+
+                        mMigratingDialog = new MaterialDialog.Builder(LoginActivity.this)
+                                .title(R.string.create_session_progress_login_title)
+                                .content(R.string.create_session_migrating)
+                                .progress(true, 0)
+                                .cancelable(false)
+                                .show();
+                    }
+                });
+            }
+
             @Override
             public void finished() {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mPreserveStatus = false;
+                        mSaveCurrentFormInputToPersistentStorage = false;
 
                         startActivity(new Intent(LoginActivity.this, ConversationsListActivity.class));
                         finish();
@@ -349,66 +370,66 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             @Override
-            public void loginFailed() {
+            public void error(final LocalError error) {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (mCreatingSessionDialog != null) {
-                            mCreatingSessionDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                public void onDismiss(DialogInterface dialog) {
-                                    new MaterialDialog.Builder(LoginActivity.this)
-                                            .title(R.string.error_login_failed_title)
-                                            .content(R.string.error_login_failed_description)
-                                            .neutralText(R.string.ok)
-                                            .cancelable(false)
-                                            .show();
-                                }});
+                        if (mCreatingSessionDialog != null) mCreatingSessionDialog.dismiss();
+                        mCreatingSessionDialog = null;
 
-                            mCreatingSessionDialog.dismiss();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void networkError(final NetworkError error) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mCreatingSessionDialog != null) {
-                            mCreatingSessionDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                public void onDismiss(DialogInterface dialog) {
-                                    DialogMaker.makeForNetworkError(LoginActivity.this, error).show();
-                                }});
-                            mCreatingSessionDialog.dismiss();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void localError(final LocalError error) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (mCreatingSessionDialog != null) {
-                            mCreatingSessionDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-                                public void onDismiss(DialogInterface dialog) {
-                                    DialogMaker.makeForLocalError(LoginActivity.this, error).show();
-                                }});
-                            mCreatingSessionDialog.dismiss();
-                        }
+                        DialogMaker.makeForLocalError(LoginActivity.this, error).show();
                     }
                 });
             }
         };
+
+        mClientCheckCredentialsListenerObserver = new ClientCheckCredentialsListenerObserver() {
+            @Override
+            public void loginFailed() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mCreatingSessionDialog != null) mCreatingSessionDialog.dismiss();
+                        mCreatingSessionDialog = null;
+
+                        new MaterialDialog.Builder(LoginActivity.this)
+                                .title(R.string.login_error_failed_title)
+                                .content(R.string.login_error_failed_description)
+                                .neutralText(R.string.ok)
+                                .cancelable(false)
+                                .show();
+                    }
+                });
+            }
+
+            @Override
+            public void error(final NetworkError error) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (mCreatingSessionDialog != null) mCreatingSessionDialog.dismiss();
+                        mCreatingSessionDialog = null;
+
+                        DialogMaker.makeForNetworkError(LoginActivity.this, error).show();
+                    }
+                });
+            }
+        };
+
+        SessionConnector.get().addListenerObserver(
+                ClientCheckCredentialsListenerObserver.class,
+                mClientCheckCredentialsListenerObserver);
         SessionConnector.get().addListenerObserver(
                 ClientCreateSessionListenerObserver.class,
                 mClientCreateSessionListenerObserver);
     }
 
-    private void unregisterCreateSessionListenerObserver() {
+    private void unregisterListenerObservers() {
+        RuntimeAssertion.require(mClientCheckCredentialsListenerObserver != null);
         RuntimeAssertion.require(mClientCreateSessionListenerObserver != null);
+        SessionConnector.get().removeListenerObserver(
+                ClientCheckCredentialsListenerObserver.class,
+                mClientCheckCredentialsListenerObserver);
         SessionConnector.get().removeListenerObserver(
                 ClientCreateSessionListenerObserver.class,
                 mClientCreateSessionListenerObserver);

@@ -39,6 +39,7 @@ public class KulloApplication extends Application
     public static final Uri MAINTAINER_WEBSITE = Uri.parse("https://www.kullo.net");
     public static final String LICENSES_FILE = "file:///android_asset/licenses-android.html";
     public static final String ID = "net.kullo.android";
+    public static final String TERMS_URL = "https://www.kullo.net/agb/?version=1";
 
     public static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 1001;
 
@@ -121,7 +122,7 @@ public class KulloApplication extends Application
                         Log.d(TAG, "Could not delete directory " + entry.getAbsolutePath());
                     }
                 } else {
-                    Log.d(TAG, "Entry " + entry.getAbsolutePath() + " is too young (" + ageSec + ")");
+                    Log.d(TAG, "Entry " + entry.getAbsolutePath() + " is too young (" + ageSec + "s)");
                 }
             } else if (entry.isFile()) {
                 if (!tooYoung) {

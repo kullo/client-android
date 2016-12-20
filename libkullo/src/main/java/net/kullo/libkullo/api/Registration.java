@@ -17,7 +17,7 @@ public abstract class Registration {
      *
      * If no challenge is needed, set challengeAnswer to ""
      */
-    public abstract AsyncTask registerAccountAsync(Address address, Challenge challenge, String challengeAnswer, RegistrationRegisterAccountListener listener);
+    public abstract AsyncTask registerAccountAsync(Address address, String acceptedTerms, Challenge challenge, String challengeAnswer, RegistrationRegisterAccountListener listener);
 
     private static final class CppProxy extends Registration
     {
@@ -43,11 +43,11 @@ public abstract class Registration {
         }
 
         @Override
-        public AsyncTask registerAccountAsync(Address address, Challenge challenge, String challengeAnswer, RegistrationRegisterAccountListener listener)
+        public AsyncTask registerAccountAsync(Address address, String acceptedTerms, Challenge challenge, String challengeAnswer, RegistrationRegisterAccountListener listener)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_registerAccountAsync(this.nativeRef, address, challenge, challengeAnswer, listener);
+            return native_registerAccountAsync(this.nativeRef, address, acceptedTerms, challenge, challengeAnswer, listener);
         }
-        private native AsyncTask native_registerAccountAsync(long _nativeRef, Address address, Challenge challenge, String challengeAnswer, RegistrationRegisterAccountListener listener);
+        private native AsyncTask native_registerAccountAsync(long _nativeRef, Address address, String acceptedTerms, Challenge challenge, String challengeAnswer, RegistrationRegisterAccountListener listener);
     }
 }

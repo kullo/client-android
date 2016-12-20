@@ -33,6 +33,8 @@ ellipsis (…)
     <string name="action_sync">Synchronize</string>
     <string name="action_finish">Finish</string>
     <string name="action_done">Done</string>
+    <string name="action_login">Login</string>
+    <string name="action_register">Register</string>
 
     <!-- error messages -->
     <string name="network_error_title">Network error</string>
@@ -52,10 +54,11 @@ ellipsis (…)
     <!-- login -->
     <string name="login_error_address_invalid">Invalid Kullo address</string>
     <string name="login_error_masterkey_block_invalid">Invalid</string>
-    <string name="progress_login">Login</string>
-    <string name="login">Login</string>
-    <string name="error_login_failed_title">Login failed</string>
-    <string name="error_login_failed_description">Invalid combination of Kullo address and MasterKey.</string>
+    <string name="login_error_failed_title">Login failed</string>
+    <string name="login_error_failed_description">Invalid combination of Kullo address and MasterKey.</string>
+    <string name="create_session_progress_login_title">Login</string>
+    <string name="create_session_please_wait">@string/please_wait</string>
+    <string name="create_session_migrating">Optimizing inbox …</string>
 
     <!-- logout -->
     <string name="leaving_inbox_title">Leaving inbox…</string>
@@ -64,18 +67,17 @@ ellipsis (…)
     <string name="logging_out_description">Deleting local messages and user settings</string>
 
     <!-- registration -->
-    <string name="register">Register</string>
     <string name="generate_keys_title">Generating keys%1$s</string>
     <string name="generate_keys_description_short">This may take a few minutes. Please be patient.</string>
     <string name="generate_keys_description_long">Right now, Kullo is generating strong cryptographic keys that you\'re going use to communicate securely. Finding secure keys takes some time because Kullo needs to make sure they are as secure as advertised. Kullo generates those keys on your device such that nobody else learns about them – including us.</string>
     <string name="choose_address_title">Choose your Kullo address</string>
     <string name="choose_address_username_placeholder">Username</string>
     <string name="choose_address_valid_address_instructions">You can use letters and numbers. You can use more than one word, separated by . - or _.</string>
-    <string name="choose_address_username_is_empty">Must not be empty</string>
     <string name="choose_address_address_is_invalid">Address format not valid</string>
     <string name="choose_address_address_already_exists">Address already exists</string>
     <string name="choose_address_address_blocked">Address blocked</string>
     <string name="choose_address_challenge_needed">You cannot register this address without a challenge. Challenges are not yet supported on Kullo for Android.</string>
+    <string name="registration_terms_of_service">I accept the &lt;a href=&quot;%1$s&quot;&gt;terms of service&lt;/a&gt;</string>
     <string name="could_not_start_registration">Registration failed.</string>
 
     <!-- nav drawer -->
@@ -187,6 +189,12 @@ ellipsis (…)
     <string name="select_file_canceled">Select file canceled</string>
     <string name="no_tmp_dir_found">Cannot find temporary directory</string>
     <string name="compose_error_loading_file">Error loading selected file</string>
+    <string name="compose_scale_image_title">Scale down image</string>
+    <string name="compose_scale_images_title">Scale down images</string>
+    <string name="compose_scale_option_xmegapixel">%d Megapixel</string>
+    <string name="compose_scale_option_unchanged">Original file</string>
+    <string name="compose_scale_progress_title">Scaling</string>
+    <string name="compose_scale_progress_description">Images are being scaled down…</string>
 
     <!-- share receiver -->
     <string name="sharereceiver_title_share_text">Share text</string>
@@ -195,8 +203,9 @@ ellipsis (…)
     <string name="sharereceiver_title_share_single_file">Share file</string>
     <string name="sharereceiver_title_share_files">Share %d files</string>
     <string name="sharereceiver_share_to_draft_of_conversation">Share with</string>
-    <string name="sharereceiver_error_copy_file">files could not be shared with Kullo</string>
+    <string name="sharereceiver_error_copy_file">File could not be shared with Kullo</string>
     <string name="sharereceiver_error_copy_files">%d files could not be shared with Kullo</string>
+    <string name="sharereceiver_error_missing_permission_storage">App permission missing for Kullo: Storage</string>
 
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>

@@ -1,26 +1,37 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.littlehelpers;
 
-import android.test.AndroidTestCase;
+import android.support.test.runner.AndroidJUnit4;
 
 import net.kullo.libkullo.LibKullo;
 import net.kullo.libkullo.api.Address;
 
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.List;
 
-public class AddressSetTest extends AndroidTestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-    public void setUp() throws Exception {
-        super.setUp();
+@RunWith(AndroidJUnit4.class)
+public class AddressSetTest {
+
+    @BeforeClass
+    public static void setUp() {
         LibKullo.init();
     }
 
-    public void testDefaultConstructor() {
-        AddressSet empty = new AddressSet();
+    @Test
+    public void defaultConstructor() {
+        final AddressSet empty = new AddressSet();
         assertEquals(empty.size(), 0);
     }
 
-    public void testAdd() {
+    @Test
+    public void add() {
         AddressSet set = new AddressSet();
         set.add(Address.create("test#kullo.net"));
 
@@ -28,7 +39,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertTrue(set.contains(Address.create("test#kullo.net")));
     }
 
-    public void testAddNull() {
+    @Test
+    public void addNull() {
         AddressSet set = new AddressSet();
         set.add(null);
 
@@ -43,7 +55,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertTrue(set.contains(null));
     }
 
-    public void testAddInvalidAddress() {
+    @Test
+    public void addInvalidAddress() {
         AddressSet set = new AddressSet();
         set.add(Address.create("bs string"));
 
@@ -51,7 +64,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertTrue(set.contains(null));
     }
 
-    public void testContains() {
+    @Test
+    public void contains() {
         AddressSet set = new AddressSet();
         set.add(Address.create("test#kullo.net"));
 
@@ -59,7 +73,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertFalse(set.contains(Address.create("different#kullo.net")));
     }
 
-    public void testContainsOtherType() {
+    @Test
+    public void containsOtherType() {
         AddressSet set = new AddressSet();
         set.add(Address.create("test#kullo.net"));
 
@@ -67,7 +82,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertFalse(set.contains(searchAddress));
     }
 
-    public void testAddMultipleTimes() {
+    @Test
+    public void addMultipleTimes() {
         AddressSet set = new AddressSet();
         set.add(Address.create("test#kullo.net"));
         set.add(Address.create("test#kullo.net"));
@@ -76,7 +92,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertTrue(set.contains(Address.create("test#kullo.net")));
     }
 
-    public void testRemove() {
+    @Test
+    public void remove() {
         AddressSet set = new AddressSet();
         set.add(Address.create("test#kullo.net"));
 
@@ -89,7 +106,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertFalse(set.contains(Address.create("test#kullo.net")));
     }
 
-    public void testRemoveNull() {
+    @Test
+    public void removeNull() {
         AddressSet set = new AddressSet();
         set.add(Address.create("a#kullo.net"));
         set.add(null);
@@ -104,7 +122,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertTrue(set.contains(Address.create("b#kullo.net")));
     }
 
-    public void testRemoveNonExisting() {
+    @Test
+    public void removeNonExisting() {
         AddressSet set = new AddressSet();
         set.add(Address.create("test#kullo.net"));
 
@@ -123,7 +142,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertFalse(set.contains(Address.create("test#kullo.net")));
     }
 
-    public void testRemoveMultipleElementsRemoveFromFront() {
+    @Test
+    public void removeMultipleElementsRemoveFromFront() {
         AddressSet set = new AddressSet();
         set.add(Address.create("a#kullo.net"));
         set.add(Address.create("b#kullo.net"));
@@ -153,7 +173,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertFalse(set.contains(Address.create("c#kullo.net")));
     }
 
-    public void testRemoveMultipleElementsRemoveFromBack() {
+    @Test
+    public void removeMultipleElementsRemoveFromBack() {
         AddressSet set = new AddressSet();
         set.add(Address.create("a#kullo.net"));
         set.add(Address.create("b#kullo.net"));
@@ -184,7 +205,8 @@ public class AddressSetTest extends AndroidTestCase {
     }
 
     // Removing object of wrong type does not change set because set cannot contain object
-    public void testRemoveOtherType() {
+    @Test
+    public void removeOtherType() {
         AddressSet set = new AddressSet();
         set.add(Address.create("test#kullo.net"));
 
@@ -195,7 +217,8 @@ public class AddressSetTest extends AndroidTestCase {
         assertTrue(set.contains(Address.create("test#kullo.net")));
     }
 
-    public void testSorted() {
+    @Test
+    public void sorted() {
         AddressSet set = new AddressSet();
         set.add(Address.create("a#kullo.net"));
         set.add(Address.create("c#kullo.net"));
@@ -208,7 +231,8 @@ public class AddressSetTest extends AndroidTestCase {
     }
 
     // Let null be the last element
-    public void testSortedNull() {
+    @Test
+    public void sortedNull() {
         AddressSet set = new AddressSet();
         set.add(Address.create("a#kullo.net"));
         set.add(null);
@@ -221,5 +245,4 @@ public class AddressSetTest extends AndroidTestCase {
         assertTrue(sorted.get(2).isEqualTo(Address.create("c#kullo.net")));
         assertTrue(sorted.get(3) == null);
     }
-
 }

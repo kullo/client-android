@@ -5,11 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -23,6 +20,7 @@ import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.littlehelpers.Permissions;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.javautils.RuntimeAssertion;
 
@@ -57,28 +55,11 @@ public class CropImageActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        if (requestReadPermissions()) {
+        if (Permissions.checkOrRequestReadPermission(this)) {
             loadInputBitmapIntoViewAsync();
         } else {
             Log.d(TAG, "Read permission not yet granted.");
             // Try again in onRequestPermissionsResult()
-        }
-    }
-
-    private boolean requestReadPermissions() {
-        // permission is always granted on pre Android 6 devices
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true;
-
-        // Use constant Manifest.permission.READ_EXTERNAL_STORAGE in API 16+
-        final String requestedPermission = "android.permission.READ_EXTERNAL_STORAGE";
-
-        if (ContextCompat.checkSelfPermission(this, requestedPermission) != PackageManager.PERMISSION_GRANTED) {
-            // No explanation for the user is needed in this case
-            ActivityCompat.requestPermissions(this, new String[]{requestedPermission},
-                    KulloApplication.PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
-            return false;
-        } else {
-            return true;
         }
     }
 

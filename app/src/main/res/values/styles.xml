@@ -51,6 +51,7 @@
 
     </style>
 
+    <style name="ColoredButton" parent="Widget.AppCompat.Button.Colored" />
 
     <style name="ConversationHeaderTitle" parent="@android:style/TextAppearance">
         <item name="android:textColor">#FFFFFF</item>

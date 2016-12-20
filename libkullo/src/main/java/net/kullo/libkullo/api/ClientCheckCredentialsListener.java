@@ -7,5 +7,9 @@ package net.kullo.libkullo.api;
 public abstract class ClientCheckCredentialsListener {
     public abstract void finished(Address address, MasterKey masterKey, boolean valid);
 
+    /**
+     * Network errors except NetworkError.Unauthorized, which is handled
+     * by finished()
+     */
     public abstract void error(Address address, NetworkError error);
 }

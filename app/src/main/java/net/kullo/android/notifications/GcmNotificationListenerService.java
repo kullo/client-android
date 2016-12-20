@@ -6,6 +6,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.WorkerThread;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -14,12 +15,16 @@ import com.google.android.gms.gcm.GcmListenerService;
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.SessionConnector;
-import net.kullo.android.screens.ConversationsListActivity;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.screens.ConversationsListActivity;
 
+// All private methods on this call are called from onMessageReceived
+// onMessageReceived is running in the background, see
+// "Methods are invoked asynchronously." (https://developers.google.com/android/reference/com/google/android/gms/gcm/GcmListenerService.html)
 public class GcmNotificationListenerService extends GcmListenerService {
     private static final String TAG = "GcmListenerService";
 
+    @WorkerThread
     @Override
     public void onMessageReceived(String from, Bundle data) {
         Log.i(TAG, "Push notification received: " + data.toString());
@@ -27,14 +32,13 @@ public class GcmNotificationListenerService extends GcmListenerService {
         String action = data.getString("action");
 
         if (action != null && action.equals("new_message")) {
-            if (((KulloApplication) getApplication()).foregroundActivitiesCount() >= 1) {
-                trySync();
-            } else {
+            if (((KulloApplication) getApplication()).foregroundActivitiesCount() == 0) {
                 makeAndShowNotification();
             }
+            syncIfSessionAvailable();
         } else {
             // no notification payload, sync silently
-            trySync();
+            syncIfSessionAvailable();
         }
     }
 
@@ -62,7 +66,8 @@ public class GcmNotificationListenerService extends GcmListenerService {
         notificationManager.notify(0, notificationBuilder.build());
     }
 
-    private void trySync() {
+    @WorkerThread
+    private void syncIfSessionAvailable() {
         SessionConnector sessionConnector = SessionConnector.get();
         if (sessionConnector.sessionAvailable()) sessionConnector.sync();
     }

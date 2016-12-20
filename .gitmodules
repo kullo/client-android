@@ -4,3 +4,6 @@
 [submodule "libkullo/src/main/jniLibs"]
 	path = libkullo/src/main/jniLibs
 	url = git@bitbucket.org:kullo/libkullo-android-bin.git
+[submodule "reduce"]
+	path = reduce
+	url = git@bitbucket.org:kullo/reduce.git

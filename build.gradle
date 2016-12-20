@@ -7,7 +7,7 @@ buildscript {
     dependencies {
         // Android plugin for gradle
         // http://google.github.io/android-gradle-dsl
-        classpath 'com.android.tools.build:gradle:2.2.2'
+        classpath 'com.android.tools.build:gradle:2.2.3'
 
         // Get latest version from
         // https://bintray.com/android/android-tools/com.google.gms.google-services/view

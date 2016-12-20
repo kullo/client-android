@@ -2,24 +2,30 @@
 package net.kullo.android.screens.registration;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.SwitchCompat;
 import android.text.Editable;
+import android.text.Html;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.Credentials;
 import net.kullo.android.kulloapi.DialogMaker;
-import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.kulloapi.KulloUtils;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.observers.listenerobservers.RegistrationRegisterAccountListenerObserver;
 import net.kullo.android.screens.RegistrationActivity;
 import net.kullo.javautils.RuntimeAssertion;
@@ -34,9 +40,11 @@ public class ChooseAddressFragment extends Fragment {
 
     private View mFragmentRoot;
     private RegistrationRegisterAccountListenerObserver mRegistrationRegisterAccountListenerObserver = null;
-    private Button mRegisterButton;
     private TextInputLayout mAddressInputLayout;
     private EditText mAddressEditText;
+    private SwitchCompat mTermsCheckBox;
+    private TextView mTermsText;
+    private Button mRegisterButton;
 
     @Nullable
     @Override
@@ -62,8 +70,28 @@ public class ChooseAddressFragment extends Fragment {
                 // clear old error if present when user is re-editing the text
                 mAddressInputLayout.setErrorEnabled(false);
                 mAddressInputLayout.setError(null);
+
+                preValidateForm();
             }
         });
+
+        mTermsCheckBox = (SwitchCompat) view.findViewById(R.id.terms_of_service_check);
+        RuntimeAssertion.require(mTermsCheckBox != null);
+
+        mTermsCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                preValidateForm();
+            }
+        });
+
+        mTermsText = (TextView) view.findViewById(R.id.terms_of_service_text);
+        RuntimeAssertion.require(mTermsText != null);
+
+        mTermsText.setText(Html.fromHtml(String.format(
+                getString(R.string.registration_terms_of_service),
+                KulloApplication.TERMS_URL)
+        ));
 
         mRegisterButton = (Button) view.findViewById(R.id.button_register);
         RuntimeAssertion.require(mRegisterButton != null);
@@ -71,9 +99,9 @@ public class ChooseAddressFragment extends Fragment {
         mRegisterButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (validateInput()) {
-                    String address = mAddressEditText.getText().toString() +
-                            getResources().getText(R.string.kullo_domain);
+                if (validateForm()) {
+                    final String username = getUsernameFromInput();
+                    final String address = username + getResources().getText(R.string.kullo_domain);
                     startAddressCreation(address);
                 }
             }
@@ -82,35 +110,66 @@ public class ChooseAddressFragment extends Fragment {
         return view;
     }
 
+    @NonNull
+    private String getUsernameFromInput() {
+        return mAddressEditText.getText().toString().trim();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        registerListenerObservers();
+    }
+
     @Override
     public void onResume() {
         super.onResume();
-        setRegisterAddressObserver();
+
+        preValidateForm();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        unregisterRegisterAddressObserver();
+        unregisterListenerObservers();
     }
 
-    private boolean validateInput() {
-        String text = mAddressEditText.getText().toString();
+    // pre valid = user is allowed to press "Register"
+    // This shows no error messages
+    private boolean preValidateForm() {
+        boolean formIsPreValid = true;
 
-        if (text.isEmpty()) {
-            mAddressInputLayout.setError(getResources().getText(R.string.choose_address_username_is_empty));
-            mAddressInputLayout.setErrorEnabled(true);
-            return false;
+        if (getUsernameFromInput().isEmpty()) {
+            formIsPreValid = false;
         }
 
-        String address = text + getResources().getText(R.string.kullo_domain);
+        if (!mTermsCheckBox.isChecked()) {
+            formIsPreValid = false;
+        }
+
+        if (formIsPreValid) {
+            mRegisterButton.setEnabled(true);
+        } else {
+            mRegisterButton.setEnabled(false);
+        }
+
+        return formIsPreValid;
+    }
+
+    private boolean validateForm() {
+        if (!preValidateForm()) return false;
+
+        boolean formIsValid = true;
+
+        final String username = getUsernameFromInput();
+        final String address = username + getResources().getText(R.string.kullo_domain);
         if (!KulloUtils.isValidKulloAddress(address)) {
             mAddressInputLayout.setError(getResources().getText(R.string.choose_address_address_is_invalid));
             mAddressInputLayout.setErrorEnabled(true);
-            return false;
+            formIsValid = false;
         }
 
-        return true;
+        return formIsValid;
     }
 
     public void startAddressCreation(final String addressString) {
@@ -120,7 +179,7 @@ public class ChooseAddressFragment extends Fragment {
         SessionConnector.get().registerAddressAsync(addressString);
     }
 
-    private void setRegisterAddressObserver() {
+    private void registerListenerObservers() {
         mRegistrationRegisterAccountListenerObserver = new RegistrationRegisterAccountListenerObserver() {
             @Override
             public void challengeNeeded(String address, Challenge challenge) {
@@ -181,6 +240,15 @@ public class ChooseAddressFragment extends Fragment {
                 mRegistrationRegisterAccountListenerObserver);
     }
 
+    private void unregisterListenerObservers() {
+        RuntimeAssertion.require(mRegistrationRegisterAccountListenerObserver != null);
+
+        SessionConnector.get().removeListenerObserver(
+                RegistrationRegisterAccountListenerObserver.class,
+                mRegistrationRegisterAccountListenerObserver);
+        mRegistrationRegisterAccountListenerObserver = null;
+    }
+
     @UiThread
     private void showRegistrationError(final String errorText) {
         mFragmentRoot.requestFocus(); // Let user review input before changing the address
@@ -191,13 +259,6 @@ public class ChooseAddressFragment extends Fragment {
 
         // re-enable button for more tries
         mRegisterButton.setEnabled(true);
-    }
-
-    private void unregisterRegisterAddressObserver() {
-        if (mRegistrationRegisterAccountListenerObserver != null) {
-            SessionConnector.get().removeListenerObserver(RegistrationRegisterAccountListenerObserver.class, mRegistrationRegisterAccountListenerObserver);
-            mRegistrationRegisterAccountListenerObserver = null;
-        }
     }
 
     @UiThread

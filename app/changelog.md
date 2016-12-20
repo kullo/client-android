@@ -1,6 +1,20 @@
 Kullo for Android
 -----------------
 
+## v41
+
+ * Allow scaling down images before sending
+ * Improved file handling in share receiver and compose screen
+ * Allow adding multiple attachments at once in compose screen
+ * Exclude Kullo from Android Auto Backup for Apps
+ * Sync automatically when app is running in background and push notification is received
+ * Fix permission issue when receiving certain kind of file shares in Android 6+
+
+### Components
+
+ * Update libkullo to v59
+ * Update Botan to 1.11.34
+
 ## v40 (2016-11-25)
 
  * Improved share receiver

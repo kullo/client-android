@@ -2,10 +2,14 @@
 package net.kullo.android.screens;
 
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -31,6 +35,7 @@ import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Debug;
+import net.kullo.android.littlehelpers.Images;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.StreamCopy;
 import net.kullo.android.littlehelpers.Ui;
@@ -44,12 +49,15 @@ import net.kullo.android.screens.compose.DraftAttachmentOpener;
 import net.kullo.android.screens.compose.DraftAttachmentsAdapter;
 import net.kullo.android.ui.NonScrollingLinearLayoutManager;
 import net.kullo.javautils.RuntimeAssertion;
-import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
 import java.io.File;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ComposeActivity extends AppCompatActivity {
@@ -72,6 +80,16 @@ public class ComposeActivity extends AppCompatActivity {
 
     private boolean mSendingTriggered = false;
     private Pair<Integer, Integer> mStoredSelection = null;
+
+    class PreparedAttachment {
+        File tmpFile;
+        String mimeType;
+
+        PreparedAttachment(File tmpFile, String mimeType) {
+            this.tmpFile = tmpFile;
+            this.mimeType = mimeType;
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -166,10 +184,15 @@ public class ComposeActivity extends AppCompatActivity {
         if (intent.hasExtra(KulloConstants.CONVERSATION_ADD_ATTACHMENTS)) {
             List<Uri> files = intent.getParcelableArrayListExtra(KulloConstants.CONVERSATION_ADD_ATTACHMENTS);
             RuntimeAssertion.require(files != null);
+
+            Deque<PreparedAttachment> copiedFiles = new LinkedList<>();
             for (Uri file : files) {
                 Log.d(TAG, "Add file to draft: " + file);
-                addAttachment(file);
+                final PreparedAttachment a = prepareAttachment(file);
+                if (a != null) copiedFiles.add(a);
             }
+
+            processFilesAsync(copiedFiles);
         }
 
         if (intent.hasExtra(KulloConstants.CONVERSATION_ADD_TEXT)) {
@@ -183,6 +206,164 @@ public class ComposeActivity extends AppCompatActivity {
             draftText += text;
             SessionConnector.get().setDraftText(mConversationId, draftText);
         }
+    }
+
+    @MainThread
+    private void processFilesAsync(final Deque<PreparedAttachment> copiedFiles) {
+        int imagesCount = 0;
+        for (PreparedAttachment attachment : copiedFiles) {
+            if (Images.SCALABLE_TYPES.contains(attachment.mimeType)) {
+                ++imagesCount;
+            }
+        }
+
+        final int SIZE_L = 8;
+        final int SIZE_M = 3;
+        final int SIZE_S = 1;
+
+        if (imagesCount > 0) {
+            new MaterialDialog.Builder(this)
+                    .title(imagesCount == 1
+                            ? R.string.compose_scale_image_title
+                            : R.string.compose_scale_images_title)
+                    .items(
+                            String.format(getString(R.string.compose_scale_option_xmegapixel), SIZE_L),
+                            String.format(getString(R.string.compose_scale_option_xmegapixel), SIZE_M),
+                            String.format(getString(R.string.compose_scale_option_xmegapixel), SIZE_S),
+                            getString(R.string.compose_scale_option_unchanged)
+                    )
+                    .itemsCallback(new MaterialDialog.ListCallback() {
+                        @Override
+                        public void onSelection(MaterialDialog dialog, View view, int which, CharSequence text) {
+                            if (which < 3) {
+                                int pixelLimit = -1;
+                                switch (which) {
+                                    case 0:
+                                        pixelLimit = SIZE_L*Images.MEGA_PIXEL;
+                                        break;
+                                    case 1:
+                                        pixelLimit = SIZE_M*Images.MEGA_PIXEL;
+                                        break;
+                                    case 2:
+                                        pixelLimit = SIZE_S*Images.MEGA_PIXEL;
+                                        break;
+                                    default:
+                                        RuntimeAssertion.fail("Unhandled value");
+                                }
+                                scaleDownImagesInFilesList(copiedFiles, pixelLimit, new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        copyFilesToDatabase(copiedFiles, null);
+                                    }
+                                });
+                            } else {
+                                copyFilesToDatabase(copiedFiles, null);
+                            }
+                        }
+                    })
+                    .dismissListener(new DialogInterface.OnDismissListener() {
+                        @Override
+                        public void onDismiss(DialogInterface dialogInterface) {
+                            // dismissed
+                        }
+                    })
+                    .show();
+        } else {
+            copyFilesToDatabase(copiedFiles, null);
+        }
+    }
+
+    private void scaleDownImagesInFilesList(
+            @NonNull final Collection<PreparedAttachment> copiedFiles,
+            final int pixelLimit,
+            @Nullable final Runnable allDoneCallback) {
+        int count = 0;
+        for (PreparedAttachment attachment : copiedFiles) {
+            if (Images.SCALABLE_TYPES.contains(attachment.mimeType)) {
+                count += 1;
+            }
+        }
+        final int imagesCount = count;
+        final boolean showDeterminateProgress = (imagesCount >= 3);
+
+        new AsyncTask<Void, Void, Void>() {
+            MaterialDialog mScalingDialog;
+
+            @Override
+            protected void onPreExecute() {
+
+                mScalingDialog = new MaterialDialog.Builder(ComposeActivity.this)
+                        .title(R.string.compose_scale_progress_title)
+                        .content(R.string.compose_scale_progress_description)
+                        .progress(!showDeterminateProgress, imagesCount, true)
+                        // Do not use progressIndeterminateStyle() for determinate dialogs
+                        // https://github.com/afollestad/material-dialogs/issues/1236
+                        //.progressIndeterminateStyle(true)
+                        .cancelable(false)
+                        .build();
+                mScalingDialog.show();
+            }
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+                int doneCount = 0;
+                for (PreparedAttachment attachment : copiedFiles) {
+                    if (Images.SCALABLE_TYPES.contains(attachment.mimeType)) {
+                        Log.d(TAG, "Found file type that can be scaled down: " + attachment.tmpFile);
+                        Images.scaleDownInplace(attachment.tmpFile, pixelLimit);
+
+                        doneCount += 1;
+
+                        // setProgress must not be set in indeterminate mode
+                        // https://github.com/afollestad/material-dialogs/issues/1235
+                        // setProgress is not thread-safe
+                        // https://github.com/afollestad/material-dialogs/pull/1238
+                        if (showDeterminateProgress) {
+                            final int finalDoneCount = doneCount;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mScalingDialog.setProgress(finalDoneCount);
+                                }
+                            });
+                        }
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                mScalingDialog.dismiss();
+                if (allDoneCallback != null) allDoneCallback.run();
+            }
+        }.execute();
+    }
+
+    // Method calls itself until all files are copied and than calls the callback once
+    @MainThread
+    void copyFilesToDatabase(
+            @NonNull final Deque<PreparedAttachment> copiedFiles,
+            @Nullable final Runnable allDoneCallback) {
+        if (copiedFiles.isEmpty()) {
+            if (allDoneCallback != null) allDoneCallback.run();
+            return;
+        }
+
+        final PreparedAttachment attachment = copiedFiles.pollFirst();
+        final String path = attachment.tmpFile.getAbsolutePath();
+        final String mimeType = attachment.mimeType;
+        SessionConnector.get().addAttachmentToDraft(mConversationId, path, mimeType, new Runnable() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        copyFilesToDatabase(copiedFiles, allDoneCallback);
+                    }
+                });
+            }
+        });
     }
 
     @Override
@@ -266,10 +447,28 @@ public class ComposeActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_ATTACH_FILE) {
             if (resultCode == Activity.RESULT_OK) {
                 RuntimeAssertion.require(data != null);
-                final Uri selectedFileUri = data.getData();
-                RuntimeAssertion.require(selectedFileUri != null);
-                Log.d(TAG, "Attachment source: " + selectedFileUri);
-                addAttachment(selectedFileUri);
+
+                final List<Uri> selectedFileUris = new ArrayList<>();
+                if (data.getClipData() != null) {
+                    final ClipData clipdata = data.getClipData();
+                    for (int i = 0; i < clipdata.getItemCount(); ++i) {
+                        final Uri u = clipdata.getItemAt(i).getUri();
+                        selectedFileUris.add(u);
+                    }
+                } else {
+                    final Uri selectedFileUri = data.getData();
+                    RuntimeAssertion.require(selectedFileUri != null);
+                    selectedFileUris.add(selectedFileUri);
+                }
+                Log.d(TAG, "Attachment sources: " + selectedFileUris);
+
+                final Deque<PreparedAttachment> copiedFiles = new LinkedList<>();
+                for (final Uri selectedFileUri : selectedFileUris) {
+                    final PreparedAttachment a = prepareAttachment(selectedFileUri);
+                    if (a != null) copiedFiles.add(a);
+                }
+                processFilesAsync(copiedFiles);
+
             } else if (resultCode == Activity.RESULT_CANCELED){
                 Toast.makeText(this, R.string.select_file_canceled, Toast.LENGTH_SHORT).show();
             } else {
@@ -328,7 +527,7 @@ public class ComposeActivity extends AppCompatActivity {
                 finish(); // this will cause onPause, which saves the draft
                 return true;
             case R.id.action_add_attachment:
-                selectAttachmentIntent();
+                startFileSelectionActivity();
                 return true;
             case R.id.action_send:
                 send();
@@ -470,13 +669,15 @@ public class ComposeActivity extends AppCompatActivity {
 
     // ATTACHMENTS
 
-    private void selectAttachmentIntent() {
-        // Open file for attachment
-        final Intent fileIntent = new Intent();
-        fileIntent.setType("*/*");
-        fileIntent.addCategory(Intent.CATEGORY_OPENABLE);
-        fileIntent.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(fileIntent, REQUEST_CODE_ATTACH_FILE);
+    private void startFileSelectionActivity() {
+        final Intent intent = new Intent();
+        intent.setType("*/*");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        }
+        startActivityForResult(intent, REQUEST_CODE_ATTACH_FILE);
     }
 
     @NonNull
@@ -485,47 +686,54 @@ public class ComposeActivity extends AppCompatActivity {
         else return "application/octet-stream";
     }
 
-    private void addAttachment(@NonNull final Uri selectedFileUri) {
+    @Nullable
+    private PreparedAttachment prepareAttachment(@NonNull final Uri selectedFileUri) {
         final String scheme = selectedFileUri.getScheme();
         switch (scheme) {
             case "file":
-                addAttachmentFromFileUri(selectedFileUri);
-                break;
+                return prepareAttachmentFromFileUri(selectedFileUri);
             case "content":
-                addAttachmentFromContentUri(selectedFileUri);
-                break;
+                return prepareAttachmentFromContentUri(selectedFileUri);
             default:
                 RuntimeAssertion.fail("Unrecognized scheme: " + scheme);
+                return null;
         }
     }
 
-    private void addAttachmentFromFileUri(@NonNull final Uri selectedFileUri) {
+    @Nullable
+    private PreparedAttachment prepareAttachmentFromFileUri(@NonNull final Uri selectedFileUri) {
         final String guessedMimeType = URLConnection.guessContentTypeFromName(selectedFileUri.toString());
         final String mimeType = mimeTypeOrFallback(guessedMimeType);
 
-        AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, selectedFileUri.getPath(), mimeType);
-        task.waitUntilDone();
+        String tmpFilename = UriHelpers.getFilename(this, selectedFileUri, "tmp.tmp");
+        File cacheDir = ((KulloApplication) getApplication()).cacheDir(CacheType.AddAttachment, null);
+        final File tmpFile = new File(cacheDir, tmpFilename);
+        Log.d(TAG, "Tmp file path before adding to DB: " + tmpFile);
+
+        if (StreamCopy.copyToPath(this, selectedFileUri, tmpFile.getAbsolutePath())) {
+            return new PreparedAttachment(tmpFile, mimeType);
+        } else {
+            Log.e(TAG, "Could not copy " + selectedFileUri + " to " + tmpFile);
+            Toast.makeText(this, R.string.compose_error_loading_file, Toast.LENGTH_SHORT).show();
+            return null;
+        }
     }
 
-    private void addAttachmentFromContentUri(@NonNull final Uri selectedFileUri) {
+    @Nullable
+    private PreparedAttachment prepareAttachmentFromContentUri(@NonNull final Uri selectedFileUri) {
         final String mimeType = mimeTypeOrFallback(getContentResolver().getType(selectedFileUri));
 
         String tmpFilename = UriHelpers.getFilename(this, selectedFileUri, "tmp.tmp");
         File cacheDir = ((KulloApplication) getApplication()).cacheDir(CacheType.AddAttachment, null);
-        final String tmpFilePath = (new File(cacheDir, tmpFilename)).getPath();
-        Log.d(TAG, "Tmp file path before adding to DB: " + tmpFilePath);
+        final File tmpFile = new File(cacheDir, tmpFilename);
+        Log.d(TAG, "Tmp file path before adding to DB: " + tmpFile);
 
-        if (StreamCopy.copyToPath(this, selectedFileUri, tmpFilePath)) {
-            AsyncTask task = SessionConnector.get().addAttachmentToDraft(mConversationId, tmpFilePath, mimeType);
-            task.waitUntilDone();
-
-            // remove temporary file now that it's been uploaded
-            if (!(new File(tmpFilePath)).delete()) {
-                Log.e(TAG, "File could not be deleted: " + tmpFilePath);
-            }
+        if (StreamCopy.copyToPath(this, selectedFileUri, tmpFile.getAbsolutePath())) {
+            return new PreparedAttachment(tmpFile, mimeType);
         } else {
-            Log.e(TAG, "Could not copy " + selectedFileUri + " to " + tmpFilePath);
+            Log.e(TAG, "Could not copy " + selectedFileUri + " to " + tmpFile);
             Toast.makeText(this, R.string.compose_error_loading_file, Toast.LENGTH_SHORT).show();
+            return null;
         }
     }
 }

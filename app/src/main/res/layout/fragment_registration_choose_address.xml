@@ -61,13 +61,38 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Caption"
         />
 
+    <!-- check-to-text spacing: http://stackoverflow.com/a/4038195/2013738 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp">
+        <android.support.v7.widget.SwitchCompat
+            android:id="@+id/terms_of_service_check"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="8dp"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true">
+        </android.support.v7.widget.SwitchCompat>
+
+        <TextView
+            android:id="@+id/terms_of_service_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/terms_of_service_check"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:text="@string/registration_terms_of_service" />
+    </RelativeLayout>
+
     <Button
         android:id="@+id/button_register"
         android:layout_gravity="right"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:theme="@style/Button.Tinted"
-        android:text="@string/register"
+        style="@style/ColoredButton"
+        android:text="@string/action_register"
         />
 
 </LinearLayout>

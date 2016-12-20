@@ -1,1 +1,1 @@
-include ':app', ':libkullo', ':javautils'
+include ':app', ':libkullo', ':javautils', ':reduce'

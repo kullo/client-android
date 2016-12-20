@@ -7,6 +7,8 @@ package net.kullo.libkullo.api;
 public final class SyncProgress {
 
 
+    /*package*/ final SyncPhase phase;
+
     /*package*/ final long incomingMessagesProcessed;
 
     /*package*/ final long incomingMessagesTotal;
@@ -30,6 +32,7 @@ public final class SyncProgress {
     /*package*/ final long runTimeMs;
 
     public SyncProgress(
+            SyncPhase phase,
             long incomingMessagesProcessed,
             long incomingMessagesTotal,
             long incomingMessagesNew,
@@ -41,6 +44,7 @@ public final class SyncProgress {
             long outgoingMessagesUploadedBytes,
             long outgoingMessagesTotalBytes,
             long runTimeMs) {
+        this.phase = phase;
         this.incomingMessagesProcessed = incomingMessagesProcessed;
         this.incomingMessagesTotal = incomingMessagesTotal;
         this.incomingMessagesNew = incomingMessagesNew;
@@ -52,6 +56,10 @@ public final class SyncProgress {
         this.outgoingMessagesUploadedBytes = outgoingMessagesUploadedBytes;
         this.outgoingMessagesTotalBytes = outgoingMessagesTotalBytes;
         this.runTimeMs = runTimeMs;
+    }
+
+    public SyncPhase getPhase() {
+        return phase;
     }
 
     /** inbox (unit: messages) */
@@ -105,7 +113,8 @@ public final class SyncProgress {
     @Override
     public String toString() {
         return "SyncProgress{" +
-                "incomingMessagesProcessed=" + incomingMessagesProcessed +
+                "phase=" + phase +
+                "," + "incomingMessagesProcessed=" + incomingMessagesProcessed +
                 "," + "incomingMessagesTotal=" + incomingMessagesTotal +
                 "," + "incomingMessagesNew=" + incomingMessagesNew +
                 "," + "incomingMessagesNewUnread=" + incomingMessagesNewUnread +

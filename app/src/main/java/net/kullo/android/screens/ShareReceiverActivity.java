@@ -2,10 +2,12 @@
 package net.kullo.android.screens;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -27,6 +29,7 @@ import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.Formatting;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.littlehelpers.Permissions;
 import net.kullo.android.littlehelpers.StreamCopy;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.littlehelpers.UriHelpers;
@@ -80,6 +83,14 @@ public class ShareReceiverActivity extends AppCompatActivity {
         Files,
     }
 
+    private enum ShareType {
+        Images, // "image/*" only
+        Any, // arbitrary mime types
+    }
+
+    private ShareType mShareType;
+    @Nullable private List<Uri> mShareSources = null;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -116,34 +127,68 @@ public class ShareReceiverActivity extends AppCompatActivity {
             } else if (type.startsWith("image/")) {
                 Uri imageUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
                 prepareUi(UiMode.SingleImage, null);
-                handleSendSingleImage(imageUri);
+                mShareType = ShareType.Images;
+                mShareSources = Collections.singletonList(imageUri);
             } else {
                 Uri fileUri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
                 prepareUi(UiMode.SingleFile, null);
-                handleSendFiles(Collections.singletonList(fileUri));
+                mShareType = ShareType.Any;
+                mShareSources = Collections.singletonList(fileUri);
             }
         } else if (action.equals(Intent.ACTION_SEND_MULTIPLE) && type != null) {
             if (type.startsWith("image/")) {
                 final List<Uri> imageUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+                mShareType = ShareType.Images;
+                mShareSources = imageUris;
                 if (imageUris.size() == 1) {
                     prepareUi(UiMode.SingleImage, null);
-                    handleSendSingleImage(imageUris.get(0));
                 } else {
                     prepareUi(UiMode.Images, imageUris.size());
-                    handleSendMultipleImages(imageUris);
                 }
             } else {
                 final List<Uri> fileUris = intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM);
+                mShareType = ShareType.Any;
+                mShareSources = fileUris;
                 if (fileUris.size() == 1) {
                     prepareUi(UiMode.SingleFile, null);
-                    handleSendFiles(Collections.singletonList(fileUris.get(0)));
                 } else {
                     prepareUi(UiMode.Files, fileUris.size());
-                    handleSendFiles(fileUris);
                 }
             }
         } else {
             Log.e(TAG, "Invalid intend data");
+        }
+
+        if (mShareSources != null) {
+            if (!UriHelpers.containsFileUri(mShareSources)
+                    || Permissions.checkOrRequestReadPermission(this)) {
+                readShares();
+            } else {
+                Log.d(TAG, "Read permission not yet granted.");
+                // Try again in onRequestPermissionsResult()
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case KulloApplication.PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE:
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    readShares();
+                } else {
+                    Toast.makeText(this,
+                            R.string.sharereceiver_error_missing_permission_storage,
+                            Toast.LENGTH_LONG).show();
+                    setResult(RESULT_CANCELED);
+                    finish();
+                }
+                break;
+            default:
+                RuntimeAssertion.fail("Unhandled request code in onRequestPermissionsResult()");
         }
     }
 
@@ -154,6 +199,27 @@ public class ShareReceiverActivity extends AppCompatActivity {
             out = out.substring(0, KulloConstants.SHARE_TEXT_LIMIT-1) + "…";
         }
         return out;
+    }
+
+    @MainThread
+    private void readShares() {
+        if (mShareSources == null) return;
+
+        RuntimeAssertion.require(!UriHelpers.containsFileUri(mShareSources)
+                || Permissions.checkOrRequestReadPermission(this),
+                "At this point we need to have the permission to read file:// uris");
+
+        switch (mShareType) {
+            case Images:
+                if (mShareSources.size() == 1) {
+                    handleSendSingleImage(mShareSources.get(0));
+                } else {
+                    handleSendMultipleImages(mShareSources);
+                }
+            case Any:
+                handleSendFiles(mShareSources);
+                break;
+        }
     }
 
     private void prepareUi(UiMode mode, @Nullable final Integer itemsCount) {
@@ -326,6 +392,7 @@ public class ShareReceiverActivity extends AppCompatActivity {
                         hideGeneratePreviewsLoadingIndicator();
 
                         Share share = mReadyShares.get(0);
+                        RuntimeAssertion.require(share.previewUri != null);
 
                         // Get image meta
                         final String imageMetaText = String.format("%s (%s)",
@@ -488,7 +555,7 @@ public class ShareReceiverActivity extends AppCompatActivity {
             protected Void doInBackground(Void... voids) {
                 for (int index = 0; index < mReadyShares.size(); ++index) {
                     Log.d(TAG, "Generating preview for share at index " + index + " ...");
-                    Share share = mReadyShares.get(index);
+                    final Share share = mReadyShares.get(index);
 
                     if (share.size > 1_048_576 /* 1 MiB */) {
                         Bitmap bmp;
@@ -517,6 +584,8 @@ public class ShareReceiverActivity extends AppCompatActivity {
                     } else {
                         share.previewUri = share.cacheUri;
                     }
+
+                    mReadyShares.set(index, share);
                 }
                 return null;
             }

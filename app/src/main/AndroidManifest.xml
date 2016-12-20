@@ -37,11 +37,15 @@
 
     <application
         android:name=".application.KulloApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:screenOrientation="portrait"
         android:theme="@style/AppTheme">
+
+        <!-- https://firebase.google.com/support/guides/disable-analytics -->
+        <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true" />
+
         <activity
             android:name=".screens.WelcomeActivity"
             android:noHistory="true"
@@ -156,21 +160,21 @@
         </receiver>
 
         <service
-            android:name="net.kullo.android.notifications.GcmNotificationListenerService"
+            android:name=".notifications.GcmNotificationListenerService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.android.c2dm.intent.RECEIVE" />
             </intent-filter>
         </service>
         <service
-            android:name="net.kullo.android.notifications.GcmInstanceIDListenerService"
+            android:name=".notifications.GcmInstanceIDListenerService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.android.gms.iid.InstanceID" />
             </intent-filter>
         </service>
         <service
-            android:name="net.kullo.android.notifications.GcmRegistrationIntentService"
+            android:name=".notifications.GcmRegistrationIntentService"
             android:exported="false" />
         <!-- END NOTIFICATIONS -->
 

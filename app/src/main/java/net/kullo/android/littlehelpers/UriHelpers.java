@@ -8,7 +8,22 @@ import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.webkit.MimeTypeMap;
 
+import java.util.Collection;
+import java.util.Objects;
+
 public class UriHelpers {
+    public static boolean isFileUri(@NonNull final Uri uri) {
+        return uri.getScheme().equals("file");
+    }
+
+    public static boolean containsFileUri(@NonNull final Collection<Uri> uris) {
+        boolean out = false;
+        for (final Uri uri : uris) {
+            out |= isFileUri(uri);
+        }
+        return out;
+    }
+
     @NonNull
     public static String getFilename(@NonNull final Context context,
                                      @NonNull final Uri uri,

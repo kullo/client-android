@@ -6,11 +6,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.support.annotation.AnyThread;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import net.kullo.android.application.KulloApplication;
 import net.kullo.android.littlehelpers.AddressSet;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.KulloConstants;
@@ -24,6 +26,7 @@ import net.kullo.android.observers.eventobservers.MessageAddedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageAttachmentsDownloadedChangedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageStateEventObserver;
+import net.kullo.android.observers.listenerobservers.ClientCheckCredentialsListenerObserver;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
 import net.kullo.android.observers.listenerobservers.ClientGenerateKeysListenerObserver;
 import net.kullo.android.observers.listenerobservers.DraftAttachmentsAddListenerObserver;
@@ -86,8 +89,12 @@ public class SessionConnector {
     private static final int SECONDS_BETWEEN_SYNCS = 5 * 60;
 
     private static final SessionConnector SINGLETON = new SessionConnector();
-    @NonNull public static SessionConnector get() {
-        return SINGLETON;
+    @AnyThread
+    @NonNull
+    public static SessionConnector get() {
+        synchronized (SINGLETON) {
+            return SINGLETON;
+        }
     }
 
     private AsyncTasksHolder mTaskHolder = new AsyncTasksHolder();
@@ -107,8 +114,9 @@ public class SessionConnector {
 
     private SessionConnector() {
         mListenerObservers = new HashMap<>(10);
-        mListenerObservers.put(ClientGenerateKeysListenerObserver.class, new LinkedList<ListenerObserver>());
+        mListenerObservers.put(ClientCheckCredentialsListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(ClientCreateSessionListenerObserver.class, new LinkedList<ListenerObserver>());
+        mListenerObservers.put(ClientGenerateKeysListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(DraftAttachmentsAddListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(DraftAttachmentsSaveListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(MessageAttachmentsSaveListenerObserver.class, new LinkedList<ListenerObserver>());
@@ -162,9 +170,9 @@ public class SessionConnector {
                     storeCredentials(callingActivity, credentials);
                     createSession(callingActivity, credentials);
                 } else {
-                    synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                        for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                            ((ClientCreateSessionListenerObserver) observer).loginFailed();
+                    synchronized (mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
+                        for (ListenerObserver observer : mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
+                            ((ClientCheckCredentialsListenerObserver) observer).loginFailed();
                         }
                     }
                 }
@@ -172,9 +180,9 @@ public class SessionConnector {
 
             @Override
             public void error(Address address, NetworkError error) {
-                synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                        ((ClientCreateSessionListenerObserver) observer).networkError(error);
+                synchronized (mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
+                    for (ListenerObserver observer : mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
+                        ((ClientCheckCredentialsListenerObserver) observer).error(error);
                     }
                 }
             }
@@ -278,11 +286,17 @@ public class SessionConnector {
         }, new ClientCreateSessionListener() {
             private final String TAG = "ClientCreateSessionList"; // max 23 chars
 
+            @AnyThread
             @Override
             public void migrationStarted(Address address) {
-                //TODO give user feedback
+                synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
+                    for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
+                        ((ClientCreateSessionListenerObserver) observer).migrationStarted();
+                    }
+                }
             }
 
+            @AnyThread
             @Override
             public void finished(final Session session) {
                 Log.d(TAG, "createSession finished :)");
@@ -308,13 +322,14 @@ public class SessionConnector {
                 });
             }
 
+            @AnyThread
             @Override
             public void error(Address address, LocalError error) {
                 Log.d(TAG, address.toString() + " " + error.toString());
 
                 synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
                     for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                        ((ClientCreateSessionListenerObserver) observer).localError(error);
+                        ((ClientCreateSessionListenerObserver) observer).error(error);
                     }
                 }
             }
@@ -489,23 +504,23 @@ public class SessionConnector {
         sharedPref.edit().clear().apply();
     }
 
+    @AnyThread
     public boolean sessionAvailable() {
         synchronized (mSessionGuard) {
             return mSession != null;
         }
     }
 
-
     // SYNC
 
-    @MainThread
+    @AnyThread
     public boolean isSyncing() {
         synchronized (mSessionGuard) {
             return mSession.syncer().isSyncing();
         }
     }
 
-    @MainThread
+    @AnyThread
     public void sync() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
@@ -513,9 +528,9 @@ public class SessionConnector {
         }
     }
 
-    @MainThread
+    @AnyThread
     public void syncIfNecessary() {
-        DateTime lastFullSync;
+        final DateTime lastFullSync;
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             lastFullSync = mSession.syncer().lastFullSync();
@@ -532,7 +547,7 @@ public class SessionConnector {
         }
     }
 
-    @MainThread
+    @AnyThread
     public void sendMessages() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
@@ -755,9 +770,12 @@ public class SessionConnector {
     // ATTACHMENTS
     @NonNull
     @MainThread
-    public AsyncTask addAttachmentToDraft(long conversationId, String filePath, @NonNull String mimeType) {
+    public AsyncTask addAttachmentToDraft(
+            final long conversationId,
+            @NonNull final String filePath,
+            @NonNull final String mimeType,
+            @Nullable final Runnable doneCallback) {
         RuntimeAssertion.require(mSession != null);
-        RuntimeAssertion.require(filePath != null);
 
         AsyncTask task = mSession.draftAttachments().addAsync(conversationId, filePath, mimeType, new DraftAttachmentsAddListener() {
             @Override
@@ -772,6 +790,8 @@ public class SessionConnector {
                         ((DraftAttachmentsAddListenerObserver) observer).finished(convId, attId, path);
                     }
                 }
+
+                if (doneCallback != null) doneCallback.run();
             }
 
             @Override
@@ -1221,7 +1241,12 @@ public class SessionConnector {
         Address address = Address.create(addressString);
         RuntimeAssertion.require(address != null);
 
-        mTaskHolder.add(mRegistration.registerAccountAsync(address, null, "", new RegistrationRegisterAccountListener() {
+        mTaskHolder.add(mRegistration.registerAccountAsync(
+                address,
+                KulloApplication.TERMS_URL,
+                null,
+                "",
+                new RegistrationRegisterAccountListener() {
             @Override
             public void challengeNeeded(Address address, Challenge challenge) {
                 synchronized (mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
@@ -1317,13 +1342,13 @@ public class SessionConnector {
 
     // Observers
 
-    public void addListenerObserver(Class type, ListenerObserver observer) {
+    public void addListenerObserver(Class type, @NonNull ListenerObserver observer) {
         synchronized (mListenerObservers.get(type)) {
             mListenerObservers.get(type).add(observer);
         }
     }
 
-    public void removeListenerObserver(Class type, ListenerObserver observerToRemove) {
+    public void removeListenerObserver(Class type, @NonNull ListenerObserver observerToRemove) {
         synchronized (mListenerObservers.get(type)) {
             Iterator<ListenerObserver> itr = mListenerObservers.get(type).iterator();
             while (itr.hasNext()) {

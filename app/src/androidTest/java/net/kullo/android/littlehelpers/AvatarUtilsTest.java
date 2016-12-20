@@ -1,11 +1,18 @@
 /* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
 package net.kullo.android.littlehelpers;
 
-import android.test.AndroidTestCase;
+import android.support.test.runner.AndroidJUnit4;
 
-public class AvatarUtilsTest extends AndroidTestCase {
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-    public void testScalingFactorOneDimension() {
+import static org.junit.Assert.assertEquals;
+
+@RunWith(AndroidJUnit4.class)
+public class AvatarUtilsTest {
+
+    @Test
+    public void scalingFactorOneDimension() {
         // limit equals size
         assertEquals(1.0, AvatarUtils.scalingFactorOneDimension(1, 1, 1), 0.001);
         assertEquals(1.0, AvatarUtils.scalingFactorOneDimension(2, 2, 4), 0.001);
@@ -22,7 +29,8 @@ public class AvatarUtilsTest extends AndroidTestCase {
         assertEquals(1.0, AvatarUtils.scalingFactorOneDimension(2, 2, 100), 0.001);
     }
 
-    public void testFactorToSampleSize() {
+    @Test
+    public void factorToSampleSize() {
         assertEquals(1, AvatarUtils.sampleSize(1.0));
         assertEquals(2, AvatarUtils.sampleSize(0.5));
         assertEquals(4, AvatarUtils.sampleSize(0.25));

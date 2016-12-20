@@ -89,7 +89,7 @@
                         android:id="@+id/button_login"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/login"
+                        android:text="@string/action_login"
                         android:theme="@style/Button.Tinted"
                         android:layout_alignParentRight="true" />
 
@@ -113,7 +113,7 @@
                         android:id="@+id/button_register"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/register"
+                        android:text="@string/action_register"
                         android:theme="@style/Button.Tinted"
                         android:layout_alignParentRight="true" />
 

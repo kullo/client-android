@@ -11,6 +11,7 @@ import android.support.v7.widget.SwitchCompat;
 import android.text.Editable;
 import android.text.Html;
 import android.text.TextWatcher;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -92,6 +93,7 @@ public class ChooseAddressFragment extends Fragment {
                 getString(R.string.registration_terms_of_service),
                 KulloApplication.TERMS_URL)
         ));
+        mTermsText.setMovementMethod(LinkMovementMethod.getInstance()); // make links clickable
 
         mRegisterButton = (Button) view.findViewById(R.id.button_register);
         RuntimeAssertion.require(mRegisterButton != null);

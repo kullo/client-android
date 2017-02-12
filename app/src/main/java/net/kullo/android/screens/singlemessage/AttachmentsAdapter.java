@@ -1,12 +1,12 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
-package net.kullo.android.screens.messageslist;
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+package net.kullo.android.screens.singlemessage;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.annotation.UiThread;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.graphics.Color;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.KulloIdsAdapter;
@@ -15,10 +15,10 @@ import net.kullo.android.littlehelpers.Formatting;
 
 public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
     private Context mContext;
-    private Long mMessageId;
+    private long mMessageId;
     private boolean mAttachmentsDownloaded;
 
-    public AttachmentsAdapter(Context context, Long messageId, boolean attachmentsDownloaded) {
+    public AttachmentsAdapter(Context context, long messageId, boolean attachmentsDownloaded) {
         super();
         mContext = context;
         mMessageId = messageId;
@@ -28,9 +28,9 @@ public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
 
     @Override
     public AttachmentsViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-        View itemView = LayoutInflater.
-                from(viewGroup.getContext()).
-                inflate(R.layout.row_attachment, viewGroup, false);
+        View itemView = LayoutInflater
+                .from(viewGroup.getContext())
+                .inflate(R.layout.row_attachment, viewGroup, false);
 
         return new AttachmentsViewHolder(itemView);
     }
@@ -41,16 +41,15 @@ public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
 
         String filename = SessionConnector.get().getMessageAttachmentFilename(mMessageId, attachmentId);
         String sizeText = Formatting.filesizeHuman(SessionConnector.get().getMessageAttachmentFilesize(mMessageId, attachmentId));
-        String text = filename + " (" + sizeText + ")";
-        attachmentsViewHolder.mAttachmentName.setText(text);
+        attachmentsViewHolder.mFilename.setText(filename);
+        attachmentsViewHolder.mFilesize.setText(sizeText);
 
-        int textColor = mContext.getResources().getColor(R.color.kulloTextPrimaryColor);
         if (!mAttachmentsDownloaded) {
-            textColor = mContext.getResources().getColor(R.color.kulloDisabledTextColor);
+            attachmentsViewHolder.mContainer.setAlpha(0.5f);
+        } else {
+            attachmentsViewHolder.mContainer.setAlpha(1.0f);
         }
-        attachmentsViewHolder.mAttachmentName.setTextColor(textColor);
 
-        // draw background if item is selected
         if (isSelected(attachmentId)) {
             attachmentsViewHolder.itemView.setBackgroundColor(mContext.getResources().getColor(R.color.kulloSelectionColor));
         } else {

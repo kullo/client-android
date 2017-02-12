@@ -1,7 +1,9 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.littlehelpers;
 
 import android.support.test.runner.AndroidJUnit4;
+
+import net.kullo.reduce.Size;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

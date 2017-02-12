@@ -1,20 +1,24 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens.compose;
 
-import android.support.v7.widget.RecyclerView;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import net.kullo.android.R;
+import net.kullo.android.ui.ClickableRecyclerViewViewHolder;
+import net.kullo.javautils.RuntimeAssertion;
 
-public class DraftAttachmentsViewHolder extends RecyclerView.ViewHolder {
-    public TextView mAttachmentName;
-    public ImageView mRemoveButton;
+class DraftAttachmentsViewHolder extends ClickableRecyclerViewViewHolder {
+    TextView mFilename;
+    TextView mFilesize;
 
-    public DraftAttachmentsViewHolder(View itemView) {
+    DraftAttachmentsViewHolder(View itemView) {
         super(itemView);
-        mAttachmentName = (TextView) itemView.findViewById(R.id.draft_attachment_name);
-        mRemoveButton = (ImageView) itemView.findViewById(R.id.draft_attachment_remove_button);
+
+        mFilename = (TextView) itemView.findViewById(R.id.filename);
+        mFilesize = (TextView) itemView.findViewById(R.id.filesize);
+        RuntimeAssertion.require(mFilename != null);
+        RuntimeAssertion.require(mFilesize != null);
     }
+
 }

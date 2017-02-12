@@ -1,15 +1,15 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.application;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 
-import com.afollestad.materialdialogs.DialogAction;
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import net.kullo.android.R;
 import net.kullo.android.screens.SettingsActivity;
+
+import io.github.dialogsforandroid.DialogAction;
+import io.github.dialogsforandroid.MaterialDialog;
 
 public class CommonDialogs {
     public static MaterialDialog buildShowSettingsDialog(final Activity callingActivity) {

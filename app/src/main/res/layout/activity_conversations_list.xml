@@ -71,6 +71,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="@android:color/transparent"
+                        style="@style/RecyclerViewScrollBarVerticalStyle"
                         />
                 </RelativeLayout>
             </android.support.v4.widget.SwipeRefreshLayout>
@@ -118,7 +119,7 @@
                 android:onClick="startConversationButtonClicked"
                 app:elevation="@dimen/fab_elevation"
                 app:pressedTranslationZ="@dimen/fab_pressed_translation"
-                app:layout_behavior="net.kullo.android.thirdparty.ScrollAwareFABBehavior" />
+                app:layout_behavior="net.kullo.android.ui.VerticalScrollFabBehavior" />
 
         </android.support.design.widget.CoordinatorLayout>
 

@@ -1,7 +1,21 @@
 Kullo for Android
 -----------------
 
-## v41
+## v42 (2017-02-11)
+
+ * Improve link highlighting
+ * Show attachments as grid
+ * Fix crash bug when sharing images with Kullo
+ * Fix crash bug when opening APK files on Android lower than 7.0
+ * Add native code optimized for 64 bit Arm processors
+
+### Components
+
+ * Update libkullo to v60
+ * Update Botan to 2.0.1
+ * Update SmartSqlite to v17
+
+## v41 (2016-12-20)
 
  * Allow scaling down images before sending
  * Improved file handling in share receiver and compose screen

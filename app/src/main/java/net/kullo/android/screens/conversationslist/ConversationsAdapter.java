@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens.conversationslist;
 
 
@@ -46,8 +46,7 @@ public class ConversationsAdapter extends KulloIdsAdapter<ConversationViewHolder
     public ConversationViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.row_conversation, parent, false);
-        return new ConversationViewHolder(view) {
-        };
+        return new ConversationViewHolder(view);
     }
 
     @Override

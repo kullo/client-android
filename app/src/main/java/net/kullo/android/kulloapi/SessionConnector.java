@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.kulloapi;
 
 import android.app.Activity;
@@ -901,29 +901,61 @@ public class SessionConnector {
         }
     }
 
-    //CLIENT CURRENT USER
+    @NonNull
+    @MainThread
+    public String getCurrentUserAddressAsString() {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.userSettings().address().toString();
+        }
+    }
 
     @NonNull
     @MainThread
-    public String getClientName() {
+    public String getCurrentUserMasterKeyAsPem() {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.userSettings().masterKey().pem();
+        }
+    }
+
+    @NonNull
+    @MainThread
+    public String getCurrentUserName() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             return mSession.userSettings().name();
         }
     }
 
+    @MainThread
+    public void setCurrentUserName(@NonNull String name) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.userSettings().setName(name);
+        }
+    }
+
     @NonNull
     @MainThread
-    public String getClientOrganization() {
+    public String getCurrentUserOrganization() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             return mSession.userSettings().organization();
         }
     }
 
+    @MainThread
+    public void setCurrentUserOrganization(@NonNull String organization) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.userSettings().setOrganization(organization);
+        }
+    }
+
     @NonNull
     @MainThread
-    public String getClientFooter() {
+    public String getCurrentUserFooter() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             return mSession.userSettings().footer();
@@ -931,60 +963,16 @@ public class SessionConnector {
     }
 
     @MainThread
-    public void setClientName(String name) {
+    public void setCurrentUserFooter(@NonNull String footer) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            RuntimeAssertion.require(name != null);
-            mSession.userSettings().setName(name);
-        }
-    }
-
-    @MainThread
-    public void setClientOrganization(String organization) {
-        synchronized (mSessionGuard) {
-            RuntimeAssertion.require(mSession != null);
-            RuntimeAssertion.require(organization != null);
-            mSession.userSettings().setOrganization(organization);
-        }
-    }
-
-    @MainThread
-    public void setClientFooter(String footer) {
-        synchronized (mSessionGuard) {
-            RuntimeAssertion.require(mSession != null);
-            RuntimeAssertion.require(footer != null);
             mSession.userSettings().setFooter(footer);
         }
     }
 
+    @NonNull
     @MainThread
-    public void setClientAvatar(byte[] avatar) {
-        synchronized (mSessionGuard) {
-            RuntimeAssertion.require(mSession != null);
-            RuntimeAssertion.require(avatar != null);
-            mSession.userSettings().setAvatar(avatar);
-        }
-    }
-
-    @MainThread
-    public void setClientAvatarMimeType(String avatarMimeType) {
-        synchronized (mSessionGuard) {
-            RuntimeAssertion.require(mSession != null);
-            RuntimeAssertion.require(avatarMimeType != null);
-            mSession.userSettings().setAvatarMimeType(avatarMimeType);
-        }
-    }
-
-    @MainThread
-    public String getClientAddressAsString() {
-        synchronized (mSessionGuard) {
-            RuntimeAssertion.require(mSession != null);
-            return mSession.userSettings().address().toString();
-        }
-    }
-
-    @MainThread
-    public byte[] getClientAvatar() {
+    public byte[] getCurrentUserAvatar() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             return mSession.userSettings().avatar();
@@ -992,10 +980,18 @@ public class SessionConnector {
     }
 
     @MainThread
-    public String getMasterKeyAsPem() {
+    public void setCurrentUserAvatar(@NonNull byte[] avatar) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            return mSession.userSettings().masterKey().pem();
+            mSession.userSettings().setAvatar(avatar);
+        }
+    }
+
+    @MainThread
+    public void setCurrentUserAvatarMimeType(@NonNull String avatarMimeType) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mSession.userSettings().setAvatarMimeType(avatarMimeType);
         }
     }
 
@@ -1046,6 +1042,15 @@ public class SessionConnector {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             return mSession.messages().text(messageId);
+        }
+    }
+
+    @NonNull
+    @MainThread
+    public String getMessageTextAsHtml(long messageId) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.messages().textAsHtml(messageId, false);
         }
     }
 

@@ -10,6 +10,9 @@ public abstract class Registration {
     /**
      * Register a new account.
      *
+     * acceptedTerms is the url of the accepted terms of service.
+     * Set null if no terms are accepted.
+     *
      * Set challenge to the value passed to
      * RegistrationRegisterAccountListener::challengeNeeded if you recently sent
      * a registration request for the same address that failed because of a

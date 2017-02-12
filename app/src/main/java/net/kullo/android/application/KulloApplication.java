@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.application;
 
 import android.app.Activity;
@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.FileProvider;
 import android.util.Log;
 
 import net.danlew.android.joda.JodaTimeAndroid;
@@ -201,10 +202,13 @@ public class KulloApplication extends Application
         }
     }
 
-    public boolean canOpenFileType(File file, String mimeType) {
+    public boolean canOpenFileType(@NonNull final File file, @NonNull final String mimeType) {
+        // use FileProvider to get a content:// uri
+        final Uri uri = FileProvider.getUriForFile(this, KulloApplication.ID, file);
+
         Intent openFileIntent = new Intent();
         openFileIntent.setAction(android.content.Intent.ACTION_VIEW);
-        openFileIntent.setDataAndType(Uri.fromFile(file), mimeType);
+        openFileIntent.setDataAndType(uri, mimeType);
 
         final PackageManager packageManager = getPackageManager();
         List results = packageManager.queryIntentActivities(openFileIntent, 0);

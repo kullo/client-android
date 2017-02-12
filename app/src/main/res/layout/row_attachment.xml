@@ -1,31 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/container"
+    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    >
+    android:padding="8dp">
 
     <ImageView
-        android:id="@+id/attachmentBullet"
-        android:layout_alignParentLeft="true"
-        android:layout_centerVertical="true"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
-        android:alpha="0.5"
-        android:src="@drawable/ic_attachment_black_18dp" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:alpha="0.75"
+        android:src="@drawable/ic_attachment_black_48dp"/>
 
     <TextView
-        android:id="@+id/attachmentName"
-        android:layout_marginLeft="6dp"
-        android:layout_toRightOf="@id/attachmentBullet"
-        android:layout_alignParentRight="true"
-        android:layout_width="wrap_content"
+        android:id="@+id/filename"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:singleLine="true"
+        android:text="sample file 2016.docx"
+        android:maxLines="1"
         android:ellipsize="middle"
-        android:textColor="@color/kulloTextPrimaryColor"
-        android:gravity="left"
-        android:paddingTop="5dp"
-        android:paddingBottom="7dp"
-        />
+        android:gravity="center"
+        android:textAppearance="@style/Base.TextAppearance.AppCompat.Caption" />
 
-</RelativeLayout>
+    <TextView
+        android:id="@+id/filesize"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="345 Bytes"
+        android:maxLines="1"
+        android:gravity="center"
+        android:textAppearance="@style/Base.TextAppearance.AppCompat.Caption" />
+</LinearLayout>

@@ -7,3 +7,9 @@
 [submodule "reduce"]
 	path = reduce
 	url = git@bitbucket.org:kullo/reduce.git
+[submodule "reduce-android/src/main/jniLibs"]
+	path = reduce-android/src/main/jniLibs
+	url = git@bitbucket.org:kullo/reduce-android-bin.git
+[submodule "dialogs-for-android"]
+	path = dialogs-for-android
+	url = https://github.com/DialogsForAndroid/dialogs-for-android.git

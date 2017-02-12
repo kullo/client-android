@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.DialogInterface;
@@ -13,8 +13,6 @@ import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.ClientConnector;
 import net.kullo.android.kulloapi.CreateSessionResult;
@@ -22,15 +20,17 @@ import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
 import net.kullo.android.littlehelpers.KulloConstants;
-import net.kullo.android.ui.NonScrollingLinearLayoutManager;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.screens.startconversation.ParticipantsAdapter;
+import net.kullo.android.ui.NonScrollingLinearLayoutManager;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.ClientAddressExistsListener;
 import net.kullo.libkullo.api.NetworkError;
+
+import io.github.dialogsforandroid.MaterialDialog;
 
 public class StartConversationActivity extends AppCompatActivity {
     @SuppressWarnings("unused") private static final String TAG = "StartConversationAct."; // max. 23 chars
@@ -112,6 +112,7 @@ public class StartConversationActivity extends AppCompatActivity {
 
         RecyclerView recyclerView = (RecyclerView) findViewById(R.id.participantsList);
         RuntimeAssertion.require(recyclerView != null);
+        recyclerView.setNestedScrollingEnabled(false);
         recyclerView.setLayoutManager(new NonScrollingLinearLayoutManager(this));
         recyclerView.setAdapter(mParticipantsAdapter);
     }
@@ -171,7 +172,7 @@ public class StartConversationActivity extends AppCompatActivity {
         mNewParticipantTextInputLayout.setError(null);
 
         // prevent conversation with self
-        if (newParticipantAddress.equals(SessionConnector.get().getClientAddressAsString())) {
+        if (newParticipantAddress.equals(SessionConnector.get().getCurrentUserAddressAsString())) {
             mNewParticipantTextInputLayout.setError(getResources().getText(R.string.sender_is_recipient));
             return;
         }

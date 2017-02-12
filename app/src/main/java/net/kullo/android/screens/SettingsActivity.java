@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.app.Activity;
@@ -108,9 +108,9 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        SessionConnector.get().setClientName(mNameEditText.getText().toString().trim());
-        SessionConnector.get().setClientOrganization(mOrganizationEditText.getText().toString().trim());
-        SessionConnector.get().setClientFooter(mFooterEditText.getText().toString().trim());
+        SessionConnector.get().setCurrentUserName(mNameEditText.getText().toString().trim());
+        SessionConnector.get().setCurrentUserOrganization(mOrganizationEditText.getText().toString().trim());
+        SessionConnector.get().setCurrentUserFooter(mFooterEditText.getText().toString().trim());
 
         // Upload potential changes to UserSettings
         SessionConnector.get().sync();
@@ -295,18 +295,18 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void updateTextInputViewsFromSession() {
-        mNameEditText.setText(SessionConnector.get().getClientName());
-        mOrganizationEditText.setText(SessionConnector.get().getClientOrganization());
-        mFooterEditText.setText(SessionConnector.get().getClientFooter());
+        mNameEditText.setText(SessionConnector.get().getCurrentUserName());
+        mOrganizationEditText.setText(SessionConnector.get().getCurrentUserOrganization());
+        mFooterEditText.setText(SessionConnector.get().getCurrentUserFooter());
     }
 
     private void clearStoredSessionAvatar() {
-        SessionConnector.get().setClientAvatar(new byte[0]);
-        SessionConnector.get().setClientAvatarMimeType("");
+        SessionConnector.get().setCurrentUserAvatar(new byte[0]);
+        SessionConnector.get().setCurrentUserAvatarMimeType("");
     }
 
     private void updateAvatarViewFromSession() {
-        byte[] avatar = SessionConnector.get().getClientAvatar();
+        byte[] avatar = SessionConnector.get().getCurrentUserAvatar();
         if (avatar != null && avatar.length != 0) {
             mAvatarView.setImageBitmap(AvatarUtils.avatarToBitmap(avatar));
         } else {

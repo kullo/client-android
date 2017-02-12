@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -16,6 +16,8 @@ import net.kullo.android.notifications.GcmConnector;
 import net.kullo.javautils.RuntimeAssertion;
 
 public class AboutActivity extends AppCompatActivity {
+    private static final String TAG = "AboutActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

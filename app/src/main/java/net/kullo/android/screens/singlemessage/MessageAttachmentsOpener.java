@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens.singlemessage;
 
 import android.annotation.TargetApi;
@@ -14,15 +14,11 @@ import android.support.v4.content.FileProvider;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import net.kullo.android.R;
 import net.kullo.android.application.CacheType;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Debug;
-import net.kullo.android.littlehelpers.ListHelper;
 import net.kullo.android.littlehelpers.MimeTypeMerger;
 import net.kullo.android.littlehelpers.StreamCopy;
 import net.kullo.android.observers.listenerobservers.MessageAttachmentsSaveListenerObserver;
@@ -30,7 +26,11 @@ import net.kullo.javautils.RuntimeAssertion;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
+import io.github.dialogsforandroid.DialogAction;
+import io.github.dialogsforandroid.MaterialDialog;
 
 public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerObserver {
     public static final String TAG = "MessageAttachmentsOp."; // max 23 chars
@@ -112,12 +112,12 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
 
     public void saveAndOpenAttachment(long messageId, long attachmentId) {
         mCurrentAction = OpenAction.OPEN;
-        saveAttachments(messageId, ListHelper.asList(attachmentId));
+        saveAttachments(messageId, Collections.singletonList(attachmentId));
     }
 
     public void saveAndOpenWithAttachment(long messageId, long attachmentId) {
         mCurrentAction = OpenAction.OPEN_WITH;
-        saveAttachments(messageId, ListHelper.asList(attachmentId));
+        saveAttachments(messageId, Collections.singletonList(attachmentId));
     }
 
     public void saveAndShareAttachments(long messageId, List<Long> attachmentList) {
@@ -128,7 +128,7 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
     @TargetApi(Build.VERSION_CODES.KITKAT)
     public void saveAndDownloadAttachment(long messageId, long attachmentId) {
         mCurrentAction = OpenAction.SAVE_TO;
-        saveAttachments(messageId, ListHelper.asList(attachmentId));
+        saveAttachments(messageId, Collections.singletonList(attachmentId));
     }
 
     ///// REGISTER OBSERVER
@@ -266,7 +266,7 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
         mPendingFiles--;
         File tmpfile = new File(path);
         String filename = tmpfile.getName();
-        Uri uri = FileProvider.getUriForFile(mBaseActivity, KulloApplication.ID, tmpfile);
+        Uri uri = FileProvider.getUriForFile(mBaseActivity.getApplication(), KulloApplication.ID, tmpfile);
         Log.d(TAG, "Serving URI: " + uri);
         mReadyFiles.add(new ReadyFile(tmpfile, filename, uri));
     }

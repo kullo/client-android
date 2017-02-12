@@ -5,7 +5,7 @@
     >
 
     <ImageView
-        android:id="@+id/draft_attachment_bullet"
+        android:id="@+id/draft_attachment_icon"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
         android:layout_width="18dp"
@@ -15,19 +15,18 @@
         android:src="@drawable/ic_attachment_black_18dp" />
 
     <TextView
-        android:id="@+id/draft_attachment_name"
+        android:id="@+id/draft_attachment_filename"
         android:layout_marginLeft="6dp"
-        android:layout_toRightOf="@id/draft_attachment_bullet"
+        android:layout_toRightOf="@id/draft_attachment_icon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:singleLine="true"
+        android:maxLines="1"
         android:ellipsize="middle"
         android:textColor="@color/kulloTextPrimaryColor"
         android:gravity="left"
         android:paddingTop="5dp"
         android:paddingBottom="7dp"
-        android:layout_marginRight="30dp"
-        />
+        android:layout_marginRight="30dp" />
 
     <ImageView
         android:id="@+id/draft_attachment_remove_button"

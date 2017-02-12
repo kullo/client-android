@@ -1,3 +1,4 @@
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.libkullo.api;
 
 public class DateTime extends DateTimeBase implements Comparable<DateTime> {

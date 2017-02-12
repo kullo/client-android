@@ -89,6 +89,7 @@
                     android:id="@+id/messagesList"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    style="@style/RecyclerViewScrollBarVerticalStyle"
                     />
 
             </LinearLayout>
@@ -105,6 +106,6 @@
         android:src="@drawable/ic_create_white_24dp"
         app:elevation="@dimen/fab_elevation"
         app:pressedTranslationZ="@dimen/fab_pressed_translation"
-        app:layout_behavior="net.kullo.android.thirdparty.ScrollAwareFABBehavior" />
+        app:layout_behavior="net.kullo.android.ui.VerticalScrollFabBehavior" />
 
 </android.support.design.widget.CoordinatorLayout>

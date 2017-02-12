@@ -1,14 +1,18 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.util.Linkify;
+import android.text.Spannable;
+import android.text.method.LinkMovementMethod;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -19,8 +23,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import net.kullo.android.R;
 import net.kullo.android.application.CommonDialogs;
 import net.kullo.android.application.KulloApplication;
@@ -29,14 +31,16 @@ import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.littlehelpers.TextViewContent;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.MessageAttachmentsDownloadedChangedEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
-import net.kullo.android.screens.messageslist.AttachmentsAdapter;
+import net.kullo.android.screens.singlemessage.AttachmentsAdapter;
 import net.kullo.android.screens.singlemessage.MessageAttachmentsOpener;
-import net.kullo.android.ui.NonScrollingLinearLayoutManager;
+import net.kullo.android.ui.NonScrollingGridLayoutManager;
 import net.kullo.android.ui.RecyclerItemClickListener;
+import net.kullo.android.ui.ScreenMetrics;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
@@ -49,33 +53,35 @@ import org.joda.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import io.github.dialogsforandroid.MaterialDialog;
 
 public class SingleMessageActivity extends AppCompatActivity {
+    @SuppressWarnings("unused") private static final String TAG = "SingleMessageActivity";
     private long mMessageId;
 
     private MessageAttachmentsOpener mMessageAttachmentsOpener;
     private SyncerListenerObserver mDownloadAttachmentsFinishedObserver;
     private MessageAttachmentsDownloadedChangedEventObserver mMessageAttachmentsDownloadedChangedEventObserver;
 
-    public static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
-    protected DateTimeFormatter mFormatterDate;
+    private static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
+    private DateTimeFormatter mFormatterDate;
 
     private AttachmentsAdapter mAttachmentsAdapter = null;
     private RecyclerItemClickListener mAttachmentsClickListener = null;
-    private ActionMode mActionMode = null;
+    @Nullable private ActionMode mActionMode = null;
 
     // Views
     private View mOptionalPaddingElement;
-    protected CircleImageView mCircleImageView;
-    protected TextView mMessageDateTextView;
-    protected TextView mSenderNameTextView;
-    protected TextView mSenderOrganizationTextView;
-    protected TextView mMessageContentTextView;
-    protected RecyclerView mAttachmentsList;
-    protected Button mDownloadButton;
-    protected View mFooterContainer;
-    protected ImageButton mToogleFooterButton;
-    protected TextView mFooterTextView;
+    private CircleImageView mCircleImageView;
+    private TextView mMessageDateTextView;
+    private TextView mSenderNameTextView;
+    private TextView mSenderOrganizationTextView;
+    private TextView mMessageContentTextView;
+    private RecyclerView mAttachmentsList;
+    private Button mDownloadButton;
+    private View mFooterContainer;
+    private ImageButton mToggleFooterButton;
+    private TextView mFooterTextView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -95,7 +101,63 @@ public class SingleMessageActivity extends AppCompatActivity {
         Ui.setColorStatusBarArrangeHeader(this);
 
         mFormatterDate = ((KulloApplication) getApplication()).getFullDateTimeFormatter();
+        mMessageAttachmentsOpener = new MessageAttachmentsOpener(this);
 
+        registerObservers();
+        setupUi();
+
+        if (result.state == CreateSessionState.CREATING) {
+            RuntimeAssertion.require(result.task != null);
+            result.task.waitUntilDone();
+        }
+
+        GcmConnector.get().fetchAndRegisterToken(this);
+
+        populateMessageFields();
+    }
+
+    private void setupUi() {
+        mCircleImageView = (CircleImageView) findViewById(R.id.sender_avatar);
+        mMessageDateTextView = (TextView) findViewById(R.id.message_date);
+        mSenderNameTextView = (TextView) findViewById(R.id.sender_name);
+        mSenderOrganizationTextView = (TextView) findViewById(R.id.sender_company);
+        mMessageContentTextView = (TextView) findViewById(R.id.message_content);
+        mAttachmentsList = (RecyclerView) findViewById(R.id.attachments_list);
+        mDownloadButton = (Button) findViewById(R.id.download_button);
+        mOptionalPaddingElement = findViewById(R.id.optional_padding_element);
+        mFooterContainer = findViewById(R.id.footer_container);
+        mToggleFooterButton = (ImageButton) findViewById(R.id.footer_button);
+        mFooterTextView = (TextView) findViewById(R.id.footer_text);
+
+        mAttachmentsList.setNestedScrollingEnabled(false);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        SessionConnector.get().setMessageRead(mMessageId);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        GcmConnector.get().removeAllNotifications(this);
+    }
+
+    @Override
+    protected void onStop() {
+        clearSelection();
+        super.onStop();
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterObservers();
+    }
+
+    private void registerObservers() {
         mDownloadAttachmentsFinishedObserver = new SyncerListenerObserver() {
             @Override
             public void started() {
@@ -125,7 +187,8 @@ public class SingleMessageActivity extends AppCompatActivity {
                 });
             }
         };
-        SessionConnector.get().addListenerObserver(SyncerListenerObserver.class,
+        SessionConnector.get().addListenerObserver(
+                SyncerListenerObserver.class,
                 mDownloadAttachmentsFinishedObserver);
 
         mMessageAttachmentsDownloadedChangedEventObserver = new MessageAttachmentsDownloadedChangedEventObserver() {
@@ -139,66 +202,17 @@ public class SingleMessageActivity extends AppCompatActivity {
                 });
             }
         };
-        SessionConnector.get().addEventObserver(MessageAttachmentsDownloadedChangedEventObserver.class,
+        SessionConnector.get().addEventObserver(
+                MessageAttachmentsDownloadedChangedEventObserver.class,
                 mMessageAttachmentsDownloadedChangedEventObserver);
 
-        mMessageAttachmentsOpener = new MessageAttachmentsOpener(this);
         mMessageAttachmentsOpener.registerSaveFinishedListenerObserver();
-
-        setupUi();
-
-        if (result.state == CreateSessionState.CREATING) {
-            RuntimeAssertion.require(result.task != null);
-            result.task.waitUntilDone();
-        }
-
-        GcmConnector.get().fetchAndRegisterToken(this);
     }
 
-    private void setupUi() {
-        mCircleImageView = (CircleImageView) findViewById(R.id.sender_avatar);
-        mMessageDateTextView = (TextView) findViewById(R.id.message_date);
-        mSenderNameTextView = (TextView) findViewById(R.id.sender_name);
-        mSenderOrganizationTextView = (TextView) findViewById(R.id.sender_company);
-        mMessageContentTextView = (TextView) findViewById(R.id.message_content);
-        mAttachmentsList = (RecyclerView) findViewById(R.id.attachments_list);
-        mDownloadButton = (Button) findViewById(R.id.download_button);
-        mOptionalPaddingElement = findViewById(R.id.optional_padding_element);
-        mFooterContainer = findViewById(R.id.footer_container);
-        mToogleFooterButton = (ImageButton) findViewById(R.id.footer_button);
-        mFooterTextView = (TextView) findViewById(R.id.footer_text);
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        SessionConnector.get().setMessageRead(mMessageId);
-    }
-
-    @Override
-    protected void onStop() {
-        clearSelection();
-        super.onStop();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        GcmConnector.get().removeAllNotifications(this);
-        populateMessageFields();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
+    private void unregisterObservers() {
         mMessageAttachmentsOpener.unregisterSaveFinishedListenerObserver();
-        SessionConnector.get().removeEventObserver(MessageAttachmentsDownloadedChangedEventObserver.class,
+        SessionConnector.get().removeEventObserver(
+                MessageAttachmentsDownloadedChangedEventObserver.class,
                 mMessageAttachmentsDownloadedChangedEventObserver);
         SessionConnector.get().removeListenerObserver(
                 SyncerListenerObserver.class,
@@ -241,7 +255,7 @@ public class SingleMessageActivity extends AppCompatActivity {
 
     public void populateMessageFields() {
         final DateTime dateReceived = SessionConnector.get().getMessageDateReceived(mMessageId);
-        final String messageText = SessionConnector.get().getMessageText(mMessageId);
+        final String messageTextAsHtml = SessionConnector.get().getMessageTextAsHtml(mMessageId);
         final String messageFooter = SessionConnector.get().getMessageFooter(mMessageId);
         final Bitmap senderAvatar = SessionConnector.get().getSenderAvatar(this, mMessageId);
         final String senderName = SessionConnector.get().getSenderName(mMessageId);
@@ -255,8 +269,14 @@ public class SingleMessageActivity extends AppCompatActivity {
         setTitle(senderName);
 
         mMessageContentTextView.setMaxLines(Integer.MAX_VALUE);
-        mMessageContentTextView.setAutoLinkMask(Linkify.WEB_URLS);
-        mMessageContentTextView.setText(messageText);
+        final Spannable content = TextViewContent.getSpannableFromHtml(messageTextAsHtml, new TextViewContent.LinkClickedListener() {
+            @Override
+            protected void onClicked(Uri target) {
+                startActivity(new Intent(Intent.ACTION_VIEW, target));
+            }
+        });
+        mMessageContentTextView.setText(content);
+        mMessageContentTextView.setMovementMethod(LinkMovementMethod.getInstance()); // make links clickable
 
         reloadAttachmentsList();
 
@@ -284,7 +304,6 @@ public class SingleMessageActivity extends AppCompatActivity {
 
         setAttachmentsListVisibility(View.VISIBLE);
 
-        mAttachmentsList.setLayoutManager(new NonScrollingLinearLayoutManager(this));
         mAttachmentsAdapter = new AttachmentsAdapter(SingleMessageActivity.this, mMessageId, attachmentsDownloaded);
         mAttachmentsList.setAdapter(mAttachmentsAdapter);
 
@@ -297,7 +316,7 @@ public class SingleMessageActivity extends AppCompatActivity {
                     public void onItemClick(View view, int position) {
                         long attachmentId = mAttachmentsAdapter.getItem(position);
                         if (mAttachmentsAdapter.isSelectionActive()) {
-                            selectAttachment(attachmentId);
+                            toggleAttachmentSelection(attachmentId);
                         } else {
                             mMessageAttachmentsOpener.saveAndOpenAttachment(mMessageId, attachmentId);
                         }
@@ -306,7 +325,7 @@ public class SingleMessageActivity extends AppCompatActivity {
                     @Override
                     public void onItemLongPress(View view, int position) {
                         long attachmentId = mAttachmentsAdapter.getItem(position);
-                        selectAttachment(attachmentId);
+                        toggleAttachmentSelection(attachmentId);
                     }
                 };
                 mAttachmentsList.addOnItemTouchListener(mAttachmentsClickListener);
@@ -321,6 +340,20 @@ public class SingleMessageActivity extends AppCompatActivity {
                 }
             });
         }
+
+        // Set dummy layout manager to avoid error log "E/RecyclerView: No adapter attached; skipping layout"
+        LinearLayoutManager dummyLayoutManager = new LinearLayoutManager(this);
+        mAttachmentsList.setLayoutManager(dummyLayoutManager);
+
+        // We need to wait for the RecyclerView layouting in order to have width available
+        mAttachmentsList.post(new Runnable() {
+            @Override
+            public void run() {
+                int columns = ScreenMetrics.getColumnsForComponent(mAttachmentsList, 100.0f);
+                final NonScrollingGridLayoutManager glm = new NonScrollingGridLayoutManager(SingleMessageActivity.this, columns);
+                mAttachmentsList.setLayoutManager(glm);
+            }
+        });
     }
 
     private void setAttachmentsListVisibility(int visibility) {
@@ -341,8 +374,8 @@ public class SingleMessageActivity extends AppCompatActivity {
 
         if (footerExpanded) {
             mFooterTextView.setVisibility(View.VISIBLE);
-            mToogleFooterButton.setImageResource(R.drawable.ic_expand_less_active_button_color_36dp);
-            mToogleFooterButton.setOnClickListener(new View.OnClickListener() {
+            mToggleFooterButton.setImageResource(R.drawable.ic_expand_less_active_button_color_36dp);
+            mToggleFooterButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     showFooterContainer(false);
@@ -350,8 +383,8 @@ public class SingleMessageActivity extends AppCompatActivity {
             });
         } else {
             mFooterTextView.setVisibility(View.GONE);
-            mToogleFooterButton.setImageResource(R.drawable.ic_expand_more_active_button_color_36dp);
-            mToogleFooterButton.setOnClickListener(new View.OnClickListener() {
+            mToggleFooterButton.setImageResource(R.drawable.ic_expand_more_active_button_color_36dp);
+            mToggleFooterButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     showFooterContainer(true);
@@ -365,64 +398,66 @@ public class SingleMessageActivity extends AppCompatActivity {
         mFooterContainer.setVisibility(View.GONE);
     }
 
-    // CONTEXT MENU
-    private void selectAttachment(final long attachmentId) {
+    private void toggleAttachmentSelection(final long attachmentId) {
         mAttachmentsAdapter.toggleSelectedItem(attachmentId);
+
         if (!mAttachmentsAdapter.isSelectionActive()) {
-            mActionMode.finish();
-            return;
-        }
-        if (mActionMode == null) {
-            mActionMode = startActionMode(new ActionMode.Callback() {
-                @Override
-                public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                    MenuInflater inflater = mode.getMenuInflater();
-                    inflater.inflate(R.menu.appbar_menu_attachment_actions, menu);
-                    return true;
-                }
+            if (mActionMode != null) mActionMode.finish();
+        } else {
+            if (mActionMode == null) setupAttachmentsActionMode();
 
-                @Override
-                public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                    return false;
-                }
-
-                @Override
-                public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                    switch (item.getItemId()) {
-                         case R.id.action_save_as:
-                             mMessageAttachmentsOpener.saveAndDownloadAttachment(mMessageId, mAttachmentsAdapter.getSelectedItems().get(0));
-                             mode.finish();
-                             return true;
-                        case R.id.action_open_with:
-                            mMessageAttachmentsOpener.saveAndOpenWithAttachment(mMessageId, mAttachmentsAdapter.getSelectedItems().get(0));
-                            mode.finish();
-                            return true;
-                        case R.id.action_share:
-                            mMessageAttachmentsOpener.saveAndShareAttachments(mMessageId, mAttachmentsAdapter.getSelectedItems());
-                            mode.finish();
-                            return true;
-                        default:
-                            return false;
-                    }
-                }
-                @Override
-                public void onDestroyActionMode(ActionMode mode) {
-                    mAttachmentsAdapter.clearSelectedItems();
-                    mActionMode = null;
-                }
-            });
-        }
-
-        // update action bar title
-        final String title = String.format(
+            // update action bar title
+            final String title = String.format(
                 getResources().getString(R.string.title_n_selected),
                 mAttachmentsAdapter.getSelectedItemsCount());
-        mActionMode.setTitle(title);
-        boolean singleItemActions = mAttachmentsAdapter.getSelectedItemsCount() == 1;
-        mActionMode.getMenu().findItem(R.id.action_open_with)
+            mActionMode.setTitle(title);
+            boolean singleItemActions = mAttachmentsAdapter.getSelectedItemsCount() == 1;
+            mActionMode.getMenu().findItem(R.id.action_open_with)
                 .setVisible(singleItemActions);
-        mActionMode.getMenu().findItem(R.id.action_save_as)
+            mActionMode.getMenu().findItem(R.id.action_save_as)
                 .setVisible(singleItemActions && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT);
+        }
+    }
+
+    private void setupAttachmentsActionMode() {
+        mActionMode = startActionMode(new ActionMode.Callback() {
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                MenuInflater inflater = mode.getMenuInflater();
+                inflater.inflate(R.menu.appbar_menu_attachment_actions, menu);
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                switch (item.getItemId()) {
+                     case R.id.action_save_as:
+                         mMessageAttachmentsOpener.saveAndDownloadAttachment(mMessageId, mAttachmentsAdapter.getSelectedItems().get(0));
+                         mode.finish();
+                         return true;
+                    case R.id.action_open_with:
+                        mMessageAttachmentsOpener.saveAndOpenWithAttachment(mMessageId, mAttachmentsAdapter.getSelectedItems().get(0));
+                        mode.finish();
+                        return true;
+                    case R.id.action_share:
+                        mMessageAttachmentsOpener.saveAndShareAttachments(mMessageId, mAttachmentsAdapter.getSelectedItems());
+                        mode.finish();
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                mAttachmentsAdapter.clearSelectedItems();
+                mActionMode = null;
+            }
+        });
     }
 
     public void clearSelection() {

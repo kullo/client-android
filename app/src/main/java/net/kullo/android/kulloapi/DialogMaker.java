@@ -1,15 +1,15 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.kulloapi;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.afollestad.materialdialogs.DialogAction;
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import net.kullo.android.R;
 import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.NetworkError;
+
+import io.github.dialogsforandroid.DialogAction;
+import io.github.dialogsforandroid.MaterialDialog;
 
 public class DialogMaker {
     @NonNull

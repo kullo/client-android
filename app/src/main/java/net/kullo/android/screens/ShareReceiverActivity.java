@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -40,6 +40,7 @@ import net.kullo.android.screens.sharereceiver.Share;
 import net.kullo.android.screens.sharereceiver.ShareTargetsAdapter;
 import net.kullo.android.ui.DividerDecoration;
 import net.kullo.android.ui.ImageView16by9;
+import net.kullo.android.ui.NonScrollingLinearLayoutManager;
 import net.kullo.android.ui.RecyclerItemClickListener;
 import net.kullo.javautils.RuntimeAssertion;
 
@@ -216,6 +217,7 @@ public class ShareReceiverActivity extends AppCompatActivity {
                 } else {
                     handleSendMultipleImages(mShareSources);
                 }
+                break;
             case Any:
                 handleSendFiles(mShareSources);
                 break;
@@ -322,7 +324,7 @@ public class ShareReceiverActivity extends AppCompatActivity {
         // Disable nested scrolling to ensure the containing NestedScrollView scrolls properly
         conversationsRecyclerView.setNestedScrollingEnabled(false);
 
-        final LinearLayoutManager llm = new LinearLayoutManager(this);
+        final NonScrollingLinearLayoutManager llm = new NonScrollingLinearLayoutManager(this);
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         conversationsRecyclerView.setLayoutManager(llm);
 

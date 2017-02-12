@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.app.Activity;
@@ -13,18 +13,19 @@ import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.Pair;
+import android.view.ActionMode;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.application.CacheType;
@@ -47,7 +48,8 @@ import net.kullo.android.observers.eventobservers.DraftEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.compose.DraftAttachmentOpener;
 import net.kullo.android.screens.compose.DraftAttachmentsAdapter;
-import net.kullo.android.ui.NonScrollingLinearLayoutManager;
+import net.kullo.android.ui.NonScrollingGridLayoutManager;
+import net.kullo.android.ui.ScreenMetrics;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
@@ -59,6 +61,8 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+
+import io.github.dialogsforandroid.MaterialDialog;
 
 public class ComposeActivity extends AppCompatActivity {
     private static final String TAG = "ComposeActivity";
@@ -79,7 +83,10 @@ public class ComposeActivity extends AppCompatActivity {
     private DraftAttachmentOpener mDraftAttachmentOpener;
 
     private boolean mSendingTriggered = false;
-    private Pair<Integer, Integer> mStoredSelection = null;
+    @Nullable private ActionMode mDraftAttachmentsActionMode = null;
+
+    // restore cursor position and selection when activity brought back from sleep
+    @Nullable private Pair<Integer, Integer> mStoredTextSelection = null;
 
     class PreparedAttachment {
         File tmpFile;
@@ -129,6 +136,23 @@ public class ComposeActivity extends AppCompatActivity {
         mDraftAttachmentOpener = new DraftAttachmentOpener(this);
         mDraftAttachmentOpener.registerSaveFinishedListenerObserver();
         mDraftAttachmentsAdapter = new DraftAttachmentsAdapter(this, mConversationId, mDraftAttachmentOpener);
+        mDraftAttachmentsAdapter.onItemClickListener = new DraftAttachmentsAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClicked(int position, long id) {
+                if (mDraftAttachmentsAdapter.isSelectionActive()) {
+                    selectDraftAttachment(id);
+                } else {
+                    mDraftAttachmentOpener.saveAndOpenAttachment(mConversationId, id);
+                }
+            }
+        };
+        mDraftAttachmentsAdapter.onItemLongClickListener = new DraftAttachmentsAdapter.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClicked(int position, long id) {
+                selectDraftAttachment(id);
+                return true;
+            }
+        };
         mAttachmentsList.setAdapter(mDraftAttachmentsAdapter);
 
         SessionConnector.get().addEventObserver(DraftAttachmentAddedEventObserver.class, new DraftAttachmentAddedEventObserver() {
@@ -167,6 +191,59 @@ public class ComposeActivity extends AppCompatActivity {
         GcmConnector.get().fetchAndRegisterToken(this);
     }
 
+    private void selectDraftAttachment(long id) {
+        mDraftAttachmentsAdapter.toggleSelectedItem(id);
+
+        if (!mDraftAttachmentsAdapter.isSelectionActive()) {
+            if (mDraftAttachmentsActionMode != null) {
+                mDraftAttachmentsActionMode.finish();
+            }
+        } else {
+            if (mDraftAttachmentsActionMode == null) setupDraftAttachmentsActionMode();
+            final String title = String.format(
+                    getResources().getString(R.string.title_n_selected),
+                    mDraftAttachmentsAdapter.getSelectedItemsCount());
+            mDraftAttachmentsActionMode.setTitle(title);
+        }
+    }
+
+    private void setupDraftAttachmentsActionMode() {
+        mDraftAttachmentsActionMode = startActionMode(new ActionMode.Callback() {
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                MenuInflater inflater = mode.getMenuInflater();
+                inflater.inflate(R.menu.appbar_menu_message_actions, menu);
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.action_delete:
+                        List<Long> selectedDraftAttachmentsIdsCopy = new ArrayList<>(mDraftAttachmentsAdapter.getSelectedItems());
+                        for (long attachmentId : selectedDraftAttachmentsIdsCopy) {
+                            SessionConnector.get().removeDraftAttachment(mConversationId, attachmentId);
+                        }
+                        mode.finish();
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                mDraftAttachmentsAdapter.clearSelectedItems();
+                mDraftAttachmentsActionMode = null;
+            }
+        });
+    }
+
     private void setupUi() {
         mComposeFrame = findViewById(R.id.compose_frame);
         mComposeLayout = (LinearLayout) findViewById(R.id.compose_layout);
@@ -175,7 +252,20 @@ public class ComposeActivity extends AppCompatActivity {
         mComposeText = (EditText) findViewById(R.id.compose_text);
 
         mAttachmentsList = (RecyclerView) findViewById(R.id.attachments_list);
-        mAttachmentsList.setLayoutManager(new NonScrollingLinearLayoutManager(this));
+        mAttachmentsList.setNestedScrollingEnabled(false);
+        // Set dummy layout manager to avoid error log "E/RecyclerView: No adapter attached; skipping layout"
+        final LinearLayoutManager dummyLayoutManager = new LinearLayoutManager(this);
+        mAttachmentsList.setLayoutManager(dummyLayoutManager);
+
+        // We need to wait for the RecyclerView layouting in order to have width available
+        mAttachmentsList.post(new Runnable() {
+            @Override
+            public void run() {
+                int columns = ScreenMetrics.getColumnsForComponent(mAttachmentsList, 100.0f);
+                final NonScrollingGridLayoutManager glm = new NonScrollingGridLayoutManager(ComposeActivity.this, columns);
+                mAttachmentsList.setLayoutManager(glm);
+            }
+        });
     }
 
     private void handleShares(Intent intent) {
@@ -296,9 +386,6 @@ public class ComposeActivity extends AppCompatActivity {
                         .title(R.string.compose_scale_progress_title)
                         .content(R.string.compose_scale_progress_description)
                         .progress(!showDeterminateProgress, imagesCount, true)
-                        // Do not use progressIndeterminateStyle() for determinate dialogs
-                        // https://github.com/afollestad/material-dialogs/issues/1236
-                        //.progressIndeterminateStyle(true)
                         .cancelable(false)
                         .build();
                 mScalingDialog.show();
@@ -424,7 +511,6 @@ public class ComposeActivity extends AppCompatActivity {
         mComposeReceivers.setText(SessionConnector.get().getConversationNameOrPlaceHolder(mConversationId));
 
         updateDraftTextFromStorage();
-        restoreSelection();
 
         mDraftEventObserver = new DraftEventObserver() {
             @Override
@@ -483,14 +569,16 @@ public class ComposeActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         GcmConnector.get().removeAllNotifications(this);
+
+        restoreTextSelection();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
+        storeTextSelection();
         saveDraft(false);
-        rememberSelection();
         Log.d(TAG, "Activity paused. Draft saved.");
     }
 
@@ -653,16 +741,18 @@ public class ComposeActivity extends AppCompatActivity {
                 mSyncerListenerObserver);
     }
 
-    private void rememberSelection() {
-        mStoredSelection = new Pair<>(mComposeText.getSelectionStart(), mComposeText.getSelectionEnd());
+    private void storeTextSelection() {
+        mStoredTextSelection = new Pair<>(
+                mComposeText.getSelectionStart(),
+                mComposeText.getSelectionEnd());
     }
 
-    private void restoreSelection() {
-        if (mStoredSelection != null) {
+    private void restoreTextSelection() {
+        if (mStoredTextSelection != null) {
             int textLength = mComposeText.getText().length();
             mComposeText.setSelection(
-                    Math.min(textLength, mStoredSelection.first),
-                    Math.min(textLength, mStoredSelection.second));
+                    Math.min(textLength, mStoredTextSelection.first),
+                    Math.min(textLength, mStoredTextSelection.second));
         }
     }
 

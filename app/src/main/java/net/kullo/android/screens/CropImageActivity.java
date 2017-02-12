@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -144,8 +144,8 @@ public class CropImageActivity extends AppCompatActivity {
         Bitmap sourceAvatar = AvatarUtils.cropFromCenterForThumbnail(resizedBitmap, KulloConstants.AVATAR_DIMENSION);
         byte[] avatar = AvatarUtils.bitmapToJpegBinaryWithDownsamplingQualityAndMaxByteArraySize(
                     sourceAvatar, KulloConstants.AVATAR_BEST_QUALITY, KulloConstants.AVATAR_MAX_SIZE);
-        SessionConnector.get().setClientAvatar(avatar);
-        SessionConnector.get().setClientAvatarMimeType("image/jpeg");
+        SessionConnector.get().setCurrentUserAvatar(avatar);
+        SessionConnector.get().setCurrentUserAvatarMimeType("image/jpeg");
     }
 
     private void rotateImage() {

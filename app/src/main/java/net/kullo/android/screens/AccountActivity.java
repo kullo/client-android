@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.os.Bundle;
@@ -48,8 +48,8 @@ public class AccountActivity extends AppCompatActivity {
         TextView masterkeyView = (TextView) findViewById(R.id.account_masterkey);
         masterkeyView.setHorizontallyScrolling(true);
 
-        addressView.setText(SessionConnector.get().getClientAddressAsString());
-        masterkeyView.setText(SessionConnector.get().getMasterKeyAsPem());
+        addressView.setText(SessionConnector.get().getCurrentUserAddressAsString());
+        masterkeyView.setText(SessionConnector.get().getCurrentUserMasterKeyAsPem());
     }
 
     @Override

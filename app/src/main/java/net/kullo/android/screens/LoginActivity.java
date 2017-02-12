@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -16,8 +16,6 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.TextView;
-
-import com.afollestad.materialdialogs.MaterialDialog;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.DialogMaker;
@@ -37,6 +35,8 @@ import net.kullo.libkullo.api.NetworkError;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import io.github.dialogsforandroid.MaterialDialog;
 
 /**
  * Launching activity.

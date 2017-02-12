@@ -1,15 +1,14 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
-package net.kullo.android.littlehelpers;
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+package net.kullo.reduce;
 
-import net.kullo.javautils.RuntimeAssertion;
+public class Size {
+    public int width;
+    public int height;
 
-class Size {
-    int width;
-    int height;
+    public Size(int width, int height) {
+        if (width < 0) throw new AssertionError("width must be >= 0");
+        if (height < 0) throw new AssertionError("height must be >= 0");
 
-    Size(int width, int height) {
-        RuntimeAssertion.require(width >= 0);
-        RuntimeAssertion.require(height >= 0);
         this.width = width;
         this.height = height;
     }

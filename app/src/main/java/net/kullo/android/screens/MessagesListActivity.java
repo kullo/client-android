@@ -1,9 +1,10 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
@@ -21,8 +22,6 @@ import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import net.kullo.android.R;
 import net.kullo.android.application.CommonDialogs;
 import net.kullo.android.kulloapi.CreateSessionResult;
@@ -38,9 +37,9 @@ import net.kullo.android.observers.eventobservers.MessageAddedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageStateEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
+import net.kullo.android.screens.messageslist.MessagesAdapter;
 import net.kullo.android.ui.DividerDecoration;
 import net.kullo.android.ui.RecyclerItemClickListener;
-import net.kullo.android.screens.messageslist.MessagesAdapter;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
@@ -48,6 +47,7 @@ import net.kullo.libkullo.api.SyncProgress;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.dialogsforandroid.MaterialDialog;
 import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
 public class MessagesListActivity extends AppCompatActivity {
@@ -62,7 +62,7 @@ public class MessagesListActivity extends AppCompatActivity {
     private MessageStateEventObserver mMessageStateObserver;
 
     private SyncerListenerObserver mSyncerListenerObserver;
-    private ActionMode mActionMode = null;
+    @Nullable private ActionMode mActionMode = null;
 
     // Views
     private boolean mIsAtTopScrollPosition = true;
@@ -297,7 +297,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 long messageId = mMessagesAdapter.getItem(position);
 
                 if (mMessagesAdapter.isSelectionActive()) {
-                    selectMessage(messageId);
+                    messageSelected(messageId);
                 } else {
                     Intent intent = new Intent(MessagesListActivity.this, SingleMessageActivity.class);
                     intent.putExtra(KulloConstants.MESSAGE_ID, messageId);
@@ -308,7 +308,7 @@ public class MessagesListActivity extends AppCompatActivity {
             @Override
             public void onItemLongPress(View view, int position) {
                 long messageId = mMessagesAdapter.getItem(position);
-                selectMessage(messageId);
+                messageSelected(messageId);
             }
         });
 
@@ -492,55 +492,56 @@ public class MessagesListActivity extends AppCompatActivity {
                 mSyncerListenerObserver);
     }
 
-    // CONTEXT MENU
-    private void selectMessage(final Long messageId) {
+    private void messageSelected(final long messageId) {
         mMessagesAdapter.toggleSelectedItem(messageId);
         if (!mMessagesAdapter.isSelectionActive()) {
-            mActionMode.finish();
+            if (mActionMode != null) mActionMode.finish();
             return;
         }
-        if (mActionMode == null) {
-            mActionMode = startActionMode(new ActionMode.Callback() {
-                @Override
-                public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-                    MenuInflater inflater = mode.getMenuInflater();
-                    inflater.inflate(R.menu.appbar_menu_message_actions, menu);
-                    return true;
-                }
 
-                @Override
-                public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                    return false;
-                }
+        if (mActionMode == null) setupActionMode();
 
-                @Override
-                public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-                    switch (item.getItemId()) {
-                        case R.id.action_delete:
-                            List<Long> selectedMessageIdsCopy = new ArrayList<>(mMessagesAdapter.getSelectedItems());
-                            for (long selectedMessageId : selectedMessageIdsCopy) {
-                                SessionConnector.get().removeMessage(selectedMessageId);
-                            }
-                            SessionConnector.get().sync();
-
-                            mode.finish();
-                            return true;
-                        default:
-                            return false;
-                    }
-                }
-                @Override
-                public void onDestroyActionMode(ActionMode mode) {
-                    mMessagesAdapter.clearSelectedItems();
-                    mActionMode = null;
-                }
-            });
-        }
-
-        // update action bar title
         final String title = String.format(
                 getResources().getString(R.string.title_n_selected),
                 mMessagesAdapter.getSelectedItemsCount());
         mActionMode.setTitle(title);
+    }
+
+    private void setupActionMode() {
+        mActionMode = startActionMode(new ActionMode.Callback() {
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                MenuInflater inflater = mode.getMenuInflater();
+                inflater.inflate(R.menu.appbar_menu_message_actions, menu);
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.action_delete:
+                        List<Long> selectedMessageIdsCopy = new ArrayList<>(mMessagesAdapter.getSelectedItems());
+                        for (long selectedMessageId : selectedMessageIdsCopy) {
+                            SessionConnector.get().removeMessage(selectedMessageId);
+                        }
+                        SessionConnector.get().sync();
+
+                        mode.finish();
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                mMessagesAdapter.clearSelectedItems();
+                mActionMode = null;
+            }
+        });
     }
 }

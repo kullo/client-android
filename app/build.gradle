@@ -1,10 +1,14 @@
 apply plugin: 'com.android.application'
 
 ext {
+    TARGET_SDK_VERSION = 25
+    BUILD_TOOLS_VERSION = "25.0.2"
+
     // Available versions: ls -l $ANDROID_HOME/extras/android/m2repository/com/android/support/design
-    SUPPORT_LIBRARY_VERSION = "25.0.0"
-    TARGET_SDK_VERSION = 24
-    BUILD_TOOLS_VERSION = "24.0.3"
+
+    // There is a bug with FloatingActionButton in 25.1.1
+    // that started with the upgrade from 24.0.3 to 25.1.0
+    SUPPORT_LIBRARY_VERSION = "25.0.1"
 }
 
 android {
@@ -15,8 +19,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 16
         targetSdkVersion TARGET_SDK_VERSION
-        versionCode 4103
-        versionName "41"
+        versionCode 4202
+        versionName "42"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -51,15 +55,12 @@ dependencies {
     compile "com.android.support:design:${SUPPORT_LIBRARY_VERSION}"
     compile "com.android.support:support-v4:${SUPPORT_LIBRARY_VERSION}"
 
-    compile 'com.timehop.stickyheadersrecyclerview:library:0.4.2@aar'
-    compile 'de.hdodenhof:circleimageview:2.0.0'
+    compile 'com.timehop.stickyheadersrecyclerview:library:0.4.3@aar'
+    compile 'de.hdodenhof:circleimageview:2.1.0'
     compile 'com.github.bumptech.glide:glide:3.7.0'
     compile 'com.isseiaoki:simplecropview:1.0.16'
     compile 'net.danlew:android.joda:2.9.2'
 
-    // MaterialDialogs pulls in MaterialProgressBar as a dependency
-    // At the moment, the versions match.
-    compile 'com.afollestad.material-dialogs:core:0.9.1.0'
     compile 'me.zhanghai.android.materialprogressbar:library:1.3.0'
 
     // Available versions: ls -l $ANDROID_HOME/extras/google/m2repository/com/google/android/gms/play-services-gcm
@@ -67,7 +68,8 @@ dependencies {
 
     compile project(':libkullo')
     compile project(':javautils')
-    compile project(':reduce')
+    compile project(':reduce-android')
+    compile project(':dialogs-for-android/core')
 
     testCompile 'junit:junit:4.12'
     // Available versions: ls -l $ANDROID_HOME/extras/android/m2repository/com/android/support/test/runner
@@ -81,6 +83,10 @@ android {
     packagingOptions {
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/NOTICE.txt'
+
+        pickFirst 'lib/arm64-v8a/libcrystax.so'
+        pickFirst 'lib/armeabi-v7a/libcrystax.so'
+        pickFirst 'lib/x86/libcrystax.so'
     }
 }
 

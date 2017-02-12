@@ -37,8 +37,24 @@ public abstract class Messages {
 
     public abstract String text(long msgId);
 
-    /** Escapes special characters and converts text links to 'a' tags */
-    public abstract String textAsHtml(long msgId);
+    /**
+     * Escapes special characters and converts text links to 'a' tags
+     *
+     * An application using this must preserve the white space in the HTML code,
+     * i.e. treat \n and \r\n as line breaks and not strip leading or trailing
+     * spaces in lines.
+     * This can be archived for example by wrapping this in a html block with
+     * style "white-space: pre-wrap;".
+     *
+     * When includeKulloAddresses is true, Kullo addresses are linked using the
+     * Kullo internal scheme "kulloInternal:" followed by the unescaped address.
+     * Those links must be handled by the Kullo client and must not be passed to
+     * other applications since the URI scheme is not standardized and the hash
+     * symbol not compatible with a lot of applications.
+     *
+     * Weblinks are prioritized over Kullo adress links and links do not overlap.
+     */
+    public abstract String textAsHtml(long msgId, boolean includeKulloAddresses);
 
     public abstract String footer(long msgId);
 
@@ -162,12 +178,12 @@ public abstract class Messages {
         private native String native_text(long _nativeRef, long msgId);
 
         @Override
-        public String textAsHtml(long msgId)
+        public String textAsHtml(long msgId, boolean includeKulloAddresses)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            return native_textAsHtml(this.nativeRef, msgId);
+            return native_textAsHtml(this.nativeRef, msgId, includeKulloAddresses);
         }
-        private native String native_textAsHtml(long _nativeRef, long msgId);
+        private native String native_textAsHtml(long _nativeRef, long msgId, boolean includeKulloAddresses);
 
         @Override
         public String footer(long msgId)

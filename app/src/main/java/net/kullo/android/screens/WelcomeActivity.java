@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.app.Dialog;
@@ -14,8 +14,6 @@ import android.widget.ArrayAdapter;
 import android.widget.RelativeLayout;
 import android.widget.Spinner;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.Credentials;
 import net.kullo.android.kulloapi.DialogMaker;
@@ -28,6 +26,8 @@ import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.LocalError;
 
 import java.util.ArrayList;
+
+import io.github.dialogsforandroid.MaterialDialog;
 
 /**
  * Launching activity.

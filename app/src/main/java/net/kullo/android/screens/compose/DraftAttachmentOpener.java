@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens.compose;
 
 import android.app.Activity;
@@ -9,9 +9,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 
-import com.afollestad.materialdialogs.DialogAction;
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import net.kullo.android.R;
 import net.kullo.android.application.CacheType;
 import net.kullo.android.application.KulloApplication;
@@ -19,6 +16,9 @@ import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.observers.listenerobservers.DraftAttachmentsSaveListenerObserver;
 
 import java.io.File;
+
+import io.github.dialogsforandroid.DialogAction;
+import io.github.dialogsforandroid.MaterialDialog;
 
 public class DraftAttachmentOpener implements DraftAttachmentsSaveListenerObserver {
     public static final String TAG = "DraftAttachmentOpener";

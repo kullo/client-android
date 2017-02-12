@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -22,8 +22,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.afollestad.materialdialogs.DialogAction;
-import com.afollestad.materialdialogs.MaterialDialog;
 import com.timehop.stickyheadersrecyclerview.StickyRecyclerHeadersDecoration;
 
 import net.kullo.android.R;
@@ -49,6 +47,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import io.github.dialogsforandroid.DialogAction;
+import io.github.dialogsforandroid.MaterialDialog;
 import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
 public class ConversationsListActivity extends AppCompatActivity implements
@@ -411,10 +411,10 @@ public class ConversationsListActivity extends AppCompatActivity implements
     }
 
     private void updateAccountInfoInNavigationHeader() {
-        mNavigationHeaderNameView.setText(SessionConnector.get().getClientName());
-        mNavigationHeaderAddressView.setText(SessionConnector.get().getClientAddressAsString());
+        mNavigationHeaderNameView.setText(SessionConnector.get().getCurrentUserName());
+        mNavigationHeaderAddressView.setText(SessionConnector.get().getCurrentUserAddressAsString());
 
-        byte[] avatar = SessionConnector.get().getClientAvatar();
+        byte[] avatar = SessionConnector.get().getCurrentUserAvatar();
         if (avatar != null && avatar.length > 0) {
             mNavigationHeaderAvatarView.setImageBitmap(AvatarUtils.avatarToBitmap(avatar));
             mNavigationHeaderAvatarView.setVisibility(View.VISIBLE);

@@ -65,4 +65,18 @@
         <item name="android:background">?android:attr/listDivider</item>
     </style>
 
+    <style name="NestedScrollBarVerticalStyle">
+        <item name="android:scrollbarFadeDuration">250</item>
+        <item name="android:scrollbars">vertical</item>
+        <item name="android:fillViewport">true</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <style name="RecyclerViewScrollBarVerticalStyle">
+        <item name="android:scrollbarFadeDuration">250</item>
+        <item name="android:scrollbars">vertical</item>
+        <item name="android:fillViewport">true</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
 </resources>

@@ -19,11 +19,13 @@ http://stackoverflow.com/a/8639921
         android:layout_height="wrap_content"
         />
 
-    <ScrollView
+    <android.support.v4.widget.NestedScrollView
         android:id="@+id/compose_frame"
         android:layout_below="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        style="@style/NestedScrollBarVerticalStyle"
         >
 
         <LinearLayout
@@ -95,11 +97,10 @@ http://stackoverflow.com/a/8639921
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
-                android:layout_gravity="bottom"
                 />
 
         </LinearLayout>
 
-    </ScrollView>
+    </android.support.v4.widget.NestedScrollView>
 
 </RelativeLayout>

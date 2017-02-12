@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -6,14 +6,14 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
-import com.afollestad.materialdialogs.MaterialDialog;
-
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.javautils.RuntimeAssertion;
+
+import io.github.dialogsforandroid.MaterialDialog;
 
 public class LeaveInboxActivity extends AppCompatActivity {
     private static final String TAG = "LeaveInboxActivity";

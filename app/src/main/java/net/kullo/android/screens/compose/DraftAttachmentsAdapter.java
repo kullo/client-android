@@ -1,7 +1,9 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens.compose;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,11 +12,23 @@ import net.kullo.android.R;
 import net.kullo.android.kulloapi.KulloIdsAdapter;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Formatting;
+import net.kullo.android.ui.ClickableRecyclerViewViewHolder;
 
 public class DraftAttachmentsAdapter extends KulloIdsAdapter<DraftAttachmentsViewHolder> {
     private Context mContext;
     private Long mConversationId;
     private DraftAttachmentOpener mDraftAttachmentOpener;
+
+    public interface OnItemClickListener {
+        public void onItemClicked(int position, long id);
+    }
+
+    public interface OnItemLongClickListener {
+        public boolean onItemLongClicked(int position, long id);
+    }
+
+    @Nullable public OnItemClickListener onItemClickListener = null;
+    @Nullable public OnItemLongClickListener onItemLongClickListener = null;
 
     public DraftAttachmentsAdapter(Context context, Long conversationId, DraftAttachmentOpener draftAttachmentOpener) {
         super();
@@ -26,9 +40,9 @@ public class DraftAttachmentsAdapter extends KulloIdsAdapter<DraftAttachmentsVie
 
     @Override
     public DraftAttachmentsViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
-        View itemView = LayoutInflater.
-                from(viewGroup.getContext()).
-                inflate(R.layout.row_draft_attachment, viewGroup, false);
+        View itemView = LayoutInflater
+                .from(viewGroup.getContext())
+                .inflate(R.layout.row_attachment, viewGroup, false);
 
         return new DraftAttachmentsViewHolder(itemView);
     }
@@ -39,24 +53,33 @@ public class DraftAttachmentsAdapter extends KulloIdsAdapter<DraftAttachmentsVie
 
         String filename = SessionConnector.get().getDraftAttachmentFilename(mConversationId, attachmentId);
         String sizeText = Formatting.filesizeHuman(SessionConnector.get().getDraftAttachmentFilesize(mConversationId, attachmentId));
-        String text = filename + " (" + sizeText + ")";
-        attachmentsViewHolder.mAttachmentName.setText(text);
+        attachmentsViewHolder.mFilename.setText(filename);
+        attachmentsViewHolder.mFilesize.setText(sizeText);
 
-        int textColor = mContext.getResources().getColor(R.color.kulloTextPrimaryColor);
-        attachmentsViewHolder.mAttachmentName.setTextColor(textColor);
-
-        attachmentsViewHolder.mRemoveButton.setOnClickListener(new View.OnClickListener() {
+        attachmentsViewHolder.bindOnClickListener(new ClickableRecyclerViewViewHolder.OnItemClickListener() {
             @Override
-            public void onClick(View v) {
-                SessionConnector.get().removeDraftAttachment(mConversationId, attachmentId);
+            public void onItemClicked(int adapterPosition) {
+                if (onItemClickListener != null) {
+                    long id = getItemId(adapterPosition);
+                    onItemClickListener.onItemClicked(adapterPosition, id);
+                }
+            }
+        });
+        attachmentsViewHolder.bindOnItemLongClickListener(new ClickableRecyclerViewViewHolder.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClicked(int adapterPosition) {
+                if (onItemLongClickListener != null) {
+                    long id = getItemId(adapterPosition);
+                    return onItemLongClickListener.onItemLongClicked(adapterPosition, id);
+                }
+                return false;
             }
         });
 
-        attachmentsViewHolder.mAttachmentName.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mDraftAttachmentOpener.saveAndOpenAttachment(mConversationId, attachmentId);
-            }
-        });
+        if (isSelected(attachmentId)) {
+            attachmentsViewHolder.itemView.setBackgroundColor(mContext.getResources().getColor(R.color.kulloSelectionColor));
+        } else {
+            attachmentsViewHolder.itemView.setBackgroundColor(Color.TRANSPARENT);
+        }
     }
 }

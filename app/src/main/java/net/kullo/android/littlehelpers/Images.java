@@ -1,4 +1,4 @@
-/* Copyright 2015-2016 Kullo GmbH. All rights reserved. */
+/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.littlehelpers;
 
 import android.graphics.BitmapFactory;
@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.reduce.Reduce;
+import net.kullo.reduce.Size;
 
 import java.io.File;
 import java.util.Collection;
@@ -28,15 +29,12 @@ public class Images {
         Size outDimensions = destinationSizeForPixelLimit(inDimensions, pixelLimit);
         RuntimeAssertion.require(outDimensions.width*outDimensions.height <= pixelLimit,
                 "Dimensions exceed limit (w=" + outDimensions.width + " h=" + outDimensions.height + ")");
-        Reduce.scale(filePath.getAbsolutePath(), filePath.getAbsolutePath(),
-                outDimensions.width, outDimensions.height);
+        Reduce.scale(filePath.getAbsolutePath(), filePath.getAbsolutePath(), outDimensions);
     }
 
     @NonNull
     static Size destinationSizeForPixelLimit(@NonNull Size inDimensions, int pixelLimit) {
-        int[] out = Reduce.destinationSizeForPixelLimit(
-                inDimensions.width, inDimensions.height, pixelLimit);
-        return new Size(out[0], out[1]);
+        return Reduce.destinationSizeForPixelLimit(inDimensions, pixelLimit);
     }
 
     @NonNull

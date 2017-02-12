@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<TextView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<!--
+Add right margin to show scrollbar because
+stickyheadersrecyclerview draws header elements on a canvas above the scrollbar.
+4dp is the size of an Android 6.0 scrollbar.
+-->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingTop="8dp"
     android:paddingBottom="8dp"
     android:paddingLeft="@dimen/md_additions_list_padding"
+    android:paddingRight="0dp"
+    android:layout_marginRight="4dp"
     android:background="@color/kulloBackgroundLight"
     android:textSize="12sp"
     android:textStyle="bold"
-    android:textColor="@color/kulloAccentColor"
-    tools:context=".ConversationsListActivity"
-    />
+    android:textColor="@color/kulloAccentColor" />

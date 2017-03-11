@@ -12,6 +12,8 @@ import android.os.Bundle;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.UiThread;
+import android.support.annotation.WorkerThread;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -88,7 +90,7 @@ public class ComposeActivity extends AppCompatActivity {
     // restore cursor position and selection when activity brought back from sleep
     @Nullable private Pair<Integer, Integer> mStoredTextSelection = null;
 
-    class PreparedAttachment {
+    private class PreparedAttachment {
         File tmpFile;
         String mimeType;
 
@@ -128,7 +130,7 @@ public class ComposeActivity extends AppCompatActivity {
             throw new RuntimeException("Unexpected start of activity: No valid intent data found.");
         }
 
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
         Ui.setupActionbar(this);
         setTitle(getString(R.string.activity_title_compose));
         setupUi();
@@ -268,6 +270,7 @@ public class ComposeActivity extends AppCompatActivity {
         });
     }
 
+    @UiThread
     private void handleShares(Intent intent) {
         RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
 
@@ -275,17 +278,13 @@ public class ComposeActivity extends AppCompatActivity {
             List<Uri> files = intent.getParcelableArrayListExtra(KulloConstants.CONVERSATION_ADD_ATTACHMENTS);
             RuntimeAssertion.require(files != null);
 
-            Deque<PreparedAttachment> copiedFiles = new LinkedList<>();
-            for (Uri file : files) {
-                Log.d(TAG, "Add file to draft: " + file);
-                final PreparedAttachment a = prepareAttachment(file);
-                if (a != null) copiedFiles.add(a);
-            }
-
-            processFilesAsync(copiedFiles);
-        }
-
-        if (intent.hasExtra(KulloConstants.CONVERSATION_ADD_TEXT)) {
+            copyNewAttachmentFilesToCacheAsync(files, new CopiedToCacheCallback() {
+                @Override
+                void onCopiedToCache(List<PreparedAttachment> copiedFiles) {
+                    processFilesAsync(copiedFiles);
+                }
+            });
+        } else if (intent.hasExtra(KulloConstants.CONVERSATION_ADD_TEXT)) {
             String text = intent.getStringExtra(KulloConstants.CONVERSATION_ADD_TEXT);
             RuntimeAssertion.require(text != null);
 
@@ -296,6 +295,12 @@ public class ComposeActivity extends AppCompatActivity {
             draftText += text;
             SessionConnector.get().setDraftText(mConversationId, draftText);
         }
+    }
+
+    @MainThread
+    private void processFilesAsync(final List<PreparedAttachment> copiedFiles) {
+        Deque<PreparedAttachment> files = new LinkedList<>(copiedFiles);
+        processFilesAsync(files);
     }
 
     @MainThread
@@ -548,13 +553,12 @@ public class ComposeActivity extends AppCompatActivity {
                 }
                 Log.d(TAG, "Attachment sources: " + selectedFileUris);
 
-                final Deque<PreparedAttachment> copiedFiles = new LinkedList<>();
-                for (final Uri selectedFileUri : selectedFileUris) {
-                    final PreparedAttachment a = prepareAttachment(selectedFileUri);
-                    if (a != null) copiedFiles.add(a);
-                }
-                processFilesAsync(copiedFiles);
-
+                copyNewAttachmentFilesToCacheAsync(selectedFileUris, new CopiedToCacheCallback() {
+                    @Override
+                    void onCopiedToCache(List<PreparedAttachment> copiedFiles) {
+                        processFilesAsync(copiedFiles);
+                    }
+                });
             } else if (resultCode == Activity.RESULT_CANCELED){
                 Toast.makeText(this, R.string.select_file_canceled, Toast.LENGTH_SHORT).show();
             } else {
@@ -563,6 +567,45 @@ public class ComposeActivity extends AppCompatActivity {
         } else {
             RuntimeAssertion.fail("Unknown request code: " + requestCode);
         }
+    }
+
+    abstract class CopiedToCacheCallback {
+        abstract void onCopiedToCache(List<PreparedAttachment> selectedFileUris);
+    }
+
+    @MainThread
+    private void copyNewAttachmentFilesToCacheAsync(
+        @NonNull final List<Uri> selectedFileUris,
+        @NonNull final CopiedToCacheCallback callback
+    ) {
+        new AsyncTask<Void, Void, List<PreparedAttachment>>() {
+            boolean mError = false;
+
+            @Override
+            protected List<PreparedAttachment> doInBackground(Void... params) {
+                final List<PreparedAttachment> out = new LinkedList<>();
+                for (final Uri selectedFileUri : selectedFileUris) {
+                    final PreparedAttachment a = prepareAttachment(selectedFileUri);
+                    if (a != null) {
+                        out.add(a);
+                    } else {
+                        mError = true;
+                    }
+                }
+
+                return out;
+            }
+
+            @Override
+            protected void onPostExecute(List<PreparedAttachment> preparedAttachments) {
+                if (mError) {
+                    Toast.makeText(ComposeActivity.this, R.string.compose_error_loading_file,
+                        Toast.LENGTH_SHORT).show();
+                }
+
+                callback.onCopiedToCache(preparedAttachments);
+            }
+        }.execute();
     }
 
     @Override
@@ -771,58 +814,48 @@ public class ComposeActivity extends AppCompatActivity {
     }
 
     @NonNull
-    private static String mimeTypeOrFallback(String mimeType) {
+    private static String mimeTypeOrFallback(@Nullable final String mimeType) {
         if (mimeType != null) return mimeType;
         else return "application/octet-stream";
     }
 
+    @WorkerThread
     @Nullable
     private PreparedAttachment prepareAttachment(@NonNull final Uri selectedFileUri) {
+        final String guessedMimeType;
         final String scheme = selectedFileUri.getScheme();
         switch (scheme) {
             case "file":
-                return prepareAttachmentFromFileUri(selectedFileUri);
+                guessedMimeType = URLConnection.guessContentTypeFromName(selectedFileUri.toString());
+                break;
             case "content":
-                return prepareAttachmentFromContentUri(selectedFileUri);
+                guessedMimeType = getContentResolver().getType(selectedFileUri);
+                break;
             default:
                 RuntimeAssertion.fail("Unrecognized scheme: " + scheme);
                 return null;
         }
-    }
-
-    @Nullable
-    private PreparedAttachment prepareAttachmentFromFileUri(@NonNull final Uri selectedFileUri) {
-        final String guessedMimeType = URLConnection.guessContentTypeFromName(selectedFileUri.toString());
         final String mimeType = mimeTypeOrFallback(guessedMimeType);
-
-        String tmpFilename = UriHelpers.getFilename(this, selectedFileUri, "tmp.tmp");
-        File cacheDir = ((KulloApplication) getApplication()).cacheDir(CacheType.AddAttachment, null);
-        final File tmpFile = new File(cacheDir, tmpFilename);
-        Log.d(TAG, "Tmp file path before adding to DB: " + tmpFile);
-
-        if (StreamCopy.copyToPath(this, selectedFileUri, tmpFile.getAbsolutePath())) {
+        final File tmpFile = doCopyAttachmentToCache(selectedFileUri);
+        if (tmpFile != null) {
             return new PreparedAttachment(tmpFile, mimeType);
         } else {
-            Log.e(TAG, "Could not copy " + selectedFileUri + " to " + tmpFile);
-            Toast.makeText(this, R.string.compose_error_loading_file, Toast.LENGTH_SHORT).show();
             return null;
         }
     }
 
+    @WorkerThread
     @Nullable
-    private PreparedAttachment prepareAttachmentFromContentUri(@NonNull final Uri selectedFileUri) {
-        final String mimeType = mimeTypeOrFallback(getContentResolver().getType(selectedFileUri));
-
+    private File doCopyAttachmentToCache(@NonNull final Uri selectedFileUri) {
         String tmpFilename = UriHelpers.getFilename(this, selectedFileUri, "tmp.tmp");
         File cacheDir = ((KulloApplication) getApplication()).cacheDir(CacheType.AddAttachment, null);
         final File tmpFile = new File(cacheDir, tmpFilename);
         Log.d(TAG, "Tmp file path before adding to DB: " + tmpFile);
 
         if (StreamCopy.copyToPath(this, selectedFileUri, tmpFile.getAbsolutePath())) {
-            return new PreparedAttachment(tmpFile, mimeType);
+            return tmpFile;
         } else {
             Log.e(TAG, "Could not copy " + selectedFileUri + " to " + tmpFile);
-            Toast.makeText(this, R.string.compose_error_loading_file, Toast.LENGTH_SHORT).show();
             return null;
         }
     }

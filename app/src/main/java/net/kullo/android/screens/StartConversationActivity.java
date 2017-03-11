@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -54,7 +55,7 @@ public class StartConversationActivity extends AppCompatActivity {
 
         Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
         setTitle(getResources().getString(R.string.new_conversation));
 
         setupLayout();
@@ -102,15 +103,24 @@ public class StartConversationActivity extends AppCompatActivity {
             }
         });
 
+        // keyboard action
+        mNewParticipantEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                addParticipant();
+                return true;
+            }
+        });
+
         // list header
-        mParticipantsHeader = (TextView) findViewById(R.id.participantsHeader);
+        mParticipantsHeader = (TextView) findViewById(R.id.participants_header);
         RuntimeAssertion.require(mParticipantsHeader != null);
         mParticipantsHeader.setVisibility(View.INVISIBLE);
 
         // participants list
         mParticipantsAdapter = new ParticipantsAdapter();
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.participantsList);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.participants_list);
         RuntimeAssertion.require(recyclerView != null);
         recyclerView.setNestedScrollingEnabled(false);
         recyclerView.setLayoutManager(new NonScrollingLinearLayoutManager(this));

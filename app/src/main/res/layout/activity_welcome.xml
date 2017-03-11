@@ -65,7 +65,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/welcome_action_open"
-                        android:theme="@style/Button.Tinted"
                         android:layout_alignParentRight="true"
                         />
                 </RelativeLayout>
@@ -90,7 +89,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/action_login"
-                        android:theme="@style/Button.Tinted"
                         android:layout_alignParentRight="true" />
 
                 </RelativeLayout>
@@ -114,7 +112,6 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/action_register"
-                        android:theme="@style/Button.Tinted"
                         android:layout_alignParentRight="true" />
 
                 </RelativeLayout>

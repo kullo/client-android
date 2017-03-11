@@ -4,7 +4,7 @@
         <item
             android:id="@+id/menuitem_conversations"
             android:checked="false"
-            android:icon="@drawable/ic_message_black_24dp"
+            android:icon="@drawable/ic_inbox_black_24dp"
             android:title="@string/menu_conversations" />
     </group>
 

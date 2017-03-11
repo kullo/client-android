@@ -20,7 +20,7 @@ public class LicensesActivity extends AppCompatActivity {
 
         Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
 
         WebView webview = (WebView) findViewById(R.id.webview);
         RuntimeAssertion.require(webview != null);

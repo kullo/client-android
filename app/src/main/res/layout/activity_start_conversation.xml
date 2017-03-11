@@ -49,7 +49,8 @@
                             android:layout_height="wrap_content"
                             android:hint="@string/kullo_address"
                             android:inputType="textEmailAddress"
-                            android:maxLines="1" />
+                            android:maxLines="1"
+                            android:imeOptions="actionDone"/>
                     </android.support.design.widget.TextInputLayout>
 
                     <Button
@@ -58,13 +59,12 @@
                         android:layout_height="wrap_content"
                         android:text="@string/add_participant"
                         android:layout_gravity="right"
-                        android:theme="@style/Button.Tinted"
                         android:layout_marginLeft="16dp"
                         android:layout_marginRight="16dp"
                         android:layout_marginBottom="16dp"/>
 
                     <TextView
-                        android:id="@+id/participantsHeader"
+                        android:id="@+id/participants_header"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textColor="@color/kulloAccentColor"
@@ -73,7 +73,7 @@
                         android:layout_margin="16dp" />
 
                     <android.support.v7.widget.RecyclerView
-                        android:id="@+id/participantsList"
+                        android:id="@+id/participants_list"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="16dp"

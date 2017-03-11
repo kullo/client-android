@@ -35,9 +35,9 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/md_additions_card_padding_big"
-                        android:layout_marginLeft="@dimen/md_additions_card_padding"
-                        android:layout_marginRight="@dimen/md_additions_card_padding"
+                        android:layout_marginTop="@dimen/md_additions_card_content_padding_big"
+                        android:layout_marginLeft="@dimen/md_additions_card_content_padding"
+                        android:layout_marginRight="@dimen/md_additions_card_content_padding"
                         android:text="@string/app_name_full"
                         style="@style/MdAdditions.Card.Title"
                         />
@@ -45,9 +45,9 @@
                         android:id="@+id/app_version"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="@dimen/md_additions_card_padding"
-                        android:layout_marginRight="@dimen/md_additions_card_padding"
-                        android:layout_marginBottom="@dimen/md_additions_card_padding"
+                        android:layout_marginLeft="@dimen/md_additions_card_content_padding"
+                        android:layout_marginRight="@dimen/md_additions_card_content_padding"
+                        android:layout_marginBottom="@dimen/md_additions_card_content_padding"
                         android:text="@string/app_version"
                         style="@style/MdAdditions.Card.Subtitle"
                         />
@@ -55,21 +55,20 @@
                         android:id="@+id/kudos_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="@dimen/md_additions_card_padding"
-                        android:layout_marginRight="@dimen/md_additions_card_padding"
-                        android:layout_marginBottom="@dimen/md_additions_card_padding"
+                        android:layout_marginLeft="@dimen/md_additions_card_content_padding"
+                        android:layout_marginRight="@dimen/md_additions_card_content_padding"
+                        android:layout_marginBottom="@dimen/md_additions_card_content_padding"
                         android:text="@string/licenses_text_kudos"
                         />
                     <!-- buttons row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_margin="@dimen/md_additions_card_padding_action"
-                        >
+                        android:layout_marginLeft="@dimen/md_additions_card_action_padding_left">
                         <Button
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            style="@style/Button.Borderless"
+                            style="@style/BorderlessButton"
                             android:text="@string/action_licenses"
                             android:onClick="openLicensesClicked" />
                     </LinearLayout>
@@ -91,10 +90,10 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/md_additions_card_padding_big"
-                        android:layout_marginLeft="@dimen/md_additions_card_padding"
-                        android:layout_marginRight="@dimen/md_additions_card_padding"
-                        android:layout_marginBottom="@dimen/md_additions_card_padding"
+                        android:layout_marginTop="@dimen/md_additions_card_content_padding_big"
+                        android:layout_marginLeft="@dimen/md_additions_card_content_padding"
+                        android:layout_marginRight="@dimen/md_additions_card_content_padding"
+                        android:layout_marginBottom="@dimen/md_additions_card_content_padding"
                         android:text="@string/about_title_app_features"
                         style="@style/MdAdditions.Card.Title"
                         />
@@ -102,9 +101,9 @@
                         android:id="@+id/about_push_notifications_text"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="@dimen/md_additions_card_padding"
-                        android:layout_marginRight="@dimen/md_additions_card_padding"
-                        android:layout_marginBottom="@dimen/md_additions_card_padding"
+                        android:layout_marginLeft="@dimen/md_additions_card_content_padding"
+                        android:layout_marginRight="@dimen/md_additions_card_content_padding"
+                        android:layout_marginBottom="@dimen/md_additions_card_content_padding"
                         android:text="@string/about_push_notifications_text"
                         />
                 </LinearLayout>
@@ -125,9 +124,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:layout_marginTop="@dimen/md_additions_card_padding_big"
-                        android:layout_marginLeft="@dimen/md_additions_card_padding"
-                        android:layout_marginRight="@dimen/md_additions_card_padding"
+                        android:layout_marginTop="@dimen/md_additions_card_content_padding_big"
+                        android:layout_marginLeft="@dimen/md_additions_card_content_padding"
+                        android:layout_marginRight="@dimen/md_additions_card_content_padding"
                         >
 
                         <TextView
@@ -151,33 +150,32 @@
                         android:adjustViewBounds="true"
                         android:scaleType="centerCrop"
                         android:src="@drawable/team_photo"
-                        android:layout_marginTop="@dimen/md_additions_card_padding"
-                        android:layout_marginBottom="@dimen/md_additions_card_padding"
+                        android:layout_marginTop="@dimen/md_additions_card_content_padding"
+                        android:layout_marginBottom="@dimen/md_additions_card_content_padding"
                         />
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginLeft="@dimen/md_additions_card_padding"
-                        android:layout_marginRight="@dimen/md_additions_card_padding"
-                        android:layout_marginBottom="@dimen/md_additions_card_padding"
-                        android:text="@string/impressum_content_address"
-                        />
+                        android:layout_marginLeft="@dimen/md_additions_card_content_padding"
+                        android:layout_marginRight="@dimen/md_additions_card_content_padding"
+                        android:layout_marginBottom="@dimen/md_additions_card_content_padding"
+                        android:text="@string/impressum_content_address" />
                     <!-- buttons row -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_margin="@dimen/md_additions_card_padding_action"
+                        android:layout_marginLeft="@dimen/md_additions_card_action_padding_left"
                         >
                         <Button
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            style="@style/Button.Borderless"
+                            style="@style/BorderlessButton"
                             android:text="@string/action_impressum"
                             android:onClick="openImpressumClicked" />
                         <Button
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            style="@style/Button.Borderless"
+                            style="@style/BorderlessButton"
                             android:text="@string/open_website"
                             android:onClick="openWebsiteClicked" />
                     </LinearLayout>

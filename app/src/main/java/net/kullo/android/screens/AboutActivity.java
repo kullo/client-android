@@ -16,7 +16,7 @@ import net.kullo.android.notifications.GcmConnector;
 import net.kullo.javautils.RuntimeAssertion;
 
 public class AboutActivity extends AppCompatActivity {
-    private static final String TAG = "AboutActivity";
+    @SuppressWarnings("unused") private static final String TAG = "AboutActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,7 +25,7 @@ public class AboutActivity extends AppCompatActivity {
 
         Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
 
         // Set app version
         String versionName = new AppVersion(getApplication()).versionName();

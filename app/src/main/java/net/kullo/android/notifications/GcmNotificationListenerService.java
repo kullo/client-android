@@ -29,6 +29,13 @@ public class GcmNotificationListenerService extends GcmListenerService {
     public void onMessageReceived(String from, Bundle data) {
         Log.i(TAG, "Push notification received: " + data.toString());
 
+        try {
+            int count = Integer.parseInt(data.getString("badge"));
+            KulloApplication.sharedInstance.handleBadge(count);
+        } catch (NumberFormatException e) {
+            Log.d(TAG, "No integer found in badge. Ignoring.");
+        }
+
         String action = data.getString("action");
 
         if (action != null && action.equals("new_message")) {

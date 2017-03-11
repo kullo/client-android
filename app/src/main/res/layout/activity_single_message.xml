@@ -38,13 +38,13 @@
                     android:orientation="vertical">
 
                     <LinearLayout
-                        android:id="@+id/main_content"
+                        android:id="@+id/main_layout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:paddingTop="@dimen/md_additions_card_padding"
-                        android:paddingLeft="@dimen/md_additions_card_padding"
-                        android:paddingRight="@dimen/md_additions_card_padding">
+                        android:paddingTop="@dimen/md_additions_card_content_padding"
+                        android:paddingLeft="@dimen/md_additions_card_content_padding"
+                        android:paddingRight="@dimen/md_additions_card_content_padding">
 
                         <LinearLayout
                             android:orientation="horizontal"
@@ -125,7 +125,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="left"
-                            style="@style/Button.Borderless" />
+                            style="@style/BorderlessButton" />
 
                         <View
                             android:id="@+id/optional_padding_element"
@@ -159,7 +159,7 @@
                                 android:layout_marginRight="10dp"
                                 android:layout_centerVertical="true"
                                 android:src="@drawable/ic_expand_more_active_button_color_36dp"
-                                style="@style/Button.Borderless" />
+                                style="@style/BorderlessButton" />
 
                         </RelativeLayout>
 
@@ -167,10 +167,10 @@
                             android:id="@+id/footer_text"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/md_additions_card_padding"
-                            android:layout_marginLeft="@dimen/md_additions_card_padding"
-                            android:layout_marginRight="@dimen/md_additions_card_padding"
-                            android:layout_marginBottom="@dimen/md_additions_card_padding_big"
+                            android:layout_marginTop="@dimen/md_additions_card_content_padding"
+                            android:layout_marginLeft="@dimen/md_additions_card_content_padding"
+                            android:layout_marginRight="@dimen/md_additions_card_content_padding"
+                            android:layout_marginBottom="@dimen/md_additions_card_content_padding_big"
                             android:textColor="@color/md_additions_secondary_text"
                             android:textIsSelectable="true"
                             android:text="Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.   Duis autem vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla facilisis at vero eros et accumsan et iusto odio dignissim qui blandit praesent luptatum zzril delenit augue duis dolore te feugait nulla facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit, sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna aliquam erat volutpat." />

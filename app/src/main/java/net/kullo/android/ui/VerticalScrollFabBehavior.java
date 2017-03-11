@@ -7,7 +7,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
 public class VerticalScrollFabBehavior extends FloatingActionButton.Behavior {
@@ -40,7 +39,17 @@ public class VerticalScrollFabBehavior extends FloatingActionButton.Behavior {
 
         if (dyConsumed > 0 && fab.getVisibility() == View.VISIBLE) {
             // scrolling down
-            fab.hide();
+            fab.hide(new FloatingActionButton.OnVisibilityChangedListener() {
+                @Override
+                public void onHidden(FloatingActionButton fab) {
+                    super.onHidden(fab);
+
+                    // Hide animation ended. FloatingActionButton implementation did set
+                    // visibility to GONE, which must be fixed. See
+                    // http://stackoverflow.com/questions/41142711/25-1-0-android-support-lib-is-breaking-fab-behavior
+                    fab.setVisibility(View.INVISIBLE);
+                }
+            });
         } else if (dyConsumed < 0 && fab.getVisibility() != View.VISIBLE) {
             // scrolling up
             fab.show();

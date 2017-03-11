@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -65,7 +66,6 @@ public class MessagesListActivity extends AppCompatActivity {
     @Nullable private ActionMode mActionMode = null;
 
     // Views
-    private boolean mIsAtTopScrollPosition = true;
     private SwipeRefreshLayout mSwipeLayout;
     private MaterialProgressBar mProgressBarDeterminate;
     private MaterialProgressBar mProgressBarIndeterminate;
@@ -88,8 +88,8 @@ public class MessagesListActivity extends AppCompatActivity {
         mConversationId = intent.getLongExtra(CONVERSATION_ID, -1);
 
         Ui.prepareActivityForTaskManager(this);
+        Ui.setStatusBarColor(this, false, Ui.LayoutType.CoordinatorLayout);
         Ui.setupActionbar(this);
-        Ui.setColorStatusBarArrangeHeader(this);
 
         setupMessagesList();
 
@@ -101,6 +101,14 @@ public class MessagesListActivity extends AppCompatActivity {
             @Override
             public void onRefresh() {
                 SessionConnector.get().sync();
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // progress bar will take over, so we don't need this rotating
+                        mSwipeLayout.setRefreshing(false);
+                    }
+                }, 500);
             }
         });
 
@@ -205,14 +213,12 @@ public class MessagesListActivity extends AppCompatActivity {
         GcmConnector.get().removeAllNotifications(this);
 
         if (SessionConnector.get().isSyncing()) {
-            updateSwipeLayoutEnabled();
-            mSwipeLayout.setRefreshing(false);
+            updateSwipeLayout(true);
 
             mProgressBarIndeterminate.setVisibility(View.VISIBLE);
             mProgressBarDeterminate.setVisibility(View.GONE);
         } else {
-            updateSwipeLayoutEnabled();
-            mSwipeLayout.setRefreshing(false);
+            updateSwipeLayout(false);
 
             mProgressBarIndeterminate.setVisibility(View.GONE);
             mProgressBarDeterminate.setVisibility(View.GONE);
@@ -255,22 +261,18 @@ public class MessagesListActivity extends AppCompatActivity {
         }, delayMs);
     }
 
-    private void updateSwipeLayoutEnabled() {
-        mSwipeLayout.setEnabled(mIsAtTopScrollPosition && !SessionConnector.get().isSyncing());
+    private void updateSwipeLayout(boolean isSyncing) {
+        mSwipeLayout.setEnabled(!isSyncing);
     }
 
     private void setupMessagesList() {
+        CoordinatorLayout mainLayout = (CoordinatorLayout) findViewById(R.id.main_layout);
+        Ui.setStatusBarColor(mainLayout);
+
         mMessagesList = (RecyclerView) findViewById(R.id.messagesList);
         final LinearLayoutManager llm = new LinearLayoutManager(this);
         llm.setOrientation(LinearLayoutManager.VERTICAL);
         mMessagesList.setLayoutManager(llm);
-        mMessagesList.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                mIsAtTopScrollPosition = llm.findFirstCompletelyVisibleItemPosition() == 0;
-                updateSwipeLayoutEnabled();
-            }
-        });
 
         // Add decoration for dividers between list items
         int dividerLeftMargin = getResources().getDimensionPixelSize(R.dimen.md_additions_list_divider_margin_left);
@@ -389,7 +391,7 @@ public class MessagesListActivity extends AppCompatActivity {
 
     private void toggleMessageSize () {
         mMessagesAdapter.toggleMessageSize();
-        invalidateOptionsMenu();
+        supportInvalidateOptionsMenu();
     }
 
     public void replyClicked(View v) {
@@ -415,8 +417,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSwipeLayoutEnabled();
-                        mSwipeLayout.setRefreshing(false);
+                        updateSwipeLayout(true);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
                         mProgressBarIndeterminate.setVisibility(View.VISIBLE);
@@ -433,9 +434,6 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSwipeLayoutEnabled();
-                        mSwipeLayout.setRefreshing(false);
-
                         if (KulloUtils.showSyncProgressAsBar(progress)) {
                             int percent = Math.round(100 * ((float) progress.getIncomingMessagesProcessed() / progress.getIncomingMessagesTotal()));
                             mProgressBarIndeterminate.setVisibility(View.GONE);
@@ -454,8 +452,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSwipeLayoutEnabled();
-                        mSwipeLayout.setRefreshing(false);
+                        updateSwipeLayout(false);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
                         mProgressBarIndeterminate.setVisibility(View.GONE);
@@ -468,8 +465,7 @@ public class MessagesListActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSwipeLayoutEnabled();
-                        mSwipeLayout.setRefreshing(false);
+                        updateSwipeLayout(false);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
                         mProgressBarIndeterminate.setVisibility(View.GONE);
@@ -518,7 +514,8 @@ public class MessagesListActivity extends AppCompatActivity {
 
             @Override
             public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                return false;
+                Ui.setStatusBarColor(MessagesListActivity.this, true, Ui.LayoutType.CoordinatorLayout);
+                return true;
             }
 
             @Override
@@ -540,6 +537,7 @@ public class MessagesListActivity extends AppCompatActivity {
             @Override
             public void onDestroyActionMode(ActionMode mode) {
                 mMessagesAdapter.clearSelectedItems();
+                Ui.setStatusBarColor(MessagesListActivity.this, false, Ui.LayoutType.CoordinatorLayout);
                 mActionMode = null;
             }
         });

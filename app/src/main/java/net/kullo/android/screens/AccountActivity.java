@@ -25,7 +25,7 @@ public class AccountActivity extends AppCompatActivity {
         setContentView(R.layout.activity_account);
 
         Ui.prepareActivityForTaskManager(this);
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
         Ui.setupActionbar(this);
 
         if (result.state == CreateSessionState.CREATING) {

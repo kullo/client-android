@@ -55,13 +55,10 @@ public class AvatarUtils {
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setColor(context.getResources().getColor(R.color.kulloAvatarBitmapTextColor));
         paint.setTextSize(textSizePx);
+        paint.setTextAlign(Paint.Align.CENTER);
 
-        // draw text to the Canvas center
-        Rect bounds = new Rect();
-        paint.getTextBounds(initials, 0, initials.length(), bounds);
-        int x = (bitmap.getWidth() - bounds.width()) / 2;
-        int y = (bitmap.getHeight() + bounds.height()) / 2;
-
+        int x = Math.round(canvas.getWidth() / 2);
+        int y = Math.round((canvas.getHeight() / 2) - ((paint.descent() + paint.ascent()) / 2));
         canvas.drawText(initials, x, y, paint);
 
         return bitmap;

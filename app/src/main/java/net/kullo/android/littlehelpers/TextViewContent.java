@@ -1,14 +1,18 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.littlehelpers;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.view.View;
+import android.widget.TextView;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -20,6 +24,21 @@ import java.util.regex.Pattern;
 public class TextViewContent {
     private static Pattern HTML_LINK_PATTERN = Pattern.compile(
             "<a href=\"([^\"]+)\">([^<]+)</a>");
+
+    public static void injectHtmlIntoTextView(
+        @NonNull final Activity baseActivity,
+        @NonNull final TextView target,
+        @NonNull final String textAsHtml
+    ) {
+        final Spannable content = getSpannableFromHtml(textAsHtml, new LinkClickedListener() {
+            @Override
+            protected void onClicked(Uri linkTarget) {
+                baseActivity.startActivity(new Intent(Intent.ACTION_VIEW, linkTarget));
+            }
+        });
+        target.setText(content);
+        target.setMovementMethod(LinkMovementMethod.getInstance()); // make links clickable
+    }
 
     abstract public static class LinkClickedListener {
         protected LinkClickedListener() {

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.os.Handler;
 import android.support.annotation.AnyThread;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
@@ -38,6 +39,7 @@ import net.kullo.android.screens.LoginActivity;
 import net.kullo.android.screens.WelcomeActivity;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.javautils.StrictBase64;
+import net.kullo.libkullo.api.AccountInfo;
 import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.AddressNotAvailableReason;
 import net.kullo.libkullo.api.AsyncTask;
@@ -65,6 +67,7 @@ import net.kullo.libkullo.api.PushTokenType;
 import net.kullo.libkullo.api.Registration;
 import net.kullo.libkullo.api.RegistrationRegisterAccountListener;
 import net.kullo.libkullo.api.Session;
+import net.kullo.libkullo.api.SessionAccountInfoListener;
 import net.kullo.libkullo.api.SessionListener;
 import net.kullo.libkullo.api.SyncMode;
 import net.kullo.libkullo.api.SyncProgress;
@@ -132,6 +135,40 @@ public class SessionConnector {
         mEventObservers.put(MessageRemovedEventObserver.class, new LinkedList<EventObserver>());
         mEventObservers.put(MessageStateEventObserver.class, new LinkedList<EventObserver>());
         mEventObservers.put(MessageAttachmentsDownloadedChangedEventObserver.class, new LinkedList<EventObserver>());
+
+        setupInternalEventObservers();
+    }
+
+    private void setupInternalEventObservers() {
+        addEventObserver(MessageAddedEventObserver.class, new MessageAddedEventObserver() {
+            @Override
+            public void messageAdded(long conversationId, long messageId) {
+                updateBadgeCount();
+            }
+        });
+        addEventObserver(MessageStateEventObserver.class, new MessageStateEventObserver() {
+            @Override
+            public void messageStateChanged(long conversationId, long messageId) {
+                updateBadgeCount();
+            }
+        });
+        addEventObserver(MessageRemovedEventObserver.class, new MessageRemovedEventObserver() {
+            @Override
+            public void messageRemoved(long conversationId, long messageId) {
+                updateBadgeCount();
+            }
+        });
+    }
+
+    @MainThread
+    private void updateBadgeCount() {
+        int unreadCount = 0;
+        final List<Long> conversations = getAllConversationIds(false);
+        for (Long id : conversations) {
+            unreadCount += getConversationUnreadCount(id);
+        }
+
+        KulloApplication.sharedInstance.handleBadge(unreadCount);
     }
 
     //LOGIN LOGOUT
@@ -516,6 +553,7 @@ public class SessionConnector {
     @AnyThread
     public boolean isSyncing() {
         synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
             return mSession.syncer().isSyncing();
         }
     }
@@ -552,6 +590,28 @@ public class SessionConnector {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             mSession.syncer().requestSync(SyncMode.SENDONLY);
+        }
+    }
+
+    public interface GetAccountInfoCallback {
+        void onDone(@Nullable final AccountInfo accountInfo);
+    }
+
+    @MainThread
+    public void getAccountInfo(@NonNull final GetAccountInfoCallback callback) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            mTaskHolder.add(mSession.accountInfoAsync(new SessionAccountInfoListener() {
+                @Override
+                public void finished(AccountInfo accountInfo) {
+                    callback.onDone(accountInfo);
+                }
+
+                @Override
+                public void error(NetworkError error) {
+                    callback.onDone(null);
+                }
+            }));
         }
     }
 
@@ -607,23 +667,29 @@ public class SessionConnector {
 
     @NonNull
     @MainThread
-    public List<Long> getAllConversationIdsSorted() {
-        RuntimeAssertion.require(mSession != null);
+    public List<Long> getAllConversationIds(boolean sorted) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
 
-        ArrayList<Long> allConversationIds = mSession.conversations().all();
-        KulloComparator comparator = new ConversationsComparatorDsc(mSession);
-        KulloSort.sort(allConversationIds, comparator);
-        Log.d(TAG, "Done sorting conversations. " + comparator.getStats());
+            ArrayList<Long> allConversationIds = mSession.conversations().all();
+            if (sorted) {
+                KulloComparator comparator = new ConversationsComparatorDsc(mSession);
+                KulloSort.sort(allConversationIds, comparator);
+                Log.d(TAG, "Done sorting conversations. " + comparator.getStats());
+            }
 
-        return allConversationIds;
+            return allConversationIds;
+        }
     }
 
     @NonNull
     @MainThread
     public org.joda.time.DateTime getLatestMessageTimestamp(long conversationId) {
-        RuntimeAssertion.require(mSession != null);
-
-        DateTime latestMessageTimestamp = mSession.conversations().latestMessageTimestamp(conversationId);
+        final DateTime latestMessageTimestamp;
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            latestMessageTimestamp = mSession.conversations().latestMessageTimestamp(conversationId);
+        }
         return KulloUtils.convertToJodaTime(latestMessageTimestamp);
     }
 
@@ -699,6 +765,7 @@ public class SessionConnector {
         return StringUtils.join(participantTitles, ", ");
     }
 
+    @SuppressWarnings("WeakerAccess")
     @MainThread
     public int getConversationUnreadCount(long conversationId) {
         synchronized (mSessionGuard) {
@@ -875,6 +942,7 @@ public class SessionConnector {
 
     // PARTICIPANTS SENDERS
 
+    @SuppressWarnings("WeakerAccess")
     @NonNull
     @MainThread
     public AddressSet getParticipantAddresses(long conversationId) {
@@ -884,6 +952,7 @@ public class SessionConnector {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     @Nullable
     @MainThread
     public String getGlobalParticipantName(Address address) {
@@ -975,7 +1044,9 @@ public class SessionConnector {
     public byte[] getCurrentUserAvatar() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            return mSession.userSettings().avatar();
+            byte[] avatar = mSession.userSettings().avatar();
+            RuntimeAssertion.require(avatar != null);
+            return avatar;
         }
     }
 
@@ -1081,10 +1152,26 @@ public class SessionConnector {
     }
 
     @MainThread
+    @SuppressWarnings("ConstantConditions")
     public void setMessageRead(long messageId) {
+        boolean changed;
+        boolean newValue = true;
+
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            mSession.messages().setRead(messageId, true);
+
+            boolean oldValue = mSession.messages().isRead(messageId);
+            changed = oldValue != newValue;
+            mSession.messages().setRead(messageId, newValue);
+        }
+
+        if (changed) {
+            new Handler().post(new Runnable() {
+                @Override
+                public void run() {
+                    sync();
+                }
+            });
         }
     }
 

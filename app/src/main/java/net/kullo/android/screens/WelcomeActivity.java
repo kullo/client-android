@@ -54,7 +54,7 @@ public class WelcomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_welcome);
 
         Ui.prepareActivityForTaskManager(this);
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
 
         mLayoutContent = (RelativeLayout) findViewById(R.id.content);
         connectButtons();

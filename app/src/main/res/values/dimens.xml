@@ -4,9 +4,9 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
 
     <!-- https://www.google.com/design/spec/components/cards.html#cards-content-blocks-->
-    <dimen name="md_additions_card_padding_big">24dp</dimen>
-    <dimen name="md_additions_card_padding">16dp</dimen>
-    <dimen name="md_additions_card_padding_action">8dp</dimen>
+    <dimen name="md_additions_card_content_padding_big">24dp</dimen>
+    <dimen name="md_additions_card_content_padding">16dp</dimen>
+    <dimen name="md_additions_card_action_padding_left">4dp</dimen>
     <dimen name="md_additions_card_title_big">24sp</dimen>
     <dimen name="md_additions_card_title_small">14sp</dimen>
     <dimen name="md_additions_card_subtitle">14sp</dimen>

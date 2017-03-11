@@ -23,7 +23,7 @@
         android:layout_marginRight="@dimen/md_additions_list_padding"
         android:layout_centerVertical="true"
         android:textSize="14sp"
-        android:textColor="@color/onKulloBackgroundTextColorPrimary"
+        android:textColor="@color/md_additions_primary_text"
         />
 
     <ImageView

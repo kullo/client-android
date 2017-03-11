@@ -74,7 +74,7 @@ public class LoginActivity extends AppCompatActivity {
         // Activity started for user to type in MasterKey
 
         registerListenerObservers();
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
         mSaveCurrentFormInputToPersistentStorage = true;
         connectLayout();
     }

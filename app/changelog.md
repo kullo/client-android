@@ -1,6 +1,23 @@
 Kullo for Android
 -----------------
 
+## v43 (2017-03-10)
+
+ * Badges for unread messages count
+ * Show account information in drawer
+ * Improve link highlighting
+ * Fix freezing app when adding large files to draft
+
+### Components
+
+ * Update libkullo to v61
+ * Update SmartSqlite to v18
+ * Update Android Support Library to 25.2.0
+
+### Requirements
+
+ * Google Play Services 9.8
+
 ## v42 (2017-02-11)
 
  * Improve link highlighting

@@ -40,7 +40,7 @@
                     android:layout_height="wrap_content"
                     android:text="Sender Name"
                     android:textSize="14sp"
-                    android:textColor="@color/onKulloBackgroundTextColorPrimary"
+                    android:textColor="@color/md_additions_primary_text"
                     />
 
                 <TextView
@@ -51,7 +51,7 @@
                     android:layout_alignParentRight="true"
                     android:layout_alignBottom="@+id/sender_name"
                     android:textSize="12sp"
-                    android:textColor="@color/onKulloBackgroundTextColorSecondary"
+                    android:textColor="@color/md_additions_secondary_text"
                     />
 
             </RelativeLayout>
@@ -71,8 +71,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:text="@string/message_text_placeholder"
-                    android:autoLink="web"
-                    android:textColor="@color/onKulloBackgroundTextColorSecondary"
+                    android:autoLink="none"
+                    android:textColor="@color/md_additions_secondary_text"
                     android:layout_alignParentTop="true"
                     android:layout_alignParentLeft="true"
                     android:layout_marginRight="16dp"

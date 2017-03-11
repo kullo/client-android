@@ -1,26 +1,10 @@
 <resources>
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <!-- actionmodeoverlay switch must go at the beginning of the list -->
-        <item name="windowActionModeOverlay">true</item>
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/kulloPrimaryColor</item>
-        <item name="colorPrimaryDark">@color/kulloPrimaryDarkColor</item>
-        <item name="colorAccent">@color/kulloAccentColor</item>
-        <!--<item name="android:textColorPrimary">@color/kulloTextPrimaryColor</item>-->
-        <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
-
-        <item name="android:windowBackground">@color/kulloWindowBackground</item>
-
-        <item name="android:listPreferredItemHeight">56dp</item>
-    </style>
-
     <style name="DrawerArrowStyle" parent="Widget.AppCompat.DrawerArrowToggle">
         <item name="spinBars">true</item>
         <item name="color">@android:color/white</item>
     </style>
 
-    <style name="ToolbarStyle" parent="">
+    <style name="ToolbarStyle">
         <item name="popupTheme">@style/ThemeOverlay.AppCompat.Light</item>
         <item name="theme">@style/ThemeOverlay.AppCompat.Dark.ActionBar</item>
     </style>
@@ -41,23 +25,12 @@
         <item name="android:orientation">vertical</item>
     </style>
 
-    <style name="Button.Tinted" parent="Widget.AppCompat.Button">
-        <item name="colorButtonNormal">@color/kulloAccentColor</item>
-        <item name="colorControlHighlight">@color/kulloAccentColor</item>
-        <item name="android:textColor">@android:color/white</item>
+    <!-- Default button style is RaisedButton (set in theme) -->
+    <style name="RaisedButton" parent="Widget.AppCompat.Button.Colored">
+        <item name="colorButtonNormal">@color/kulloTurquoise</item>
     </style>
 
-    <style name="Button.Borderless" parent="Widget.AppCompat.Button.Borderless">
-
-    </style>
-
-    <style name="ColoredButton" parent="Widget.AppCompat.Button.Colored" />
-
-    <style name="ConversationHeaderTitle" parent="@android:style/TextAppearance">
-        <item name="android:textColor">#FFFFFF</item>
-        <item name="android:textSize">20sp</item>
-        <item name="android:maxLength">10</item>
-    </style>
+    <style name="BorderlessButton" parent="Widget.AppCompat.Button.Borderless" />
 
     <style name="Divider">
         <item name="android:layout_width">match_parent</item>

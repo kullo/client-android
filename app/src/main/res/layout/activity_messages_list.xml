@@ -2,7 +2,7 @@
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main_content"
+    android:id="@+id/main_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
@@ -82,7 +82,7 @@
                     android:layout_marginRight="@dimen/activity_horizontal_margin"
                     android:gravity="center_horizontal"
                     android:text="@string/empty_messages_list"
-                    android:textColor="@color/onKulloBackgroundTextColorSecondary"
+                    android:textColor="@color/md_additions_secondary_text"
                     />
 
                 <android.support.v7.widget.RecyclerView

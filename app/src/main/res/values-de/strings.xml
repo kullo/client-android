@@ -84,6 +84,12 @@ ellipsis (…)
     <string name="menu_leave_inbox">Posteingang verlassen</string>
     <string name="open_drawer">Menü öffnen</string>
     <string name="close_drawer">Menü schließen</string>
+    <string name="account_overlay_network_error">Netzwerkfehler beim Abrufen der Accountinformationen</string>
+    <string name="account_overlay_button_retry">Erneut versuchen</string>
+    <string name="account_overlay_button_settings">Account-Einstellungen</string>
+    <string name="account_overlay_storage_label">Genutzter Postfachspeicher</string>
+    <string name="account_overlay_plan_label">Tarif</string>
+
 
     <!-- conversations list -->
     <string name="footer">Impressum</string>
@@ -199,5 +205,4 @@ ellipsis (…)
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>
     <string name="notification_body_new_message">Neue Kullo-Nachricht erhalten</string>
-
 </resources>

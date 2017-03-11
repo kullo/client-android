@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="KulloAppThemeBase" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- windowActionModeOverlay switch must go at the beginning of the list -->
+        <item name="windowActionModeOverlay">true</item>
+        <item name="colorPrimary">@color/kulloPrimaryColor</item>
+        <item name="colorPrimaryDark">#ff00ff</item>
+        <item name="colorAccent">@color/kulloAccentColor</item>
+        <item name="drawerArrowStyle">@style/DrawerArrowStyle</item>
+        <item name="android:windowBackground">@color/kulloWindowBackground</item>
+        <item name="android:listPreferredItemHeight">56dp</item>
+
+        <item name="android:buttonStyle">@style/RaisedButton</item>
+        <item name="buttonStyle">@style/RaisedButton</item>
+    </style>
+
+    <style name="KulloAppTheme" parent="KulloAppThemeBase" />
+</resources>

@@ -5,7 +5,10 @@ import android.app.Activity;
 import android.app.ActivityManager.TaskDescription;
 import android.graphics.BitmapFactory;
 import android.os.Build;
+import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -14,10 +17,58 @@ import net.kullo.android.R;
 import net.kullo.javautils.RuntimeAssertion;
 
 public class Ui {
-    public static void setColorStatusBarArrangeHeader(Activity activity) {
+    public enum LayoutType {
+        DrawerLayout,
+        CoordinatorLayout,
+        Other
+    }
+
+    public static void setStatusBarColor(Activity activity) {
+        setStatusBarColor(activity, false, LayoutType.Other);
+    }
+
+    public static void setStatusBarColor(Activity activity, boolean actionModeEnabled) {
+        setStatusBarColor(activity, actionModeEnabled, LayoutType.Other);
+    }
+
+    public static void setStatusBarColor(Activity activity, boolean actionModeEnabled, LayoutType type) {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            activity.getWindow().setStatusBarColor(activity.getResources().getColor(R.color.kulloPrimaryDarkColor));
+            /*
+             * By default, CoordinatorLayout and DrawerLayout draw colorPrimaryDark
+             * below statusBarColor.
+             * Other layouts draw windowBackground below statusBarColor.
+             *
+             * CoordinatorLayout/DrawerLayout must use colorPrimary as background plus a system defined
+             * dark shadow.
+             * Others must use a pre-calculated statusBarColor = colorPrimary + dark shadow
+             *
+             */
+            @ColorInt int color;
+            switch (type) {
+                case DrawerLayout:
+                case CoordinatorLayout:
+                    // Use system default semi transparent black
+                    color = 0x33000000; // 20 % black
+                    break;
+                case Other:
+                    color = 0xffBA7102; // primary orange + 20 % black, precalculated
+                    break;
+                default:
+                    color = 0;
+                    RuntimeAssertion.fail();
+            }
+            activity.getWindow().setStatusBarColor(color);
         }
+    }
+
+    public static void setStatusBarColor(DrawerLayout layout) {
+        int kulloPrimary = layout.getResources().getColor(R.color.kulloPrimaryColor);
+        layout.setStatusBarBackgroundColor(kulloPrimary);
+    }
+
+    public static void setStatusBarColor(CoordinatorLayout layout) {
+        int kulloPrimary = layout.getResources().getColor(R.color.kulloPrimaryColor);
+        layout.setStatusBarBackgroundColor(kulloPrimary);
     }
 
     @NonNull

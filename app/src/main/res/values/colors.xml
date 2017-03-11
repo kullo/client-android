@@ -10,7 +10,11 @@
     <color name="kulloBackground">#E3E0CF</color>
     <color name="kulloBackgroundLight">#F1ECDD</color>
     <color name="kulloTurquoise">#009F95</color>
+    <color name="kulloTurquoiseLight">#54B9BB</color>
+    <color name="kulloPurple">#771C7F</color>
+    <color name="kulloPurpleLight">#91127D</color>
     <color name="kulloOrange">#E88D03</color>
+    <color name="kulloWhite">#ffffff</color>
 
     <color name="kulloPrimaryColor">@color/kulloOrange</color>
     <!--
@@ -23,17 +27,11 @@
     <color name="kulloDrawerBackground">@color/kulloBackgroundLight</color>
     <color name="kulloWindowBackground">@color/kulloBackgroundLight</color>
     <color name="kulloTextPrimaryColor">#212121</color>
-    <color name="kulloNavigationColor">#000000</color>
     <color name="kulloAvatarBitmapBGColor">@color/kulloTurquoise</color>
     <color name="kulloAvatarBitmapTextColor">#FFFFFF</color>
     <color name="kulloDisabledTextColor">#B6B6B6</color>
     <color name="kulloSelectionColor">@color/kulloBackground</color>
     <color name="kulloUnreadMarkColor">@color/kulloTurquoise</color>
-
-    <!-- Use those on Kullo background -->
-    <color name="onKulloBackgroundTextColorPrimary">#1A171B</color>
-    <color name="onKulloBackgroundTextColorSecondary">#D9585759</color><!-- 85 % (=D9) Kullo gray -->
-    <color name="onKulloBackgroundTextColorHint">#61000000</color><!-- 38 % (=61) -->
 
     <!--
     "Icons and other elements"

@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import okio.BufferedSink;
@@ -61,6 +62,7 @@ public class HttpClientImpl extends HttpClient {
         requestBuilder.url(request.getUrl());
 
         // set request headers
+        requestBuilder.header("Accept-Language", Locale.getDefault().getLanguage());
         String contentType = "text/plain";
         for (HttpHeader header : request.getHeaders()) {
             requestBuilder.header(header.getKey(), header.getValue());

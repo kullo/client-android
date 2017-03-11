@@ -19,6 +19,7 @@ import net.kullo.android.kulloapi.ClientConnector;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.littlehelpers.CiStringComparator;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.notifications.GcmNotificationListenerService;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.LibKullo;
 
@@ -34,8 +35,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import me.leolin.shortcutbadger.ShortcutBadger;
+
 public class KulloApplication extends Application
         implements Application.ActivityLifecycleCallbacks {
+    public static KulloApplication sharedInstance;
+
     public static final String TAG = "KulloApplication";
     public static final Uri MAINTAINER_WEBSITE = Uri.parse("https://www.kullo.net");
     public static final String LICENSES_FILE = "file:///android_asset/licenses-android.html";
@@ -49,9 +54,23 @@ public class KulloApplication extends Application
     // only access this variable in updateForegroundActivitiesCount()
     private int mCountActivitiesInForeground = 0;
 
+    public void handleBadge(int badgeCount) {
+        RuntimeAssertion.require(badgeCount >= 0);
+
+        try {
+            ShortcutBadger.applyCount(this, badgeCount);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // ignore errors
+        }
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
+
+        sharedInstance = this;
+
         registerActivityLifecycleCallbacks(this);
 
         JodaTimeAndroid.init(this);

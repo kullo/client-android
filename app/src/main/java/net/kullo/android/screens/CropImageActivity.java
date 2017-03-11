@@ -42,7 +42,7 @@ public class CropImageActivity extends AppCompatActivity {
 
         Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
 
         mPrepareImageProgressIndicator = findViewById(R.id.prepare_image_progress_indicator);
         mCropImageView = (CropImageView)findViewById(R.id.crop_image_view);

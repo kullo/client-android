@@ -3,7 +3,6 @@ package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -11,8 +10,6 @@ import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Spannable;
-import android.text.method.LinkMovementMethod;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -98,7 +95,7 @@ public class SingleMessageActivity extends AppCompatActivity {
 
         Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
 
         mFormatterDate = ((KulloApplication) getApplication()).getFullDateTimeFormatter();
         mMessageAttachmentsOpener = new MessageAttachmentsOpener(this);
@@ -269,14 +266,7 @@ public class SingleMessageActivity extends AppCompatActivity {
         setTitle(senderName);
 
         mMessageContentTextView.setMaxLines(Integer.MAX_VALUE);
-        final Spannable content = TextViewContent.getSpannableFromHtml(messageTextAsHtml, new TextViewContent.LinkClickedListener() {
-            @Override
-            protected void onClicked(Uri target) {
-                startActivity(new Intent(Intent.ACTION_VIEW, target));
-            }
-        });
-        mMessageContentTextView.setText(content);
-        mMessageContentTextView.setMovementMethod(LinkMovementMethod.getInstance()); // make links clickable
+        TextViewContent.injectHtmlIntoTextView(this, mMessageContentTextView, messageTextAsHtml);
 
         reloadAttachmentsList();
 

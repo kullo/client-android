@@ -103,7 +103,7 @@ public class ShareReceiverActivity extends AppCompatActivity {
 
         Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this, false);
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
 
         setupUi();
 
@@ -370,7 +370,7 @@ public class ShareReceiverActivity extends AppCompatActivity {
 
     private void reloadConversationsList() {
         RuntimeAssertion.require(mAdapter != null);
-        List<Long> conversationIds = SessionConnector.get().getAllConversationIdsSorted();
+        List<Long> conversationIds = SessionConnector.get().getAllConversationIds(true);
         mAdapter.replaceAll(conversationIds);
     }
 

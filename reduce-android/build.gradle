@@ -1,5 +1,5 @@
 // This project could theoretically be generalized to a Java project
-// but in order to do that, the native code must be compiled separatly
+// but in order to do that, the native code must be compiled separately
 // for 64 bit x86 with a non-Android specific toolchain.
 // Thus we keep it Android-only for now.
 
@@ -40,7 +40,7 @@ ext {
     BUILD_TOOLS_VERSION = "25.0.2"
 
     // Available versions: ls -l $ANDROID_HOME/extras/android/m2repository/com/android/support/design
-    SUPPORT_LIBRARY_VERSION = "25.0.1"
+    SUPPORT_LIBRARY_VERSION = "25.2.0"
 }
 
 android {

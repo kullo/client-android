@@ -89,6 +89,11 @@ ellipsis (…)
     <string name="menu_leave_inbox">Leave inbox</string>
     <string name="open_drawer">Open menu</string>
     <string name="close_drawer">Close menu</string>
+    <string name="account_overlay_network_error">Network error when getting account information</string>
+    <string name="account_overlay_button_retry">Retry</string>
+    <string name="account_overlay_button_settings">Account settings</string>
+    <string name="account_overlay_storage_label">Inbox storage used</string>
+    <string name="account_overlay_plan_label">Plan</string>
 
     <!-- conversations list -->
     <string name="footer">Footer</string>

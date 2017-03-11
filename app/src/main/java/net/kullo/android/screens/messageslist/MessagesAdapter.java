@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.support.annotation.UiThread;
-import android.text.util.Linkify;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -25,13 +24,13 @@ import java.util.ArrayList;
 
 public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
     public static final String TAG = "MessagesAdapter";
-    public static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
+    private static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
 
-    final protected DateTimeFormatter mFormatterClock;
-    final protected DateTimeFormatter mFormatterCalendarDate;
-    final protected Activity mBaseActivity;
-    final protected Long mConversationId;
-	private boolean mShowCardsExpanded;
+    private final DateTimeFormatter mFormatterClock;
+    private final DateTimeFormatter mFormatterCalendarDate;
+    private final Activity mBaseActivity;
+    private final Long mConversationId;
+    private boolean mShowCardsExpanded;
 
     public MessagesAdapter(final Activity baseActivity, Long conversationId) {
         super();
@@ -68,7 +67,6 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
         final boolean unread = SessionConnector.get().getMessageUnread(messageId);
         final DateTime dateReceived = SessionConnector.get().getMessageDateReceived(messageId);
         final String text = SessionConnector.get().getMessageText(messageId);
-        final String textCompressed = text.replaceAll("\\s+", " ");
         final Bitmap senderAvatar = SessionConnector.get().getSenderAvatar(mBaseActivity, messageId);
         final String senderName = SessionConnector.get().getSenderName(messageId);
         final ArrayList<Long> attachmentIds = SessionConnector.get().getMessageAttachmentsIds(messageId);
@@ -81,11 +79,10 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
 
         if (mShowCardsExpanded) {
             messagesViewHolder.mMessageTextTextView.setMaxLines(Integer.MAX_VALUE);
-            messagesViewHolder.mMessageTextTextView.setAutoLinkMask(Linkify.WEB_URLS);
             messagesViewHolder.mMessageTextTextView.setText(text);
         } else {
+            final String textCompressed = text.replaceAll("\\s+", " ");
             messagesViewHolder.mMessageTextTextView.setMaxLines(2);
-            messagesViewHolder.mMessageTextTextView.setAutoLinkMask(0);
             messagesViewHolder.mMessageTextTextView.setText(textCompressed);
         }
 

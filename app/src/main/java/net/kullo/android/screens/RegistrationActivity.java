@@ -24,7 +24,7 @@ public class RegistrationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_registration);
 
         Ui.prepareActivityForTaskManager(this);
-        Ui.setColorStatusBarArrangeHeader(this);
+        Ui.setStatusBarColor(this);
 
         populateFragmentQueue();
         nextFragment();

@@ -1,9 +1,14 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
+import android.animation.ValueAnimator;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -18,7 +23,10 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,6 +39,7 @@ import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
+import net.kullo.android.littlehelpers.Formatting;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
@@ -40,12 +49,15 @@ import net.kullo.android.screens.conversationslist.ConversationsAdapter;
 import net.kullo.android.ui.DividerDecoration;
 import net.kullo.android.ui.RecyclerItemClickListener;
 import net.kullo.javautils.RuntimeAssertion;
+import net.kullo.libkullo.api.AccountInfo;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import de.hdodenhof.circleimageview.CircleImageView;
 import io.github.dialogsforandroid.DialogAction;
 import io.github.dialogsforandroid.MaterialDialog;
@@ -54,23 +66,41 @@ import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 public class ConversationsListActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "ConversationsListAct."; // max. 23 chars
+
+    @BindView(R.id.drawer_layout) DrawerLayout mDrawerLayout;
     private Toolbar mToolbar;
-    private NavigationView mNavigationView;
-    private CircleImageView mNavigationHeaderAvatarView;
-    private TextView mNavigationHeaderNameView;
-    private TextView mNavigationHeaderAddressView;
-    private DrawerLayout mDrawerLayout;
-    private MenuItem mPreviousMenuItemNavigationView;
-    protected RecyclerView mRecyclerView;
-    private ConversationsAdapter mAdapter;
-    private SwipeRefreshLayout mSwipeLayout;
-    private MaterialProgressBar mProgressBarDeterminate;
-    private MaterialProgressBar mProgressBarIndeterminate;
     private boolean mIsPaused;
     private ConversationsEventObserver mConversationsEventObserver;
     private SyncerListenerObserver mSyncerListenerObserver;
+
+    // MESSAGES LIST
+
+    @BindView(R.id.swipe_refresh_layout) SwipeRefreshLayout mSwipeLayout;
+    @BindView(R.id.conversations_recycler_view) RecyclerView mRecyclerView;
+    // MaterialProgressBar does not support switching between indeterminate and determinate, so use two views
+    @BindView(R.id.progressbar_determinate) MaterialProgressBar mProgressBarDeterminate;
+    @BindView(R.id.progressbar_indeterminate) MaterialProgressBar mProgressBarIndeterminate;
+    private ConversationsAdapter mAdapter;
     private ActionMode mActionMode = null;
-    private boolean mIsAtTopScrollPosition = true;
+
+    // DRAWER
+
+    @BindView(R.id.navigation_view) NavigationView mNavigationView;
+    private MenuItem mPreviousMenuItemNavigationView;
+
+    private View mNavigationHeaderView;
+    private CircleImageView mNavigationHeaderAvatarView;
+    private TextView mNavigationHeaderNameView;
+    private TextView mNavigationHeaderAddressView;
+    private ImageView mNavigationHeaderArrowIcon;
+
+    private boolean mNavigationOverlayActive = false;
+    @Nullable private AccountInfo mAccountInfo = null;
+    @BindView(R.id.nav_overlay) LinearLayout mOverlay;
+    @BindView(R.id.nav_overlay_network_error) View mOverlayNetworkError;
+    @BindView(R.id.nav_overlay_content) View mOverlayContent;
+    @BindView(R.id.nav_overlay_account_info_storage) TextView mOverlayTextStorage;
+    @BindView(R.id.nav_overlay_account_info_plan) TextView mOverlayTextPlan;
 
 
     //LIFECYCLE
@@ -85,9 +115,12 @@ public class ConversationsListActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_conversations_list);
 
         Ui.prepareActivityForTaskManager(this);
+        Ui.setStatusBarColor(this, false, Ui.LayoutType.DrawerLayout);
         mToolbar = Ui.setupActionbar(this, false);
         setTitle(R.string.menu_conversations);
-        setupLayout();
+        ButterKnife.bind(this);
+        setupNavigationDrawer();
+        setupMainLayout();
         setupSwipeRefreshLayout();
 
         if (result.state == CreateSessionState.CREATING) {
@@ -96,6 +129,18 @@ public class ConversationsListActivity extends AppCompatActivity implements
         }
 
         GcmConnector.get().fetchAndRegisterToken(this);
+
+        new Handler().post(new Runnable() {
+            @Override
+            public void run() {
+                // isDrawerOpen() does not return correct value in onCreate
+                if (mDrawerLayout.isDrawerOpen(mNavigationView)) {
+                    // when drawer is open at activity start,
+                    // onDrawerOpened is not called
+                    loadAccountInfoFromServer();
+                }
+            }
+        });
     }
 
     @Override
@@ -103,7 +148,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
         super.onStart();
         RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
 
-        updateAccountInfoInNavigationHeader();
+        updateProfileInNavigationHeader();
         registerConversationsEventObserver();
         registerSyncListenerObserver();
 
@@ -128,19 +173,18 @@ public class ConversationsListActivity extends AppCompatActivity implements
         mIsPaused = false;
 
         if (SessionConnector.get().isSyncing()) {
-            updateSwipeLayoutEnabled();
-            mSwipeLayout.setRefreshing(false);
+            updateSwipeLayout(true);
 
             mProgressBarIndeterminate.setVisibility(View.VISIBLE);
             mProgressBarDeterminate.setVisibility(View.GONE);
         } else {
-            updateSwipeLayoutEnabled();
-            mSwipeLayout.setRefreshing(false);
+            updateSwipeLayout(false);
 
             mProgressBarIndeterminate.setVisibility(View.GONE);
             mProgressBarDeterminate.setVisibility(View.GONE);
         }
 
+        updateArrowIcon();
         reloadConversationsList();
     }
 
@@ -164,11 +208,8 @@ public class ConversationsListActivity extends AppCompatActivity implements
         unregisterConversationsEventObserver();
     }
 
-    private void updateSwipeLayoutEnabled() {
-        mSwipeLayout.setEnabled(
-                !SessionConnector.get().isSyncing()
-                && (mIsAtTopScrollPosition || mAdapter.getItemCount() == 0)
-        );
+    private void updateSwipeLayout(boolean isSyncing) {
+        mSwipeLayout.setEnabled(!isSyncing);
     }
 
     private void handleSyncFromIntent() {
@@ -181,43 +222,41 @@ public class ConversationsListActivity extends AppCompatActivity implements
         }
     }
 
-    private void setupLayout() {
-        mNavigationView = (NavigationView) findViewById(R.id.navigation_view);
-        RuntimeAssertion.require(mNavigationView != null);
+    private void setupNavigationDrawer() {
         mNavigationView.setNavigationItemSelectedListener(this);
 
-        View navigationHeaderView = mNavigationView.inflateHeaderView(R.layout.navigation_view_header);
-        RuntimeAssertion.require(navigationHeaderView != null);
+        mNavigationHeaderView = mNavigationView.inflateHeaderView(R.layout.navigation_view_header);
+        RuntimeAssertion.require(mNavigationHeaderView != null);
 
-        mNavigationHeaderAvatarView = (CircleImageView) navigationHeaderView.findViewById(R.id.avatar);
-        mNavigationHeaderNameView = (TextView) navigationHeaderView.findViewById(R.id.username);
-        mNavigationHeaderAddressView = (TextView) navigationHeaderView.findViewById(R.id.address);
+        mNavigationHeaderAvatarView = (CircleImageView) mNavigationHeaderView.findViewById(R.id.avatar);
+        mNavigationHeaderNameView = (TextView) mNavigationHeaderView.findViewById(R.id.username);
+        mNavigationHeaderAddressView = (TextView) mNavigationHeaderView.findViewById(R.id.address);
+        mNavigationHeaderArrowIcon = (ImageView) mNavigationHeaderView.findViewById(R.id.account_menu_toggle_icon);
         RuntimeAssertion.require(mNavigationHeaderAvatarView != null);
         RuntimeAssertion.require(mNavigationHeaderNameView != null);
         RuntimeAssertion.require(mNavigationHeaderAddressView != null);
+        RuntimeAssertion.require(mNavigationHeaderArrowIcon != null);
 
         // Initializing Drawer Layout and ActionBarToggle
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer);
+        Ui.setStatusBarColor(mDrawerLayout);
         ActionBarDrawerToggle actionBarDrawerToggle = new ActionBarDrawerToggle(
-                this, mDrawerLayout, mToolbar, R.string.open_drawer, R.string.close_drawer) {
-            @Override
-            public void onDrawerClosed(View drawerView) {
-                // Code here will be triggered once the drawer closes
-                super.onDrawerClosed(drawerView);
-            }
-
+            this, mDrawerLayout, mToolbar, R.string.open_drawer, R.string.close_drawer) {
             @Override
             public void onDrawerOpened(View drawerView) {
-                // Code here will be triggered once the drawer open
-                updateAccountInfoInNavigationHeader();
+                updateProfileInNavigationHeader();
+                loadAccountInfoFromServer();
                 super.onDrawerOpened(drawerView);
             }
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
+                super.onDrawerClosed(drawerView);
+                hideNavigationOverlay(false);
+            }
         };
+        mDrawerLayout.addDrawerListener(actionBarDrawerToggle);
 
-        // Setting the actionbarToggle to drawer layout
-        mDrawerLayout.setDrawerListener(actionBarDrawerToggle);
-
-        // calling sync state to show menu icon
+        // When called in onPostCreate, hamburger menu is missing
         actionBarDrawerToggle.syncState();
 
         // Select conversations menu item
@@ -225,17 +264,64 @@ public class ConversationsListActivity extends AppCompatActivity implements
         mNavigationView.getMenu().getItem(0).setChecked(true);
         mPreviousMenuItemNavigationView = mNavigationView.getMenu().getItem(0);
 
-        //set up recycler view
-        mRecyclerView = (RecyclerView) findViewById(R.id.conversations_recycler_view);
-        final LinearLayoutManager llm = new LinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(llm);
-        mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+        // Overlay: set top position
+        new Handler().post(new Runnable() {
             @Override
-            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-                mIsAtTopScrollPosition = llm.findFirstCompletelyVisibleItemPosition() == 0;
-                updateSwipeLayoutEnabled();
+            public void run() {
+                int headerHeight = mNavigationHeaderView.getHeight();
+
+                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.WRAP_CONTENT);
+                params.setMargins(0, headerHeight, 0, 0);
+                params.height = 0;
+                mOverlay.setLayoutParams(params);
             }
         });
+    }
+
+    private void showNavigationOverlay() {
+        mNavigationOverlayActive = true;
+        updateArrowIcon();
+        updateAccountInfoViews();
+
+        int headerHeight = mNavigationHeaderView.getHeight();
+        int overlayHeight = mNavigationView.getHeight() - headerHeight;
+        navigationOverlayAnimateTo(overlayHeight);
+    }
+
+    private void hideNavigationOverlay(boolean animated) {
+        mNavigationOverlayActive = false;
+        updateArrowIcon();
+
+        int targetHeight = 0;
+        if (animated) {
+            navigationOverlayAnimateTo(targetHeight);
+        } else {
+            ViewGroup.LayoutParams params = mOverlay.getLayoutParams();
+            params.height = targetHeight;
+            mOverlay.setLayoutParams(params);
+        }
+    }
+
+    private void navigationOverlayAnimateTo(int targetHeight) {
+        ValueAnimator anim = ValueAnimator.ofInt(mOverlay.getHeight(), targetHeight);
+        anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                Integer value = (Integer) valueAnimator.getAnimatedValue();
+                ViewGroup.LayoutParams params = mOverlay.getLayoutParams();
+                params.height = value;
+                mOverlay.setLayoutParams(params);
+            }
+        });
+        anim.setDuration(250);
+        anim.start();
+    }
+
+    private void setupMainLayout() {
+        //set up recycler view
+        final LinearLayoutManager llm = new LinearLayoutManager(this);
+        mRecyclerView.setLayoutManager(llm);
 
         mAdapter = new ConversationsAdapter(this);
         mRecyclerView.setAdapter(mAdapter);
@@ -324,8 +410,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSwipeLayoutEnabled();
-                        mSwipeLayout.setRefreshing(false);
+                        updateSwipeLayout(true);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
                         mProgressBarIndeterminate.setVisibility(View.VISIBLE);
@@ -342,9 +427,6 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSwipeLayoutEnabled();
-                        mSwipeLayout.setRefreshing(false);
-
                         if (KulloUtils.showSyncProgressAsBar(progress)) {
                             int percent = Math.round(100 * ((float) progress.getIncomingMessagesProcessed() / progress.getIncomingMessagesTotal()));
 
@@ -366,8 +448,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSwipeLayoutEnabled();
-                        mSwipeLayout.setRefreshing(false);
+                        updateSwipeLayout(false);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
                         mProgressBarIndeterminate.setVisibility(View.GONE);
@@ -382,8 +463,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        updateSwipeLayoutEnabled();
-                        mSwipeLayout.setRefreshing(false);
+                        updateSwipeLayout(false);
 
                         mProgressBarDeterminate.setVisibility(View.GONE);
                         mProgressBarIndeterminate.setVisibility(View.GONE);
@@ -410,12 +490,12 @@ public class ConversationsListActivity extends AppCompatActivity implements
         startActivity(new Intent(this, StartConversationActivity.class));
     }
 
-    private void updateAccountInfoInNavigationHeader() {
+    private void updateProfileInNavigationHeader() {
         mNavigationHeaderNameView.setText(SessionConnector.get().getCurrentUserName());
         mNavigationHeaderAddressView.setText(SessionConnector.get().getCurrentUserAddressAsString());
 
         byte[] avatar = SessionConnector.get().getCurrentUserAvatar();
-        if (avatar != null && avatar.length > 0) {
+        if (avatar.length > 0) {
             mNavigationHeaderAvatarView.setImageBitmap(AvatarUtils.avatarToBitmap(avatar));
             mNavigationHeaderAvatarView.setVisibility(View.VISIBLE);
         } else {
@@ -498,16 +578,18 @@ public class ConversationsListActivity extends AppCompatActivity implements
     }
 
     private void setupSwipeRefreshLayout() {
-        // Switching between indeterminate and determinate is entirely broken in
-        // me.zhanghai.android.materialprogressbar.MaterialProgressBar. So use two views.
-        mProgressBarDeterminate = (MaterialProgressBar) findViewById(R.id.progressbar_determinate);
-        mProgressBarIndeterminate = (MaterialProgressBar) findViewById(R.id.progressbar_indeterminate);
-
-        mSwipeLayout = (SwipeRefreshLayout) findViewById(R.id.swipe_refresh_layout);
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 SessionConnector.get().sync();
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        // progress bar will take over, so we don't need this rotating
+                        mSwipeLayout.setRefreshing(false);
+                    }
+                }, 500);
             }
         });
     }
@@ -532,7 +614,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
         // So stop action mode as well
         clearSelection();
 
-        List<Long> conversationIds = SessionConnector.get().getAllConversationIdsSorted();
+        List<Long> conversationIds = SessionConnector.get().getAllConversationIds(true);
         mAdapter.replaceAll(conversationIds);
 
         setVisibilityControlsIfListIsEmpty();
@@ -558,7 +640,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
 
                 @Override
                 public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-                    Ui.setColorStatusBarArrangeHeader(ConversationsListActivity.this);
+                    Ui.setStatusBarColor(ConversationsListActivity.this, true, Ui.LayoutType.DrawerLayout);
                     return true;
                 }
 
@@ -618,6 +700,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 @Override
                 public void onDestroyActionMode(ActionMode mode) {
                     mAdapter.clearSelectedItems();
+                    Ui.setStatusBarColor(ConversationsListActivity.this, false, Ui.LayoutType.DrawerLayout);
                     mActionMode = null;
                 }
             });
@@ -635,5 +718,64 @@ public class ConversationsListActivity extends AppCompatActivity implements
             mAdapter.clearSelectedItems();
             mActionMode.finish();
         }
+    }
+
+    public void toggleAccountSettingsClicked(View view) {
+        if (!mNavigationOverlayActive) {
+            showNavigationOverlay();
+        } else {
+            hideNavigationOverlay(true);
+        }
+    }
+
+    private void loadAccountInfoFromServer() {
+        SessionConnector.get().getAccountInfo(new SessionConnector.GetAccountInfoCallback() {
+            @Override
+            public void onDone(@Nullable final AccountInfo accountInfo) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // do not override old information in case of network error
+                        if (accountInfo != null) {
+                            mAccountInfo = accountInfo;
+                        }
+
+                        updateAccountInfoViews();
+                    }
+                });
+            }
+        });
+    }
+
+    @MainThread
+    private void updateAccountInfoViews() {
+        if (mAccountInfo != null) {
+            mOverlayNetworkError.setVisibility(View.GONE);
+            mOverlayContent.setVisibility(View.VISIBLE);
+
+            final String storageText = Formatting.quotaInGib(
+                mAccountInfo.getStorageUsed(), mAccountInfo.getStorageQuota());
+            final String planText = mAccountInfo.getPlanName();
+            mOverlayTextStorage.setText(storageText);
+            mOverlayTextPlan.setText(planText);
+        } else {
+            mOverlayNetworkError.setVisibility(View.VISIBLE);
+            mOverlayContent.setVisibility(View.GONE);
+        }
+    }
+
+    private void updateArrowIcon() {
+        mNavigationHeaderArrowIcon.setImageResource(mNavigationOverlayActive
+            ? R.drawable.ic_arrow_drop_up_white_24dp
+            : R.drawable.ic_arrow_drop_down_white_24dp);
+    }
+
+    public void retryGetAccountInfoClicked(View view) {
+        loadAccountInfoFromServer();
+    }
+
+    public void openAccountSettingsClicked(View view) {
+        RuntimeAssertion.require(mAccountInfo != null, "Button must not be visible when target url is not available");
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mAccountInfo.getSettingsUrl())));
     }
 }

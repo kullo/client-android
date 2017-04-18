@@ -12,14 +12,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.LinearLayout;
-import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,6 +35,7 @@ import net.kullo.android.observers.eventobservers.MessageAddedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.MessageStateEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
+import net.kullo.android.screens.messageslist.ConversationAdapter;
 import net.kullo.android.screens.messageslist.MessagesAdapter;
 import net.kullo.android.ui.DividerDecoration;
 import net.kullo.android.ui.RecyclerItemClickListener;
@@ -53,9 +51,7 @@ import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
 public class MessagesListActivity extends AppCompatActivity {
     public static final String TAG = "MessagesListActivity";
-    public static final String CONVERSATION_ID = "conversation_id";
 
-    private static final boolean SHOW_AVATAR_ROW = false;
     private MessagesAdapter mMessagesAdapter;
     private Long mConversationId;
     private MessageAddedEventObserver mMessageAddedObserver;
@@ -85,7 +81,7 @@ public class MessagesListActivity extends AppCompatActivity {
         setContentView(R.layout.activity_messages_list);
 
         Intent intent = getIntent();
-        mConversationId = intent.getLongExtra(CONVERSATION_ID, -1);
+        mConversationId = intent.getLongExtra(KulloConstants.CONVERSATION_ID, -1);
 
         Ui.prepareActivityForTaskManager(this);
         Ui.setStatusBarColor(this, false, Ui.LayoutType.CoordinatorLayout);
@@ -125,8 +121,6 @@ public class MessagesListActivity extends AppCompatActivity {
         super.onStart();
 
         setTitle(SessionConnector.get().getConversationNameOrPlaceHolder(mConversationId));
-
-        updateSenderAvatarViewsInHeader();
 
         mMessageAddedObserver = new MessageAddedEventObserver() {
             @Override
@@ -171,13 +165,9 @@ public class MessagesListActivity extends AppCompatActivity {
             @Override
             public void messageStateChanged(final long conversationId, final long messageId) {
                 if (conversationId == mConversationId) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mMessagesAdapter.notifyDataForIdChanged(messageId);
-                            Log.d(TAG, "Message item changed (id: " + messageId + ").");
-                        }
-                    });
+                    boolean handled = mMessagesAdapter.tryHandleElementChanged(messageId, new MessagesComparatorDsc());
+                    RuntimeAssertion.require(handled, "Message positions do not change, so this must be true");
+                    Log.d(TAG, "Message item changed (id: " + messageId + ").");
                 }
             }
         };
@@ -291,26 +281,45 @@ public class MessagesListActivity extends AppCompatActivity {
                 updateEmptyLabel();
             }
         });
-        mMessagesList.setAdapter(mMessagesAdapter);
+        mMessagesList.setAdapter(new ConversationAdapter(mMessagesAdapter, mConversationId));
 
         mMessagesList.addOnItemTouchListener(new RecyclerItemClickListener(mMessagesList) {
+
+            @SuppressWarnings("StatementWithEmptyBody")
             @Override
             public void onItemClick(View view, int position) {
-                long messageId = mMessagesAdapter.getItem(position);
-
-                if (mMessagesAdapter.isSelectionActive()) {
-                    messageSelected(messageId);
+                if (position == 0) {
+                    if (!mMessagesAdapter.isSelectionActive()) {
+                        Intent intent = new Intent(MessagesListActivity.this, ConversationInfoActivity.class);
+                        intent.putExtra(KulloConstants.CONVERSATION_ID, mConversationId);
+                        startActivity(intent);
+                    } else {
+                        // ignore tap on conversation info when action mode is active
+                    }
                 } else {
-                    Intent intent = new Intent(MessagesListActivity.this, SingleMessageActivity.class);
-                    intent.putExtra(KulloConstants.MESSAGE_ID, messageId);
-                    startActivity(intent);
+                    int messagesAdapterPosition = position - 1;
+                    long messageId = mMessagesAdapter.getItem(messagesAdapterPosition);
+
+                    if (mMessagesAdapter.isSelectionActive()) {
+                        messageSelected(messageId);
+                    } else {
+                        Intent intent = new Intent(MessagesListActivity.this, SingleMessageActivity.class);
+                        intent.putExtra(KulloConstants.MESSAGE_ID, messageId);
+                        startActivity(intent);
+                    }
                 }
             }
 
+            @SuppressWarnings("StatementWithEmptyBody")
             @Override
             public void onItemLongPress(View view, int position) {
-                long messageId = mMessagesAdapter.getItem(position);
-                messageSelected(messageId);
+                if (position == 0) {
+                    // do nothing
+                } else {
+                    int messagesAdapterPosition = position - 1;
+                    long messageId = mMessagesAdapter.getItem(messagesAdapterPosition);
+                    messageSelected(messageId);
+                }
             }
         });
 
@@ -327,34 +336,6 @@ public class MessagesListActivity extends AppCompatActivity {
                 mConversationEmptyLabel.setVisibility(View.VISIBLE);
                 mMessagesList.setVisibility(View.GONE);
             }
-        }
-    }
-
-    private void updateSenderAvatarViewsInHeader() {
-        LinearLayout avatarsRow = (LinearLayout) findViewById(R.id.avatars_row);
-        if (SHOW_AVATAR_ROW) {
-            avatarsRow.setVisibility(View.VISIBLE);
-
-            if (avatarsRow.getChildCount() > 0) {
-                avatarsRow.removeAllViews();
-            }
-
-            final int dp40 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 40, getResources().getDisplayMetrics());
-            final int dp8 = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, getResources().getDisplayMetrics());
-            final LayoutParams params = new LayoutParams(dp40, dp40);
-            params.setMargins(0, 0, dp8, 0);
-
-            /*
-            ArrayList<Bitmap> senderAvatars = SessionConnector.get().getConversationAvatars(this, mConversationId);
-            for (Bitmap avatar : senderAvatars) {
-                CircleImageView circleImageView = new CircleImageView(this);
-                circleImageView.setImageBitmap(avatar);
-                circleImageView.setLayoutParams(params);
-                mAvatarsRow.addView(circleImageView);
-            }
-            */
-        } else {
-            avatarsRow.setVisibility(View.GONE);
         }
     }
 
@@ -498,7 +479,7 @@ public class MessagesListActivity extends AppCompatActivity {
         if (mActionMode == null) setupActionMode();
 
         final String title = String.format(
-                getResources().getString(R.string.title_n_selected),
+                getResources().getString(R.string.actionmode_title_n_selected),
                 mMessagesAdapter.getSelectedItemsCount());
         mActionMode.setTitle(title);
     }

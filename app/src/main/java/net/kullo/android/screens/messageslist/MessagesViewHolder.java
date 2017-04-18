@@ -11,7 +11,7 @@ import net.kullo.android.thirdparty.EllipsizingTextView;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-class MessagesViewHolder extends RecyclerView.ViewHolder {
+public class MessagesViewHolder extends RecyclerView.ViewHolder {
     CircleImageView mSenderAvatarImage;
     TextView mMessageDateTextView;
     TextView mSenderNameTextView;
@@ -23,7 +23,7 @@ class MessagesViewHolder extends RecyclerView.ViewHolder {
         super(itemView);
 
         mSenderAvatarImage = (CircleImageView) itemView.findViewById(R.id.img_sender);
-        mSenderNameTextView = (TextView) itemView.findViewById(R.id.sender_name);
+        mSenderNameTextView = (TextView) itemView.findViewById(R.id.sender_name_organization);
         mMessageDateTextView = (TextView) itemView.findViewById(R.id.message_date);
         mMessageTextTextView = (EllipsizingTextView) itemView.findViewById(R.id.message_content);
         mUnreadIcon = (ImageView) itemView.findViewById(R.id.unread_icon);

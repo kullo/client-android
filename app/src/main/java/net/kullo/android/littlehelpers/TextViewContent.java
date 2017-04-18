@@ -26,16 +26,11 @@ public class TextViewContent {
             "<a href=\"([^\"]+)\">([^<]+)</a>");
 
     public static void injectHtmlIntoTextView(
-        @NonNull final Activity baseActivity,
         @NonNull final TextView target,
-        @NonNull final String textAsHtml
+        @NonNull final String textAsHtml,
+        @NonNull final LinkClickedListener linkClickListener
     ) {
-        final Spannable content = getSpannableFromHtml(textAsHtml, new LinkClickedListener() {
-            @Override
-            protected void onClicked(Uri linkTarget) {
-                baseActivity.startActivity(new Intent(Intent.ACTION_VIEW, linkTarget));
-            }
-        });
+        final Spannable content = getSpannableFromHtml(textAsHtml, linkClickListener);
         target.setText(content);
         target.setMovementMethod(LinkMovementMethod.getInstance()); // make links clickable
     }

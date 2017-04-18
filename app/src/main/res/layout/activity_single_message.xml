@@ -42,24 +42,26 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:paddingTop="@dimen/md_additions_card_content_padding"
                         android:paddingLeft="@dimen/md_additions_card_content_padding"
                         android:paddingRight="@dimen/md_additions_card_content_padding">
 
                         <LinearLayout
+                            android:id="@+id/message_header"
                             android:orientation="horizontal"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
+                            android:layout_height="72dp"
+                            android:paddingTop="16dp"
+                            android:paddingBottom="16dp"
                             >
 
                             <de.hdodenhof.circleimageview.CircleImageView
                                 android:id="@+id/sender_avatar"
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
-                                android:layout_marginRight="16dp"
+                                android:layout_marginRight="12dp"
                                 android:src="@drawable/kullo_settings_avatar"
                                 />
+
 
                             <RelativeLayout
                                 android:layout_width="match_parent"
@@ -67,38 +69,56 @@
                                 >
 
                                 <TextView
-                                    android:id="@+id/sender_name"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Sender Name"
-                                    android:textSize="20sp"
-                                    android:textColor="@color/kulloAccentColor"
-                                    />
-
-                                <TextView
-                                    android:id="@+id/sender_company"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Company Inc."
-                                    android:layout_alignParentLeft="true"
-                                    android:layout_below="@+id/sender_name"
-                                    android:textSize="12sp"
-                                    android:textColor="@color/kulloTextPrimaryColor"
-                                    android:layout_toLeftOf="@+id/message_date"
+                                    android:id="@+id/sender_name_organization"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="20dp"
+                                    android:text="Sender Name (Company Inc.)"
+                                    style="@style/Body2"
+                                    android:layout_alignParentTop="true"
+                                    android:layout_alignParentStart="true"
                                     android:layout_toStartOf="@+id/message_date"
                                     android:maxLines="1"
-                                    android:ellipsize="end" />
+                                    android:ellipsize="end"
+                                    tools:ignore="HardcodedText" />
 
                                 <TextView
+                                    android:id="@+id/sender_address"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="20dp"
+                                    android:layout_alignParentStart="true"
+                                    android:layout_below="@+id/sender_name_organization"
+                                    android:layout_toStartOf="@+id/message_date"
+                                    android:text="sender#example.com"
+                                    style="@style/Body1"
+                                    android:maxLines="1"
+                                    android:ellipsize="end"
+                                    tools:ignore="HardcodedText" />
+
+                                <LinearLayout
                                     android:id="@+id/message_date"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="today"
-                                    android:layout_alignParentRight="true"
-                                    android:layout_alignBottom="@+id/sender_company"
-                                    android:textSize="12sp"
-                                    android:textColor="@color/kulloTextPrimaryColor"
-                                    />
+                                    android:layout_height="40dp"
+                                    android:layout_alignParentEnd="true"
+                                    android:layout_marginLeft="8dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        android:id="@+id/message_date_row1"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="20dp"
+                                        android:layout_gravity="right"
+                                        android:text="24.02.17"
+                                        style="@style/Body1"
+                                        tools:ignore="HardcodedText" />
+                                    <TextView
+                                        android:id="@+id/message_date_row2"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="20dp"
+                                        android:layout_gravity="right"
+                                        android:text="20:38"
+                                        style="@style/Body1"
+                                        tools:ignore="HardcodedText" />
+                                </LinearLayout>
                             </RelativeLayout>
                         </LinearLayout>
 
@@ -118,17 +138,8 @@
                             android:layout_marginTop="16dp"
                             />
 
-                        <Button
-                            android:id="@+id/download_button"
-                            android:text="@string/download_attachments"
-                            android:textColor="@color/kulloAccentColor"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="left"
-                            style="@style/BorderlessButton" />
-
                         <View
-                            android:id="@+id/optional_padding_element"
+                            android:id="@+id/content_bottom_padding_element"
                             android:layout_width="match_parent"
                             android:layout_height="24dp" />
 

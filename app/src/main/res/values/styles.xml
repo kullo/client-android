@@ -52,4 +52,11 @@
         <item name="android:orientation">vertical</item>
     </style>
 
+    <style name="Body2" parent="TextAppearance.AppCompat.Body2">
+        <item name="android:textColor">@color/md_additions_primary_text</item>
+    </style>
+    <style name="Body1" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:textColor">@color/md_additions_secondary_text</item>
+    </style>
+
 </resources>

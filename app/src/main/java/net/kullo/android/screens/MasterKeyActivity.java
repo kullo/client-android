@@ -14,7 +14,7 @@ import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.javautils.RuntimeAssertion;
 
-public class AccountActivity extends AppCompatActivity {
+public class MasterKeyActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -22,7 +22,7 @@ public class AccountActivity extends AppCompatActivity {
         final CreateSessionResult result = SessionConnector.get().createActivityWithSession(this);
         if (result.state == CreateSessionState.NO_CREDENTIALS) return;
 
-        setContentView(R.layout.activity_account);
+        setContentView(R.layout.activity_masterkey);
 
         Ui.prepareActivityForTaskManager(this);
         Ui.setStatusBarColor(this);
@@ -48,7 +48,7 @@ public class AccountActivity extends AppCompatActivity {
         TextView masterkeyView = (TextView) findViewById(R.id.account_masterkey);
         masterkeyView.setHorizontallyScrolling(true);
 
-        addressView.setText(SessionConnector.get().getCurrentUserAddressAsString());
+        addressView.setText(SessionConnector.get().getCurrentUserAddress().toString());
         masterkeyView.setText(SessionConnector.get().getCurrentUserMasterKeyAsPem());
     }
 

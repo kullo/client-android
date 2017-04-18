@@ -11,7 +11,7 @@ import android.view.ViewGroup;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
-import net.kullo.android.kulloapi.KulloIdsAdapter;
+import net.kullo.android.util.adapters.KulloIdsAdapter;
 import net.kullo.android.kulloapi.SessionConnector;
 
 import org.joda.time.DateTime;

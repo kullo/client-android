@@ -3,6 +3,7 @@ package net.kullo.android.littlehelpers;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,7 @@ import android.widget.Filterable;
 import android.widget.TextView;
 
 import net.kullo.android.R;
+import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.javautils.RuntimeAssertion;
 
 import java.util.ArrayList;
@@ -74,8 +76,19 @@ public class AddressAutocompleteAdapter extends ArrayAdapter<String> implements 
                 final ArrayList<String> suggestions = new ArrayList<>();
 
                 if (constraint != null) {
+                    String constraintString = constraint.toString();
+
+                    if (SessionConnector.get().sessionAvailable()) {
+                        List<String> known = SessionConnector.get().getKnownAddressesAsString();
+                        for (String address : known) {
+                            if (address.startsWith(constraintString)) {
+                                suggestions.add(address);
+                            }
+                        }
+                    }
+
                     for (String domainName : mDomains) {
-                        String result = appendDomain((String) constraint, domainName);
+                        String result = appendDomain(constraintString, domainName);
                         if (result != null) {
                             suggestions.add(result);
                         }
@@ -89,6 +102,7 @@ public class AddressAutocompleteAdapter extends ArrayAdapter<String> implements 
                 return filterResults;
             }
 
+            @Nullable
             private String appendDomain(final String input, final String domainName) {
                 String result = null;
                 final int hashIndex = input.indexOf(HASH_CHAR);

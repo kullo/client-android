@@ -3,6 +3,8 @@
 
 package net.kullo.libkullo.api;
 
+import java.util.HashMap;
+
 /** Encodes a progress update during syncing. Unknown totals are set to 0. */
 public final class SyncProgress {
 
@@ -25,6 +27,8 @@ public final class SyncProgress {
 
     /*package*/ final long incomingAttachmentsTotalBytes;
 
+    /*package*/ final HashMap<Long, AttachmentsBlockDownloadProgress> incomingAttachments;
+
     /*package*/ final long outgoingMessagesUploadedBytes;
 
     /*package*/ final long outgoingMessagesTotalBytes;
@@ -41,6 +45,7 @@ public final class SyncProgress {
             long incomingMessagesDeleted,
             long incomingAttachmentsDownloadedBytes,
             long incomingAttachmentsTotalBytes,
+            HashMap<Long, AttachmentsBlockDownloadProgress> incomingAttachments,
             long outgoingMessagesUploadedBytes,
             long outgoingMessagesTotalBytes,
             long runTimeMs) {
@@ -53,6 +58,7 @@ public final class SyncProgress {
         this.incomingMessagesDeleted = incomingMessagesDeleted;
         this.incomingAttachmentsDownloadedBytes = incomingAttachmentsDownloadedBytes;
         this.incomingAttachmentsTotalBytes = incomingAttachmentsTotalBytes;
+        this.incomingAttachments = incomingAttachments;
         this.outgoingMessagesUploadedBytes = outgoingMessagesUploadedBytes;
         this.outgoingMessagesTotalBytes = outgoingMessagesTotalBytes;
         this.runTimeMs = runTimeMs;
@@ -96,6 +102,10 @@ public final class SyncProgress {
         return incomingAttachmentsTotalBytes;
     }
 
+    public HashMap<Long, AttachmentsBlockDownloadProgress> getIncomingAttachments() {
+        return incomingAttachments;
+    }
+
     /** outgoing messages + attachments (unit: uncompressed bytes) */
     public long getOutgoingMessagesUploadedBytes() {
         return outgoingMessagesUploadedBytes;
@@ -122,6 +132,7 @@ public final class SyncProgress {
                 "," + "incomingMessagesDeleted=" + incomingMessagesDeleted +
                 "," + "incomingAttachmentsDownloadedBytes=" + incomingAttachmentsDownloadedBytes +
                 "," + "incomingAttachmentsTotalBytes=" + incomingAttachmentsTotalBytes +
+                "," + "incomingAttachments=" + incomingAttachments +
                 "," + "outgoingMessagesUploadedBytes=" + outgoingMessagesUploadedBytes +
                 "," + "outgoingMessagesTotalBytes=" + outgoingMessagesTotalBytes +
                 "," + "runTimeMs=" + runTimeMs +

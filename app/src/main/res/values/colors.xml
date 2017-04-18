@@ -15,6 +15,8 @@
     <color name="kulloPurpleLight">#91127D</color>
     <color name="kulloOrange">#E88D03</color>
     <color name="kulloWhite">#ffffff</color>
+    <color name="kulloGray">#585759</color>
+    <color name="kulloGrayLight">#838282</color>
 
     <color name="kulloPrimaryColor">@color/kulloOrange</color>
     <!--

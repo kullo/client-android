@@ -1,0 +1,15 @@
+Version 44
+
+● Displays sender addresses in single message
+● New conversation info screen that lets you select participants to start a new conversation with
+● Shows download progress when for attachments
+● Shows image preview for image attachments
+● Suggests known Kullo addresses
+● Highlights Kullo addresses in message text
+
+● Zeigt die Absenderadresse einer Nachricht an
+● Neuer Info-Screen einer Konversation mit der Möglichkeit, mit einem Teil der Teilnehmer eine neue Konversation zu starten
+● Download-Fortschritt bei Dateianhängen
+● Bild-Vorschau bei Dateianhängen
+● Bekannte Kullo-Adressen werden vorgeschlagen
+● Hebt Kullo-Adressen im Nachrichtentext hervor

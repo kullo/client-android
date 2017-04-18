@@ -10,15 +10,15 @@
 
     <group android:id="@+id/group_settings">
         <item
-            android:id="@+id/menuitem_settings"
-            android:checked="false"
-            android:icon="@drawable/ic_settings_black_24dp"
-            android:title="@string/menu_settings" />
-        <item
-            android:id="@+id/menuitem_account"
+            android:id="@+id/menuitem_profile_settings"
             android:checked="false"
             android:icon="@drawable/ic_account_box_black_24dp"
-            android:title="@string/menu_account" />
+            android:title="@string/menu_profile_settings" />
+        <item
+            android:id="@+id/menuitem_masterkey"
+            android:checked="false"
+            android:icon="@drawable/ic_vpn_key_black_24dp"
+            android:title="@string/menu_masterkey" />
     </group>
 
     <group android:id="@+id/group_feedback">

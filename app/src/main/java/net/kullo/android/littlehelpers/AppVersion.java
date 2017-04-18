@@ -6,11 +6,8 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
-/**
- * Created by simon on 11.09.15.
- */
 public class AppVersion {
-    Application mApp;
+    private Application mApp;
 
     public AppVersion(Application app) {
         mApp = app;
@@ -25,7 +22,7 @@ public class AppVersion {
             try {
                 PackageInfo packageInfo = packageManager.getPackageInfo(context.getPackageName(), 0);
                 versionName = packageInfo.versionName;
-            } catch (PackageManager.NameNotFoundException e) {
+            } catch (PackageManager.NameNotFoundException ignored) {
             }
         }
 

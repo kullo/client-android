@@ -203,7 +203,7 @@ public class ComposeActivity extends AppCompatActivity {
         } else {
             if (mDraftAttachmentsActionMode == null) setupDraftAttachmentsActionMode();
             final String title = String.format(
-                    getResources().getString(R.string.title_n_selected),
+                    getResources().getString(R.string.actionmode_title_n_selected),
                     mDraftAttachmentsAdapter.getSelectedItemsCount());
             mDraftAttachmentsActionMode.setTitle(title);
         }

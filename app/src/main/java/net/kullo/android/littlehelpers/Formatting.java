@@ -1,6 +1,17 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.littlehelpers;
 
+import android.content.Context;
+
+import net.kullo.android.R;
+import net.kullo.android.application.KulloApplication;
+import net.kullo.android.screens.conversationslist.ConversationsAdapter;
+
+import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
+import org.joda.time.format.DateTimeFormatter;
+
 import java.util.Locale;
 
 public class Formatting {
@@ -39,4 +50,26 @@ public class Formatting {
     }
 
     private Formatting() {}
+
+    public static String getLocalDateText(DateTime dateLatestMessage) {
+        Context context = KulloApplication.sharedInstance;
+        DateTimeFormatter formatterCalendarDate = KulloApplication.sharedInstance.getShortDateFormatter();
+        LocalDateTime localDateReceived = new LocalDateTime(dateLatestMessage, ConversationsAdapter.LOCAL_TIME_ZONE);
+
+        String dateString;
+        if(localDateReceived.toLocalDate().equals(new LocalDate())) {
+            dateString = context.getResources().getString(R.string.today);
+        } else if(localDateReceived.toLocalDate().equals((new LocalDate()).minusDays(1))) {
+            dateString = context.getResources().getString(R.string.yesterday);
+        } else {
+            dateString = localDateReceived.toString(formatterCalendarDate);
+        }
+
+        return dateString;
+    }
+
+    public static int perMilleRounded(long processedCount, long totalCount) {
+        if (totalCount <= 0) return 0;
+        return Math.round(1000 * ((float) processedCount / totalCount));
+    }
 }

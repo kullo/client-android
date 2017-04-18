@@ -8,7 +8,7 @@ ext {
 
     // There is a bug (?) with FloatingActionButton starting in 25.1.0
     // See https://code.google.com/p/android/issues/detail?id=230298
-    SUPPORT_LIBRARY_VERSION = "25.2.0"
+    SUPPORT_LIBRARY_VERSION = "25.3.1"
 }
 
 android {
@@ -19,8 +19,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 16
         targetSdkVersion TARGET_SDK_VERSION
-        versionCode 4302
-        versionName "43"
+        versionCode 4403
+        versionName "44"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -58,14 +58,13 @@ dependencies {
     compile 'com.jakewharton:butterknife:8.5.1'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
 
-    compile 'com.timehop.stickyheadersrecyclerview:library:0.4.3@aar'
     compile 'de.hdodenhof:circleimageview:2.1.0'
     compile 'com.github.bumptech.glide:glide:3.7.0'
     compile 'com.isseiaoki:simplecropview:1.0.16'
     compile 'net.danlew:android.joda:2.9.2'
     compile "me.leolin:ShortcutBadger:1.1.13@aar"
 
-    compile 'me.zhanghai.android.materialprogressbar:library:1.3.0'
+    compile 'me.zhanghai.android.materialprogressbar:library:1.4.1'
 
     // Available versions: ls -l $ANDROID_HOME/extras/google/m2repository/com/google/android/gms/play-services-gcm
     compile "com.google.android.gms:play-services-gcm:9.8.0"

@@ -1,16 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/container"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="8dp">
 
-    <ImageView
+    <RelativeLayout
+        android:id="@+id/icon_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:alpha="0.75"
-        android:src="@drawable/ic_attachment_black_48dp"/>
+        android:layout_height="48dp">
+
+        <ImageView
+            android:id="@+id/icon_default"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_centerHorizontal="true"
+            android:alpha="0.75"
+            android:src="@drawable/ic_attachment_black_48dp"/>
+
+        <me.zhanghai.android.materialprogressbar.MaterialProgressBar
+            android:id="@+id/icon_progress"
+            android:visibility="gone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:indeterminate="false"
+            app:mpb_determinateCircularProgressStyle="dynamic"
+            style="@style/Widget.MaterialProgressBar.ProgressBar" />
+
+        <ImageView
+            android:id="@+id/image_preview"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/background_for_transparent_images"
+            android:visibility="gone" />
+
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/filename"

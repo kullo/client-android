@@ -8,7 +8,7 @@ http://stackoverflow.com/a/8639921
     android:layout_height="fill_parent"
     xmlns:tools="http://schemas.android.com/tools"
     android:focusableInTouchMode="true"
-    tools:context=".screens.AccountActivity">
+    tools:context=".screens.MasterKeyActivity">
 
     <include
         android:id="@+id/toolbar"

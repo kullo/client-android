@@ -21,18 +21,6 @@
             android:layout_height="wrap_content"
             />
 
-        <LinearLayout
-            android:id="@+id/avatars_row"
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingRight="8dp"
-            android:paddingBottom="8dp"
-            android:paddingLeft="12dp"
-            android:background="@color/kulloPrimaryColor"
-            style="@style/ToolbarStyle"
-            />
-
         <android.support.v4.widget.SwipeRefreshLayout
             android:id="@+id/swipe_refresh_layout"
             android:layout_width="match_parent"

@@ -19,6 +19,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.ActionMode;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -30,13 +31,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.timehop.stickyheadersrecyclerview.StickyRecyclerHeadersDecoration;
-
 import net.kullo.android.R;
+import net.kullo.android.kulloapi.ConversationsComparatorDsc;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.KulloUtils;
+import net.kullo.android.kulloapi.LockedSessionCallback;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.Formatting;
@@ -45,13 +46,22 @@ import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.ConversationsEventObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
+import net.kullo.android.screens.conversationslist.ConversationViewHolder;
 import net.kullo.android.screens.conversationslist.ConversationsAdapter;
-import net.kullo.android.ui.DividerDecoration;
+import net.kullo.android.screens.conversationslist.ConversationsSectionHeaderViewHolder;
+import net.kullo.android.thirdparty.DynamicSectionsAdapter;
+import net.kullo.android.thirdparty.NullViewHolder;
 import net.kullo.android.ui.RecyclerItemClickListener;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.AccountInfo;
 import net.kullo.libkullo.api.NetworkError;
+import net.kullo.libkullo.api.Session;
 import net.kullo.libkullo.api.SyncProgress;
+
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,6 +73,7 @@ import io.github.dialogsforandroid.DialogAction;
 import io.github.dialogsforandroid.MaterialDialog;
 import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
+@SuppressWarnings("RedundantIfStatement")
 public class ConversationsListActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "ConversationsListAct."; // max. 23 chars
@@ -80,7 +91,8 @@ public class ConversationsListActivity extends AppCompatActivity implements
     // MaterialProgressBar does not support switching between indeterminate and determinate, so use two views
     @BindView(R.id.progressbar_determinate) MaterialProgressBar mProgressBarDeterminate;
     @BindView(R.id.progressbar_indeterminate) MaterialProgressBar mProgressBarIndeterminate;
-    private ConversationsAdapter mAdapter;
+    private ConversationsAdapter mConversationsAdapter;
+    private DynamicSectionsAdapter mAdapter;
     private ActionMode mActionMode = null;
 
     // DRAWER
@@ -192,7 +204,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
     public void onPause() {
         super.onPause();
         // make sure that selection is clear if we leave this view
-        clearSelection();
+        stopActionMode();
         mIsPaused = true;
     }
 
@@ -323,34 +335,83 @@ public class ConversationsListActivity extends AppCompatActivity implements
         final LinearLayoutManager llm = new LinearLayoutManager(this);
         mRecyclerView.setLayoutManager(llm);
 
-        mAdapter = new ConversationsAdapter(this);
+        mConversationsAdapter = new ConversationsAdapter(this);
+
+        mAdapter = new DynamicSectionsAdapter<ConversationViewHolder, ConversationsSectionHeaderViewHolder, NullViewHolder>(mConversationsAdapter) {
+
+            @Override
+            protected long getSectionId(int originalAdapterPosition) {
+                Log.d(TAG, "Running getSectionId for pos = " + originalAdapterPosition);
+
+                long conversationId = mConversationsAdapter.getItem(originalAdapterPosition);
+                DateTime latestMessageTimestamp = SessionConnector.get().getLatestMessageTimestamp(conversationId);
+
+                if (latestMessageTimestamp.equals(SessionConnector.get().emptyConversationTimestamp())) {
+                    return Long.MAX_VALUE;
+                } else {
+                    LocalDateTime localLatestMessageTimestamp = new LocalDateTime(latestMessageTimestamp, DateTimeZone.getDefault());
+                    LocalDate today = new LocalDate(DateTimeZone.getDefault());
+
+                    // The header id must change whenever the date of the latest message changed (t1)
+                    // as well as when the current date changes (t2) to invalidate "today" or "yesterday" labels.
+                    // This is going to work until year 2038, then we need to cut non-significant bits.
+                    long t1 = localLatestMessageTimestamp.toLocalDate().toDateTimeAtStartOfDay().getMillis() / 1000; // 31 bit
+                    long t2 = today.toDateTimeAtStartOfDay().getMillis() / 1000; // 31 bit
+                    return (t1 << 31) | t2;
+                }
+            }
+
+            @Override
+            protected boolean sectionHasHeader(long sectionId) {
+                return true;
+            }
+
+            @Override
+            protected ConversationsSectionHeaderViewHolder onCreateSectionHeaderViewHolder(ViewGroup parent) {
+                View itemView = LayoutInflater.
+                    from(parent.getContext()).
+                    inflate(R.layout.row_conversation_header, parent, false);
+                return new ConversationsSectionHeaderViewHolder(itemView);
+            }
+
+            @Override
+            protected void onBindHeaderViewHolder(ConversationsSectionHeaderViewHolder vh, long sectionId) {
+                TextView textView = (TextView) vh.itemView;
+                Long conversationId = mConversationsAdapter.getItem(getOriginalPositionForFirstItemInSection(sectionId));
+
+                DateTime latestMessageTimestamp = SessionConnector.get().getLatestMessageTimestamp(conversationId);
+
+                if (latestMessageTimestamp.getMillis() == SessionConnector.get().emptyConversationTimestamp().getMillis()) {
+                    textView.setText(R.string.empty_conversation_title);
+                }
+                else {
+                    textView.setText(Formatting.getLocalDateText(latestMessageTimestamp));
+                }
+            }
+        };
+
         mRecyclerView.setAdapter(mAdapter);
-
-        // Add the sticky headers decoration
-        final StickyRecyclerHeadersDecoration headersDecor = new StickyRecyclerHeadersDecoration(mAdapter);
-        mRecyclerView.addItemDecoration(headersDecor);
-
-        // Add decoration for dividers between list items
-        int dividerLeftMargin = getResources().getDimensionPixelSize(R.dimen.md_additions_list_divider_margin_left);
-        mRecyclerView.addItemDecoration(new DividerDecoration(this, dividerLeftMargin));
-
         mRecyclerView.addOnItemTouchListener(new RecyclerItemClickListener(mRecyclerView) {
             @Override
             public void onItemClick(View view, int position) {
-                long conversationId = mAdapter.getItem(position);
+                int originalAdapterPosition = mAdapter.getOriginalPositionForPosition(position);
+                if (originalAdapterPosition < 0) return;
+                long conversationId = mConversationsAdapter.getItem(originalAdapterPosition);
 
-                if (mAdapter.isSelectionActive()) {
+                if (mConversationsAdapter.isSelectionActive()) {
                     selectConversation(conversationId);
                 } else {
                     Intent intent = new Intent(ConversationsListActivity.this, MessagesListActivity.class);
-                    intent.putExtra(MessagesListActivity.CONVERSATION_ID, conversationId);
+                    intent.putExtra(KulloConstants.CONVERSATION_ID, conversationId);
                     startActivity(intent);
                 }
             }
 
             @Override
             public void onItemLongPress(View view, int position) {
-                long conversationId = mAdapter.getItem(position);
+                int originalAdapterPosition = mAdapter.getOriginalPositionForPosition(position);
+                if (originalAdapterPosition < 0) return;
+                long conversationId = mConversationsAdapter.getItem(originalAdapterPosition);
                 selectConversation(conversationId);
             }
         });
@@ -359,36 +420,39 @@ public class ConversationsListActivity extends AppCompatActivity implements
     private void registerConversationsEventObserver() {
         mConversationsEventObserver = new ConversationsEventObserver() {
             @Override
-            public void conversationAdded(long conversationId) {
-                Log.d(TAG, "Got a new conversation. Refresh view!");
-                runOnUiThread(new Runnable() {
+            public void conversationAdded(final long conversationId) {
+                SessionConnector.get().runWithLockedSession(new LockedSessionCallback() {
                     @Override
-                    public void run() {
-                        reloadConversationsList();
+                    public void run(Session lockedSession) {
+                        mConversationsAdapter.add(conversationId,
+                            new ConversationsComparatorDsc(lockedSession));
                     }
                 });
             }
 
             @Override
-            public void conversationChanged(long conversationId) {
+            public void conversationChanged(final long conversationId) {
                 Log.d(TAG, "Conversation changed. Refresh View!");
-                runOnUiThread(new Runnable() {
+
+                final boolean[] changeCouldBeHandled = {false};
+
+                SessionConnector.get().runWithLockedSession(new LockedSessionCallback() {
                     @Override
-                    public void run() {
-                        reloadConversationsList();
+                    public void run(Session lockedSession) {
+                        changeCouldBeHandled[0] = mConversationsAdapter.tryHandleElementChanged(
+                            conversationId, new ConversationsComparatorDsc(lockedSession));
                     }
                 });
+
+                if (!changeCouldBeHandled[0]) {
+                    reloadConversationsList();
+                }
             }
 
             @Override
             public void conversationRemoved(long conversationId) {
                 Log.d(TAG, "Conversation deleted. Refresh view!");
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        reloadConversationsList();
-                    }
-                });
+                reloadConversationsList();
             }
         };
         SessionConnector.get().addEventObserver(
@@ -453,7 +517,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
                         mProgressBarDeterminate.setVisibility(View.GONE);
                         mProgressBarIndeterminate.setVisibility(View.GONE);
 
-                        if (!mIsPaused) reloadConversationsList();
+                        //if (!mIsPaused) reloadConversationsList();
                     }
                 });
             }
@@ -492,7 +556,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
 
     private void updateProfileInNavigationHeader() {
         mNavigationHeaderNameView.setText(SessionConnector.get().getCurrentUserName());
-        mNavigationHeaderAddressView.setText(SessionConnector.get().getCurrentUserAddressAsString());
+        mNavigationHeaderAddressView.setText(SessionConnector.get().getCurrentUserAddress().toString());
 
         byte[] avatar = SessionConnector.get().getCurrentUserAvatar();
         if (avatar.length > 0) {
@@ -514,13 +578,11 @@ public class ConversationsListActivity extends AppCompatActivity implements
             case R.id.menuitem_conversations:
                 // nothing to do here: drawer will be closed on item selected, and we're already in the proper activity
                 break;
-            case R.id.menuitem_settings:
-                Intent intentSettings = new Intent(this, SettingsActivity.class);
-                startActivity(intentSettings);
+            case R.id.menuitem_profile_settings:
+                startActivity(new Intent(this, ProfileSettingsActivity.class));
                 break;
-            case R.id.menuitem_account:
-                Intent intentAccount = new Intent(this, AccountActivity.class);
-                startActivity(intentAccount);
+            case R.id.menuitem_masterkey:
+                startActivity(new Intent(this, MasterKeyActivity.class));
                 break;
             case R.id.menuitem_feedback:
                 Intent intent = new Intent(this, ComposeActivity.class);
@@ -528,11 +590,10 @@ public class ConversationsListActivity extends AppCompatActivity implements
                 startActivity(intent);
                 break;
             case R.id.menuitem_about:
-                Intent intentAbout = new Intent(this, AboutActivity.class);
-                startActivity(intentAbout);
+                startActivity(new Intent(this, AboutActivity.class));
                 break;
             case R.id.menuitem_logout:
-                closeInbox();
+                leaveInboxClicked();
                 return true;
             default:
                 RuntimeAssertion.fail("Unhandled menu item");
@@ -556,7 +617,6 @@ public class ConversationsListActivity extends AppCompatActivity implements
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.appbar_menu_conversations_list, menu);
-
         return true;
     }
 
@@ -572,9 +632,23 @@ public class ConversationsListActivity extends AppCompatActivity implements
         }
     }
 
-    public void closeInbox() {
-        startActivity(new Intent(this, LeaveInboxActivity.class));
-        finish();
+    public void leaveInboxClicked() {
+        new MaterialDialog.Builder(this)
+            .title(R.string.leave_inbox_confirmation_title)
+            .content(String.format(
+                getString(R.string.leave_inbox_confirmation_description),
+                SessionConnector.get().getCurrentUserAddress()))
+            .positiveText(R.string.leave_inbox_confirmation_positive)
+            .negativeText(R.string.leave_inbox_confirmation_negative)
+            .onPositive(new MaterialDialog.SingleButtonCallback() {
+                @Override
+                public void onClick(@NonNull MaterialDialog materialDialog, @NonNull DialogAction dialogAction) {
+                    ConversationsListActivity activity = ConversationsListActivity.this;
+                    activity.startActivity(new Intent(activity, LeaveInboxActivity.class));
+                    activity.finish();
+                }
+            })
+            .show();
     }
 
     private void setupSwipeRefreshLayout() {
@@ -598,7 +672,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
         ImageView swipeToRefreshImage = (ImageView) findViewById(R.id.swipe_to_refresh_image);
         TextView swipeToRefreshText = (TextView) findViewById(R.id.swipe_to_refresh_text);
 
-        if (mAdapter.getItemCount() == 0) {
+        if (mConversationsAdapter.getItemCount() == 0) {
             swipeToRefreshImage.setVisibility(View.VISIBLE);
             swipeToRefreshText.setVisibility(View.VISIBLE);
         } else {
@@ -608,22 +682,23 @@ public class ConversationsListActivity extends AppCompatActivity implements
     }
 
     private void reloadConversationsList() {
-        RuntimeAssertion.require(mAdapter != null);
+        RuntimeAssertion.require(mConversationsAdapter != null);
 
         // When list is reloaded, selection is not preserved.
         // So stop action mode as well
-        clearSelection();
+        stopActionMode();
 
         List<Long> conversationIds = SessionConnector.get().getAllConversationIds(true);
-        mAdapter.replaceAll(conversationIds);
+        mConversationsAdapter.replaceAll(conversationIds);
+        Log.d(TAG, "Replaced all conversations");
 
         setVisibilityControlsIfListIsEmpty();
     }
 
     private void selectConversation(final Long conversationId) {
         // (de)select conversation
-        mAdapter.toggleSelectedItem(conversationId);
-        if (!mAdapter.isSelectionActive()) {
+        mConversationsAdapter.toggleSelectedItem(conversationId);
+        if (!mConversationsAdapter.isSelectionActive()) {
             mActionMode.finish();
             return;
         }
@@ -650,18 +725,24 @@ public class ConversationsListActivity extends AppCompatActivity implements
                         case R.id.action_delete: {
                             int messagesToBeRemovedCount = 0;
                             final List<Long> conversationsToBeRemoved = new ArrayList<>();
-                            for (long conversationId : mAdapter.getSelectedItems()) {
+                            for (long conversationId : mConversationsAdapter.getSelectedItems()) {
                                 conversationsToBeRemoved.add(conversationId);
                                 messagesToBeRemovedCount += SessionConnector.get().getMessageCount(conversationId);
                             }
 
                             if (messagesToBeRemovedCount > 0) {
+                                String title = conversationsToBeRemoved.size() == 1
+                                    ? getString(R.string.conversations_confirm_delete_title_1)
+                                    : getString(R.string.conversations_confirm_delete_title_n);
+                                String questionPart1 = conversationsToBeRemoved.size() == 1
+                                    ? getString(R.string.conversations_confirm_delete_body_part1_1)
+                                    : String.format(getString(R.string.conversations_confirm_delete_body_part1_n), conversationsToBeRemoved.size());
+                                String questionPart2 = messagesToBeRemovedCount == 1
+                                    ? getString(R.string.conversations_confirm_delete_body_part2_1)
+                                    : String.format(getString(R.string.conversations_confirm_delete_body_part2_n), messagesToBeRemovedCount);
                                 new MaterialDialog.Builder(ConversationsListActivity.this)
-                                        .title(R.string.conversations_confirm_delete_conversations_title)
-                                        .content(String.format(
-                                                getString(R.string.conversations_confirm_delete_conversations_body),
-                                                conversationsToBeRemoved.size(),
-                                                messagesToBeRemovedCount))
+                                        .title(title)
+                                        .content(questionPart1 + " " + questionPart2)
                                         .positiveText(R.string.action_delete)
                                         .negativeText(R.string.cancel)
                                         .onPositive(new MaterialDialog.SingleButtonCallback() {
@@ -684,9 +765,9 @@ public class ConversationsListActivity extends AppCompatActivity implements
                                 // All conversations are empty
                                 // Don't sync here because conversations without messages cannot be synced
                                 SessionConnector.get().removeConversations(conversationsToBeRemoved);
-                                final String text = String.format(
-                                        getResources().getString(R.string.conversations_toast_n_empty_deleted),
-                                        conversationsToBeRemoved.size());
+                                final String text = conversationsToBeRemoved.size() == 1
+                                    ? getString(R.string.conversations_toast_deleting_empty_1)
+                                    : String.format(getString(R.string.conversations_toast_deleting_empty_n), conversationsToBeRemoved.size());
                                 Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
                                 mode.finish();
                             }
@@ -699,7 +780,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
 
                 @Override
                 public void onDestroyActionMode(ActionMode mode) {
-                    mAdapter.clearSelectedItems();
+                    mConversationsAdapter.clearSelectedItems();
                     Ui.setStatusBarColor(ConversationsListActivity.this, false, Ui.LayoutType.DrawerLayout);
                     mActionMode = null;
                 }
@@ -708,14 +789,14 @@ public class ConversationsListActivity extends AppCompatActivity implements
 
         // update action bar title
         final String title = String.format(
-                getResources().getString(R.string.title_n_selected),
-                mAdapter.getSelectedItemsCount());
+            getResources().getString(R.string.actionmode_title_n_selected),
+            mConversationsAdapter.getSelectedItemsCount());
         mActionMode.setTitle(title);
     }
 
-    public void clearSelection() {
+    public void stopActionMode() {
         if (mActionMode != null) {
-            mAdapter.clearSelectedItems();
+            mConversationsAdapter.clearSelectedItems();
             mActionMode.finish();
         }
     }

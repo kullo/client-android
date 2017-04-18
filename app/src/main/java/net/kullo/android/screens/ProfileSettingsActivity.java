@@ -38,8 +38,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SettingsActivity extends AppCompatActivity {
-    public static final String TAG = "SettingsActivity";
+public class ProfileSettingsActivity extends AppCompatActivity {
+    public static final String TAG = ProfileSettingsActivity.class.getSimpleName();
     public static final int ACTIVITY_RESULT_PERMISSION_DENIED_READ_STORAGE = 8001;
 
     private static final int REQUEST_CODE_AVATAR_SOURCE_SELECTION = 1;
@@ -65,7 +65,7 @@ public class SettingsActivity extends AppCompatActivity {
         final CreateSessionResult result = SessionConnector.get().createActivityWithSession(this);
         if (result.state == CreateSessionState.NO_CREDENTIALS) return;
 
-        setContentView(R.layout.activity_settings);
+        setContentView(R.layout.activity_profile_settings);
 
         Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
@@ -183,7 +183,7 @@ public class SettingsActivity extends AppCompatActivity {
 
         // Extras: Clear
         final Intent clearIntent = new Intent();
-        clearIntent.setClass(this, SettingsActivity.class);
+        clearIntent.setClass(this, ProfileSettingsActivity.class);
         clearIntent.setAction(ACTION_CLEAR_AVATAR);
         final LabeledIntent clearIntentOption = new LabeledIntent(clearIntent, getPackageName(),
             getString(R.string.settings_remove_avatar), R.drawable.kullo_settings_avatar);

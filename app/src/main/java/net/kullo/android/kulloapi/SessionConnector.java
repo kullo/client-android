@@ -59,6 +59,7 @@ import net.kullo.libkullo.api.EventType;
 import net.kullo.libkullo.api.InternalEvent;
 import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.MasterKey;
+import net.kullo.libkullo.api.MessageAttachmentsContentListener;
 import net.kullo.libkullo.api.MessageAttachmentsSaveToListener;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.PushToken;
@@ -85,7 +86,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionConnector {
     private static final String TAG = "SessionConnector";
@@ -100,8 +101,6 @@ public class SessionConnector {
         }
     }
 
-    private AsyncTasksHolder mTaskHolder = new AsyncTasksHolder();
-
     // Access to mSession must be synchronized, since some functions like
     // sessionAvailable() are called from other threads than main. Use extra final
     // field since mSession can change during the lifetime of SessionConnector
@@ -109,14 +108,19 @@ public class SessionConnector {
     private final Boolean mSessionGuard = false;
     private Session mSession = null;
 
-    private PushToken mPushToken = null;
+    @Nullable private PushToken mPushToken = null;
     private Registration mRegistration;
 
-    private Map<Class, LinkedList<ListenerObserver>> mListenerObservers;
-    private Map<Class, LinkedList<EventObserver>> mEventObservers;
+    // thread safe implementation
+    final private AsyncTasksHolder mTaskHolder = new AsyncTasksHolder();
+
+    // thread safe implementation
+    final private ConcurrentHashMap<Class, LinkedList<ListenerObserver>> mListenerObservers;
+    // only used on main thread
+    final private HashMap<Class, LinkedList<EventObserver>> mEventObservers;
 
     private SessionConnector() {
-        mListenerObservers = new HashMap<>(10);
+        mListenerObservers = new ConcurrentHashMap<>(10);
         mListenerObservers.put(ClientCheckCredentialsListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(ClientCreateSessionListenerObserver.class, new LinkedList<ListenerObserver>());
         mListenerObservers.put(ClientGenerateKeysListenerObserver.class, new LinkedList<ListenerObserver>());
@@ -207,20 +211,16 @@ public class SessionConnector {
                     storeCredentials(callingActivity, credentials);
                     createSession(callingActivity, credentials);
                 } else {
-                    synchronized (mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
-                        for (ListenerObserver observer : mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
-                            ((ClientCheckCredentialsListenerObserver) observer).loginFailed();
-                        }
+                    for (ListenerObserver observer : mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
+                        ((ClientCheckCredentialsListenerObserver) observer).loginFailed();
                     }
                 }
             }
 
             @Override
             public void error(Address address, NetworkError error) {
-                synchronized (mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
-                        ((ClientCheckCredentialsListenerObserver) observer).error(error);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
+                    ((ClientCheckCredentialsListenerObserver) observer).error(error);
                 }
             }
         }));
@@ -247,70 +247,48 @@ public class SessionConnector {
                             ArrayList<Event> events = mSession.notify(event);
                             for (Event e : events) {
                                 if (e.getEvent() == EventType.MESSAGEADDED) {
-                                    synchronized (mEventObservers.get(MessageAddedEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(MessageAddedEventObserver.class)) {
-                                            ((MessageAddedEventObserver) o).messageAdded(e.getConversationId(), e.getMessageId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(MessageAddedEventObserver.class)) {
+                                        ((MessageAddedEventObserver) o).messageAdded(e.getConversationId(), e.getMessageId());
                                     }
                                 } else if (e.getEvent() == EventType.MESSAGEREMOVED) {
-                                    synchronized (mEventObservers.get(MessageRemovedEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(MessageRemovedEventObserver.class)) {
-                                            ((MessageRemovedEventObserver) o).messageRemoved(e.getConversationId(), e.getMessageId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(MessageRemovedEventObserver.class)) {
+                                        ((MessageRemovedEventObserver) o).messageRemoved(e.getConversationId(), e.getMessageId());
                                     }
                                 } else if (e.getEvent() == EventType.MESSAGESTATECHANGED) {
-                                    synchronized (mEventObservers.get(MessageStateEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(MessageStateEventObserver.class)) {
-                                            ((MessageStateEventObserver) o).messageStateChanged(e.getConversationId(), e.getMessageId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(MessageStateEventObserver.class)) {
+                                        ((MessageStateEventObserver) o).messageStateChanged(e.getConversationId(), e.getMessageId());
                                     }
                                 } else if (e.getEvent() == EventType.MESSAGEATTACHMENTSDOWNLOADEDCHANGED) {
-                                    synchronized (mEventObservers.get(MessageAttachmentsDownloadedChangedEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(MessageAttachmentsDownloadedChangedEventObserver.class)) {
-                                            ((MessageAttachmentsDownloadedChangedEventObserver) o).messageAttachmentsDownloadedChanged(e.getMessageId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(MessageAttachmentsDownloadedChangedEventObserver.class)) {
+                                        ((MessageAttachmentsDownloadedChangedEventObserver) o).messageAttachmentsDownloadedChanged(e.getMessageId());
                                     }
                                 } else if (e.getEvent() == EventType.CONVERSATIONADDED) {
-                                    synchronized (mEventObservers.get(ConversationsEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(ConversationsEventObserver.class)) {
-                                            ((ConversationsEventObserver) o).conversationAdded(e.getConversationId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(ConversationsEventObserver.class)) {
+                                        ((ConversationsEventObserver) o).conversationAdded(e.getConversationId());
                                     }
                                 } else if (e.getEvent() == EventType.CONVERSATIONREMOVED) {
-                                    synchronized (mEventObservers.get(ConversationsEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(ConversationsEventObserver.class)) {
-                                            ((ConversationsEventObserver) o).conversationRemoved(e.getConversationId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(ConversationsEventObserver.class)) {
+                                        ((ConversationsEventObserver) o).conversationRemoved(e.getConversationId());
                                     }
                                 } else if (e.getEvent() == EventType.CONVERSATIONCHANGED) {
-                                    synchronized (mEventObservers.get(ConversationsEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(ConversationsEventObserver.class)) {
-                                            ((ConversationsEventObserver) o).conversationChanged(e.getConversationId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(ConversationsEventObserver.class)) {
+                                        ((ConversationsEventObserver) o).conversationChanged(e.getConversationId());
                                     }
                                 } else if (e.getEvent() == EventType.DRAFTSTATECHANGED) {
-                                    synchronized (mEventObservers.get(DraftEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(DraftEventObserver.class)) {
-                                            ((DraftEventObserver) o).draftStateChanged(e.getConversationId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(DraftEventObserver.class)) {
+                                        ((DraftEventObserver) o).draftStateChanged(e.getConversationId());
                                     }
                                 } else if (e.getEvent() == EventType.DRAFTTEXTCHANGED) {
-                                    synchronized (mEventObservers.get(DraftEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(DraftEventObserver.class)) {
-                                            ((DraftEventObserver) o).draftTextChanged(e.getConversationId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(DraftEventObserver.class)) {
+                                        ((DraftEventObserver) o).draftTextChanged(e.getConversationId());
                                     }
                                 } else if (e.getEvent() == EventType.DRAFTATTACHMENTADDED) {
-                                    synchronized (mEventObservers.get(DraftAttachmentAddedEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(DraftAttachmentAddedEventObserver.class)) {
-                                            ((DraftAttachmentAddedEventObserver) o).draftAttachmentAdded(e.getConversationId(), e.getAttachmentId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(DraftAttachmentAddedEventObserver.class)) {
+                                        ((DraftAttachmentAddedEventObserver) o).draftAttachmentAdded(e.getConversationId(), e.getAttachmentId());
                                     }
                                 } else if (e.getEvent() == EventType.DRAFTATTACHMENTREMOVED) {
-                                    synchronized (mEventObservers.get(DraftAttachmentRemovedEventObserver.class)) {
-                                        for (EventObserver o : mEventObservers.get(DraftAttachmentRemovedEventObserver.class)) {
-                                            ((DraftAttachmentRemovedEventObserver) o).draftAttachmentRemoved(e.getConversationId(), e.getAttachmentId());
-                                        }
+                                    for (EventObserver o : mEventObservers.get(DraftAttachmentRemovedEventObserver.class)) {
+                                        ((DraftAttachmentRemovedEventObserver) o).draftAttachmentRemoved(e.getConversationId(), e.getAttachmentId());
                                     }
                                 } else {
                                     Log.w(TAG, "Unhandled event type: " + e.getEvent().toString());
@@ -326,10 +304,8 @@ public class SessionConnector {
             @AnyThread
             @Override
             public void migrationStarted(Address address) {
-                synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                        ((ClientCreateSessionListenerObserver) observer).migrationStarted();
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
+                    ((ClientCreateSessionListenerObserver) observer).migrationStarted();
                 }
             }
 
@@ -350,10 +326,8 @@ public class SessionConnector {
 
                         migrateUserSettings(callingActivity);
 
-                        synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                            for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                                ((ClientCreateSessionListenerObserver) observer).finished();
-                            }
+                        for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
+                            ((ClientCreateSessionListenerObserver) observer).finished();
                         }
                     }
                 });
@@ -364,10 +338,8 @@ public class SessionConnector {
             public void error(Address address, LocalError error) {
                 Log.d(TAG, address.toString() + " " + error.toString());
 
-                synchronized (mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
-                        ((ClientCreateSessionListenerObserver) observer).error(error);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
+                    ((ClientCreateSessionListenerObserver) observer).error(error);
                 }
             }
         });
@@ -593,6 +565,29 @@ public class SessionConnector {
         }
     }
 
+    @AnyThread
+    public void runWithLockedSession(@NonNull final LockedSessionCallback lockedSessionCallback) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            lockedSessionCallback.run(mSession);
+        }
+    }
+
+    @MainThread
+    public List<String> getKnownAddressesAsString() {
+        AddressSet addresses = new AddressSet();
+        List<Long> conversationIds = getAllConversationIds(false);
+        for (long conversationId : conversationIds) {
+            addresses.addAll(getParticipantAddresses(conversationId));
+        }
+
+        List<String> out = new ArrayList<>(addresses.size());
+        for (Address address : addresses.sorted()) {
+            out.add(address.toString());
+        }
+        return out;
+    }
+
     public interface GetAccountInfoCallback {
         void onDone(@Nullable final AccountInfo accountInfo);
     }
@@ -618,47 +613,37 @@ public class SessionConnector {
     private class ConnectorSyncerListener extends SyncerListener {
         @Override
         public void started() {
-            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
-                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
-                    ((SyncerListenerObserver) observer).started();
-                }
+            for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                ((SyncerListenerObserver) observer).started();
             }
         }
 
         @Override
         public void draftPartTooBig(long convId, DraftPart part, long currentSize, long maxSize) {
-            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
-                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
-                    //TODO generalize to pass on part
-                    ((SyncerListenerObserver) observer).draftAttachmentsTooBig(convId);
-                }
+            for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                //TODO generalize to pass on part
+                ((SyncerListenerObserver) observer).draftAttachmentsTooBig(convId);
             }
         }
 
         @Override
         public void progressed(SyncProgress progress) {
-            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
-                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
-                    ((SyncerListenerObserver) observer).progressed(progress);
-                }
+            for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                ((SyncerListenerObserver) observer).progressed(progress);
             }
         }
 
         @Override
         public void finished() {
-            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
-                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
-                    ((SyncerListenerObserver) observer).finished();
-                }
+            for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                ((SyncerListenerObserver) observer).finished();
             }
         }
 
         @Override
         public void error(NetworkError error) {
-            synchronized (mListenerObservers.get(SyncerListenerObserver.class)) {
-                for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
-                    ((SyncerListenerObserver) observer).error(error);
-                }
+            for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
+                ((SyncerListenerObserver) observer).error(error);
             }
         }
     }
@@ -673,7 +658,7 @@ public class SessionConnector {
 
             ArrayList<Long> allConversationIds = mSession.conversations().all();
             if (sorted) {
-                KulloComparator comparator = new ConversationsComparatorDsc(mSession);
+                CountingComparator comparator = new ConversationsComparatorDsc(mSession);
                 KulloSort.sort(allConversationIds, comparator);
                 Log.d(TAG, "Done sorting conversations. " + comparator.getStats());
             }
@@ -715,15 +700,22 @@ public class SessionConnector {
         RuntimeAssertion.require(mSession != null);
 
         ConversationData out = new ConversationData();
-        out.mParticipants = getParticipantAddresses(conversationId);
+        out.participants = getParticipantAddresses(conversationId);
 
-        for (Address address : out.mParticipants.sorted()) {
+        for (Address address : out.participants.sorted()) {
             long latestMessageId = mSession.messages().latestForSender(address);
-            String participantName = latestMessageId != -1 ? mSession.senders().name(latestMessageId) : "";
+            final String participantName = latestMessageId != -1
+                ? mSession.senders().name(latestMessageId) : "";
+            final String participantOrganization = latestMessageId != -1
+                ? mSession.senders().organization(latestMessageId) : "";
+
+            // Name and Organization
+            out.participantsName.put(address.toString(), participantName);
+            out.participantsOrganization.put(address.toString(), participantOrganization);
 
             // Title
             String participantTitle = !participantName.isEmpty() ? participantName : address.toString();
-            out.mParticipantsTitles.add(participantTitle);
+            out.participantsTitle.add(participantTitle);
 
             // Avatar
             Bitmap participantAvatar = null;
@@ -734,14 +726,14 @@ public class SessionConnector {
                 String initials = KulloUtils.generateInitialsForAddressAndName(participantName);
                 participantAvatar = AvatarUtils.getSenderThumbnailFromInitials(context, initials);
             }
-            out.mParticipantsAvatars.add(participantAvatar);
+            out.participantsAvatar.put(address.toString(), participantAvatar);
         }
 
         // Title
-        out.mTitle = StringUtils.join(out.mParticipantsTitles, ", ");
+        out.title = StringUtils.join(out.participantsTitle, ", ");
 
         // Counts
-        out.mCountUnread = getConversationUnreadCount(conversationId);
+        out.countUnread = getConversationUnreadCount(conversationId);
 
         return out;
     }
@@ -852,10 +844,8 @@ public class SessionConnector {
 
             @Override
             public void finished(long convId, long attId, String path) {
-                synchronized (mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
-                        ((DraftAttachmentsAddListenerObserver) observer).finished(convId, attId, path);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
+                    ((DraftAttachmentsAddListenerObserver) observer).finished(convId, attId, path);
                 }
 
                 if (doneCallback != null) doneCallback.run();
@@ -863,10 +853,8 @@ public class SessionConnector {
 
             @Override
             public void error(long convId, String path, LocalError error) {
-                synchronized (mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
-                        ((DraftAttachmentsAddListenerObserver) observer).error(error.toString());
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
+                    ((DraftAttachmentsAddListenerObserver) observer).error(error.toString());
                 }
             }
         });
@@ -922,19 +910,15 @@ public class SessionConnector {
         mTaskHolder.add(mSession.draftAttachments().saveToAsync(conversationId, attachmentId, path, new DraftAttachmentsSaveToListener() {
             @Override
             public void finished(long convId, long attId, String path) {
-                synchronized (mListenerObservers.get(DraftAttachmentsSaveListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsSaveListenerObserver.class)) {
-                        ((DraftAttachmentsSaveListenerObserver) observer).finished(convId, attId, path);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsSaveListenerObserver.class)) {
+                    ((DraftAttachmentsSaveListenerObserver) observer).finished(convId, attId, path);
                 }
             }
 
             @Override
             public void error(long convId, long attId, String path, LocalError error) {
-                synchronized (mListenerObservers.get(DraftAttachmentsSaveListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsSaveListenerObserver.class)) {
-                        ((DraftAttachmentsSaveListenerObserver) observer).error(convId, attId, path, error.toString());
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsSaveListenerObserver.class)) {
+                    ((DraftAttachmentsSaveListenerObserver) observer).error(convId, attId, path, error.toString());
                 }
             }
         }));
@@ -972,10 +956,10 @@ public class SessionConnector {
 
     @NonNull
     @MainThread
-    public String getCurrentUserAddressAsString() {
+    public Address getCurrentUserAddress() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            return mSession.userSettings().address().toString();
+            return mSession.userSettings().address();
         }
     }
 
@@ -1121,7 +1105,7 @@ public class SessionConnector {
     public String getMessageTextAsHtml(long messageId) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            return mSession.messages().textAsHtml(messageId, false);
+            return mSession.messages().textAsHtml(messageId, true);
         }
     }
 
@@ -1192,11 +1176,14 @@ public class SessionConnector {
         }
     }
 
+    @NonNull
     @MainThread
     public ArrayList<Long> getMessageAttachmentsIds(long messageId) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            return mSession.messageAttachments().allForMessage(messageId);
+            final ArrayList<Long> out = mSession.messageAttachments().allForMessage(messageId);
+            RuntimeAssertion.require(out != null);
+            return out;
         }
     }
 
@@ -1232,28 +1219,54 @@ public class SessionConnector {
         }
     }
 
+    public interface GetMessageAttachmentCallback {
+        void run(byte[] data);
+    }
+
+    @MainThread
+    public AsyncTask getMessageAttachment(long messageId, long attachmentId, final GetMessageAttachmentCallback callback) {
+        final AsyncTask task;
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            task = mSession.messageAttachments().contentAsync(messageId, attachmentId, new MessageAttachmentsContentListener() {
+                @Override
+                public void finished(long msgId, long attId, byte[] content) {
+                    int contentLegth = content.length;
+                    callback.run(content);
+                }
+            });
+        }
+        mTaskHolder.add(task);
+        return task;
+    }
+
     @MainThread
     public void saveMessageAttachment(long messageId, long attachmentId, String path) {
         RuntimeAssertion.require(mSession != null);
         mTaskHolder.add(mSession.messageAttachments().saveToAsync(messageId, attachmentId, path, new MessageAttachmentsSaveToListener() {
             @Override
             public void finished(long msgId, long attId, String path) {
-                synchronized (mListenerObservers.get(MessageAttachmentsSaveListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(MessageAttachmentsSaveListenerObserver.class)) {
-                        ((MessageAttachmentsSaveListenerObserver) observer).finished(msgId, attId, path);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(MessageAttachmentsSaveListenerObserver.class)) {
+                    ((MessageAttachmentsSaveListenerObserver) observer).finished(msgId, attId, path);
                 }
             }
 
             @Override
             public void error(long msgId, long attId, String path, LocalError error) {
-                synchronized (mListenerObservers.get(MessageAttachmentsSaveListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(MessageAttachmentsSaveListenerObserver.class)) {
-                        ((MessageAttachmentsSaveListenerObserver) observer).error(msgId, attId, path, error.toString());
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(MessageAttachmentsSaveListenerObserver.class)) {
+                    ((MessageAttachmentsSaveListenerObserver) observer).error(msgId, attId, path, error.toString());
                 }
             }
         }));
+    }
+
+    @NonNull
+    @MainThread
+    public Address getSenderAddress(long messageId) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+            return mSession.senders().address(messageId);
+        }
     }
 
     @NonNull
@@ -1307,20 +1320,17 @@ public class SessionConnector {
         mTaskHolder.add(client.generateKeysAsync(new ClientGenerateKeysListener() {
             @Override
             public void progress(byte progress) {
-                synchronized (mListenerObservers.get(ClientGenerateKeysListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(ClientGenerateKeysListenerObserver.class)) {
-                        ((ClientGenerateKeysListenerObserver) observer).progress(progress);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(ClientGenerateKeysListenerObserver.class)) {
+                    ((ClientGenerateKeysListenerObserver) observer).progress(progress);
                 }
             }
 
             @Override
             public void finished(Registration registration) {
                 mRegistration = registration;
-                synchronized (mListenerObservers.get(ClientGenerateKeysListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(ClientGenerateKeysListenerObserver.class)) {
-                        ((ClientGenerateKeysListenerObserver) observer).finished();
-                    }
+
+                for (ListenerObserver observer : mListenerObservers.get(ClientGenerateKeysListenerObserver.class)) {
+                    ((ClientGenerateKeysListenerObserver) observer).finished();
                 }
             }
         }));
@@ -1341,37 +1351,29 @@ public class SessionConnector {
                 new RegistrationRegisterAccountListener() {
             @Override
             public void challengeNeeded(Address address, Challenge challenge) {
-                synchronized (mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                        ((RegistrationRegisterAccountListenerObserver) observer).challengeNeeded(addressString, challenge);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
+                    ((RegistrationRegisterAccountListenerObserver) observer).challengeNeeded(addressString, challenge);
                 }
             }
 
             @Override
             public void addressNotAvailable(Address address, AddressNotAvailableReason reason) {
-                synchronized (mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                        ((RegistrationRegisterAccountListenerObserver) observer).addressNotAvailable(addressString, reason);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
+                    ((RegistrationRegisterAccountListenerObserver) observer).addressNotAvailable(addressString, reason);
                 }
             }
 
             @Override
             public void finished(Address address, MasterKey masterKey) {
-                synchronized (mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                        ((RegistrationRegisterAccountListenerObserver) observer).finished(address, masterKey);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
+                    ((RegistrationRegisterAccountListenerObserver) observer).finished(address, masterKey);
                 }
             }
 
             @Override
             public void error(Address address, NetworkError error) {
-                synchronized (mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                    for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
-                        ((RegistrationRegisterAccountListenerObserver) observer).error(address, error);
-                    }
+                for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
+                    ((RegistrationRegisterAccountListenerObserver) observer).error(address, error);
                 }
             }
         }));
@@ -1386,6 +1388,8 @@ public class SessionConnector {
 
         // Token changed? unregister old one
         if (mPushToken != null) {
+            // Caution: Do not trigger ANR
+            // https://developer.android.com/training/articles/perf-anr.html#anr
             if (!tryUnregisterPushToken(3000)) {
                 Log.w(TAG, "Could not unregister old push token.");
             }
@@ -1424,6 +1428,44 @@ public class SessionConnector {
         }
     }
 
+    public interface UnregisterPushTokenCallback {
+        @MainThread
+        void onDone(boolean success);
+    }
+
+    @MainThread
+    public void tryUnregisterPushTokenAsync(final int timeoutMs, @NonNull final UnregisterPushTokenCallback callback) {
+        if (mPushToken == null) {
+            callback.onDone(true);
+        } else {
+            final AsyncTask unregisterPushTokenTask;
+            synchronized (mSessionGuard) {
+                RuntimeAssertion.require(mSession != null);
+                unregisterPushTokenTask = mSession.unregisterPushToken(mPushToken);
+            }
+
+            new android.os.AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... params) {
+                    unregisterPushTokenTask.waitForMs(timeoutMs);
+                    return null;
+                }
+
+                @Override
+                protected void onPostExecute(Void aVoid) {
+                    if (unregisterPushTokenTask.isDone()) {
+                        mPushToken = null;
+                        callback.onDone(true);
+                    } else {
+                        unregisterPushTokenTask.cancel(); // give up
+                        mPushToken = null;
+                        callback.onDone(false);
+                    }
+                }
+            }.execute();
+        }
+    }
+
     public boolean hasPushToken() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
@@ -1434,43 +1476,39 @@ public class SessionConnector {
 
     // Observers
 
-    public void addListenerObserver(Class type, @NonNull ListenerObserver observer) {
-        synchronized (mListenerObservers.get(type)) {
-            mListenerObservers.get(type).add(observer);
-        }
+    @AnyThread
+    public void addListenerObserver(@NonNull Class type, @NonNull ListenerObserver observer) {
+        mListenerObservers.get(type).add(observer);
     }
 
-    public void removeListenerObserver(Class type, @NonNull ListenerObserver observerToRemove) {
-        synchronized (mListenerObservers.get(type)) {
-            Iterator<ListenerObserver> itr = mListenerObservers.get(type).iterator();
-            while (itr.hasNext()) {
-                ListenerObserver o = itr.next();
+    @AnyThread
+    public void removeListenerObserver(@NonNull Class type, @NonNull ListenerObserver observerToRemove) {
+        final Iterator<ListenerObserver> itr = mListenerObservers.get(type).iterator();
+        while (itr.hasNext()) {
+            ListenerObserver o = itr.next();
 
-                if (o.equals(observerToRemove)) {
-                    itr.remove();
-                    return;
-                }
+            if (o.equals(observerToRemove)) {
+                itr.remove();
+                return;
             }
         }
         Log.w(TAG, "Listener observer to be removed not found for type: '" + type.toString() + "'");
     }
 
-    public void addEventObserver(Class type, EventObserver observer) {
-        synchronized (mEventObservers.get(type)) {
-            mEventObservers.get(type).add(observer);
-        }
+    @MainThread
+    public void addEventObserver(@NonNull Class type, @NonNull EventObserver observer) {
+        mEventObservers.get(type).add(observer);
     }
 
-    public void removeEventObserver(Class type, EventObserver observerToRemove) {
-        synchronized (mEventObservers.get(type)) {
-            Iterator<EventObserver> itr = mEventObservers.get(type).iterator();
-            while (itr.hasNext()) {
-                EventObserver o = itr.next();
+    @MainThread
+    public void removeEventObserver(@NonNull Class type, @NonNull EventObserver observerToRemove) {
+        final Iterator<EventObserver> itr = mEventObservers.get(type).iterator();
+        while (itr.hasNext()) {
+            EventObserver o = itr.next();
 
-                if (o.equals(observerToRemove)) {
-                    itr.remove();
-                    return;
-                }
+            if (o.equals(observerToRemove)) {
+                itr.remove();
+                return;
             }
         }
         Log.w(TAG, "Event observer to be removed not found for type: '" + type.toString() + "'");

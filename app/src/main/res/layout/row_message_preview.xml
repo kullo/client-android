@@ -35,7 +35,7 @@
                 >
 
                 <TextView
-                    android:id="@+id/sender_name"
+                    android:id="@+id/sender_name_organization"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Sender Name"
@@ -49,7 +49,7 @@
                     android:layout_height="wrap_content"
                     android:text="today"
                     android:layout_alignParentRight="true"
-                    android:layout_alignBottom="@+id/sender_name"
+                    android:layout_alignBottom="@+id/sender_name_organization"
                     android:textSize="12sp"
                     android:textColor="@color/md_additions_secondary_text"
                     />

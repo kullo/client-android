@@ -25,8 +25,13 @@ ellipsis (…)
     <string name="kullo_address">Kullo address</string>
     <string name="kullo_masterkey">MasterKey</string>
     <string name="kullo_domain" translatable="false">#kullo.net</string>
+    <string name="name">Name</string>
+    <string name="organization">Organization</string>
+    <string name="organization_opt">Organization (optional)</string>
+    <string name="footer">Footer</string>
     <!-- use \u0020… in German -->
     <string name="text_view_ellipsis">…</string>
+    <string name="action_toggle_message_size">Inflate</string>
 
     <!-- general actions -->
     <string name="action_delete">Delete</string>
@@ -61,10 +66,12 @@ ellipsis (…)
     <string name="create_session_migrating">Optimizing inbox …</string>
 
     <!-- logout -->
+    <string name="leave_inbox_confirmation_title">Leave inbox?</string>
+    <string name="leave_inbox_confirmation_description">You will not receive push notifications for %s anymore.</string>
+    <string name="leave_inbox_confirmation_positive">@android:string/ok</string>
+    <string name="leave_inbox_confirmation_negative">Cancel</string>
     <string name="leaving_inbox_title">Leaving inbox…</string>
     <string name="leaving_inbox_description">Switching back to welcome screen</string>
-    <string name="logging_out_title">Logging out…</string>
-    <string name="logging_out_description">Deleting local messages and user settings</string>
 
     <!-- registration -->
     <string name="generate_keys_title">Generating keys%1$s</string>
@@ -82,9 +89,9 @@ ellipsis (…)
 
     <!-- nav drawer -->
     <string name="menu_conversations">Inbox</string>
-    <string name="menu_settings">Settings</string>
+    <string name="menu_profile_settings">Profile</string>
     <string name="menu_feedback">Feedback</string>
-    <string name="menu_account">Account</string>
+    <string name="menu_masterkey">MasterKey</string>
     <string name="menu_about">About</string>
     <string name="menu_leave_inbox">Leave inbox</string>
     <string name="open_drawer">Open menu</string>
@@ -96,26 +103,35 @@ ellipsis (…)
     <string name="account_overlay_plan_label">Plan</string>
 
     <!-- conversations list -->
-    <string name="footer">Footer</string>
-    <string name="action_toggle_message_size">Inflate</string>
     <string name="empty_conversation_title">New</string>
-    <string name="download_attachments">Download</string>
     <string name="conversations_empty_state_text">Right now, there are no conversations in this inbox. Synchronize to get messages from the inbox server or start a new conversation.</string>
     <string name="conversation_options">Edit conversation</string>
-    <string name="title_n_selected">%1$d selected</string>
-    <string name="conversations_confirm_delete_conversations_title">Delete conversations</string>
-    <string name="conversations_confirm_delete_conversations_body">Delete %1$d conversations with %2$d messages in total?</string>
-    <string name="conversations_toast_n_empty_deleted">Deleting %1$d empty conversations</string>
+    <string name="actionmode_title_n_selected">%1$d selected</string>
+    <string name="conversations_confirm_delete_title_1">Delete conversation</string>
+    <string name="conversations_confirm_delete_title_n">Delete conversations</string>
+    <string name="conversations_confirm_delete_body_part1_1">Delete one conversation</string>
+    <string name="conversations_confirm_delete_body_part1_n">Delete %d conversations</string>
+    <string name="conversations_confirm_delete_body_part2_1">with one message in total?</string>
+    <string name="conversations_confirm_delete_body_part2_n">with %d messages in total?</string>
+    <string name="conversations_toast_deleting_empty_1">Deleting one empty conversation</string>
+    <string name="conversations_toast_deleting_empty_n">Deleting %d empty conversations</string>
 
     <!-- messages list -->
+    <string name="conversation_info_teaser_conversation_with">Conversation with %s</string>
+    <string name="conversation_info_teaser_with_x_participants">%d participants</string>
     <string name="message_text_placeholder" translatable="false">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</string>
     <string name="message_options">Edit message</string>
     <string name="empty_messages_list">There are no messages in this conversation.</string>
+
+    <!-- conversation info -->
+    <string name="conversation_info_title">Conversation info</string>
+    <string name="action_start_conversation_with">Start conversation with</string>
 
     <!-- single message -->
     <string name="action_write">Write</string>
     <string name="singlemessage_file_save_to_canceled">Save action canceled</string>
     <string name="singlemessage_file_save_failed">Save action failed</string>
+    <string name="singlemessage_save_not_available">Saving is only available on Android 4.4 and newer. Sorry!</string>
 
     <!-- message attachments -->
     <string name="attachments_cannot_open_externaldir_title">Cannot open external storage</string>
@@ -133,9 +149,6 @@ ellipsis (…)
     <string name="settings_remove_avatar">Clear avatar</string>
     <string name="settings_save_confirmation">Settings saved</string>
     <string name="settings_name_empty_error">Name must not be empty</string>
-    <string name="name">Name</string>
-    <string name="organization">Organization</string>
-    <string name="organization_opt">Organization (optional)</string>
     <string name="select_image_source">Select image source</string>
     <string name="capture_image_canceled">Image capture canceled</string>
     <string name="action_rotate_image">Rotate</string>
@@ -169,16 +182,17 @@ ellipsis (…)
     <string name="impressum_content_full">Provider\nKullo GmbH\nKranzplatz 5–6\n65183 Wiesbaden\n\nRepresentation\nVertretungsberechtigte Geschäftsführer:\nSimon Warta, Daniel Seither\n\nContact\n0175 1930541\nsimon@kullo.net\nsimon#kullo.net\n\nCommercial register\nRegistergericht: Amtsgericht Wiesbaden\nRegisternummer: HRB 27626\n\nVAT identification number\nDE294537976</string>
 
     <!-- start conversation -->
-    <string name="new_conversation">New Conversation</string>
-    <string name="add_participant">Add</string>
-    <string name="recipients">Recipients</string>
-    <string name="address_not_exist">Address does not exist</string>
-    <string name="address_check_failed_error_header">Address verification failed</string>
-    <string name="address_check_failed_connection_error">Address could not be verified. Are you online? Is the address correct?</string>
-    <string name="sender_is_recipient">You cannot write a message to yourself</string>
-    <string name="progress_new_participant">Address validation</string>
-    <string name="create_conversation_failed">Could not create conversation</string>
-    <string name="participant_needed">At least one participant is needed</string>
+    <string name="start_conversation_new_conversation">New Conversation</string>
+    <string name="start_conversation_add_participant">Add</string>
+    <string name="start_conversation_recipients">Recipients</string>
+    <string name="start_conversation_address_not_exist">Address does not exist</string>
+    <string name="start_conversation_address_check_failed_error_header">Address verification failed</string>
+    <string name="start_conversation_address_check_failed_connection_error">Address could not be verified. Are you online? Is the address correct?</string>
+    <string name="start_conversation_sender_is_recipient">You cannot write a message to yourself</string>
+    <string name="start_conversation_progress_new_participant">Address validation</string>
+    <string name="start_conversation_create_conversation_failed">Could not create conversation</string>
+    <string name="start_conversation_participant_needed">At least one participant is needed</string>
+    <string name="start_conversation_action_remove">Remove</string>
 
     <!-- compose -->
     <string name="activity_title_compose">Write</string>
@@ -215,4 +229,10 @@ ellipsis (…)
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>
     <string name="notification_body_new_message">You received a new Kullo message</string>
+
+    <!-- address dialog -->
+    <string name="address_dialog_option_write">Write message</string>
+    <string name="address_dialog_option_add">Add to new conversation</string>
+    <string name="address_dialog_option_copy">Copy Kullo address</string>
+    <string name="address_dialog_confirmation_copied">Copied %s</string>
 </resources>

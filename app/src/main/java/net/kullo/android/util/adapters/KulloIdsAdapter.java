@@ -1,5 +1,5 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
-package net.kullo.android.kulloapi;
+package net.kullo.android.util.adapters;
 
 import android.support.v7.widget.RecyclerView;
 
@@ -8,7 +8,8 @@ import net.kullo.javautils.RuntimeAssertion;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * An adapter that stores a list of IDs.
@@ -18,9 +19,12 @@ import java.util.List;
  * @param <VH>
  */
 public abstract class KulloIdsAdapter<VH extends RecyclerView.ViewHolder>
-        extends RecyclerView.Adapter<VH> {
+        extends RecyclerView.Adapter<VH>
+    implements ReadableAdapter<Long>, SelectableAdapter<Long> {
+    @SuppressWarnings("unused") private static final String TAG = "KulloIdsAdapter";
+
     private ArrayList<Long> mItems = new ArrayList<>();
-    private ArrayList<Long> mSelectedItems = new ArrayList<>();
+    private Set<Long> mSelectedItems = new HashSet<>();
 
     public KulloIdsAdapter() {
         setHasStableIds(true);
@@ -53,8 +57,14 @@ public abstract class KulloIdsAdapter<VH extends RecyclerView.ViewHolder>
         notifyDataSetChanged();
     }
 
+    @Override
     public Long getItem(int position) {
         return mItems.get(position);
+    }
+
+    @Override
+    public Collection<Long> getItems() {
+        return mItems;
     }
 
     public void append(Long newItem) {
@@ -76,12 +86,7 @@ public abstract class KulloIdsAdapter<VH extends RecyclerView.ViewHolder>
         }
     }
 
-    /**
-     * Looks for the position of a specific item. Returns -1 if not found.
-     *
-     * @param item an item be be looked for
-     * @return the position
-     */
+    @Override
     public int find(Long item) {
         return mItems.indexOf(item);
     }
@@ -97,6 +102,7 @@ public abstract class KulloIdsAdapter<VH extends RecyclerView.ViewHolder>
         return mItems.size();
     }
 
+    @Override
     public void toggleSelectedItem(Long item) {
         if (mSelectedItems.contains(item)) {
             mSelectedItems.remove(item);
@@ -108,32 +114,67 @@ public abstract class KulloIdsAdapter<VH extends RecyclerView.ViewHolder>
         notifyItemChanged(pos);
     }
 
+    @Override
     public boolean isSelected(Long item) {
         return mSelectedItems.contains(item);
     }
 
+    @Override
     public int getSelectedItemsCount() {
         return mSelectedItems.size();
     }
 
+    @Override
     public boolean isSelectionActive() {
         return mSelectedItems.size() > 0;
     }
 
+    @Override
     public void clearSelectedItems() {
         for (Long item : mSelectedItems) {
-            int pos = mItems.indexOf(item);
+            int pos = find(item);
             notifyItemChanged(pos);
         }
         mSelectedItems.clear();
     }
 
-    public List<Long> getSelectedItems() {
+    @Override
+    public Set<Long> getSelectedItems() {
         return mSelectedItems;
     }
 
-    public void notifyDataForIdChanged(long id) {
-        notifyItemChanged(find(id));
-    }
+    /**
+     * Tries to handle an element change. When the position of the given id does not change,
+     * this method can handle it. Otherwise false is returned and the adapter must be refilled.
+     */
+    public boolean tryHandleElementChanged(long id, Comparator<Long> comparator) {
+        boolean orderOfElementsChanged = false;
 
+        // Let A <= B <= C be elements and assume B changed. Order has changed when
+        // A > B or B > C
+
+        @SuppressWarnings("UnnecessaryLocalVariable")
+        long b = id;
+
+        int bPos = find(b);
+        int aPos = bPos-1;
+        int cPos = bPos+1;
+
+        if (aPos >= 0) {
+            long a = mItems.get(aPos);
+            orderOfElementsChanged = comparator.compare(a, b) > 0; // A > B
+        }
+
+        if (!orderOfElementsChanged && cPos < mItems.size()) {
+            long c = mItems.get(cPos);
+            orderOfElementsChanged = comparator.compare(b, c) > 0; // B > C
+        }
+
+        if (orderOfElementsChanged) {
+            return false;
+        } else {
+            notifyItemChanged(bPos);
+            return true;
+        }
+    }
 }

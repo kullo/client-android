@@ -10,10 +10,12 @@ import android.view.ViewGroup;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.ConversationData;
-import net.kullo.android.kulloapi.KulloIdsAdapter;
+import net.kullo.android.util.adapters.KulloIdsAdapter;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.javautils.RuntimeAssertion;
+
+import java.util.ArrayList;
 
 public class ShareTargetsAdapter extends KulloIdsAdapter<ShareTargetViewHolder> {
     public static final String TAG = "ShareTargetsAdapter";
@@ -38,10 +40,12 @@ public class ShareTargetsAdapter extends KulloIdsAdapter<ShareTargetViewHolder> 
         final long conversationId = getItem(position);
         ConversationData data = SessionConnector.get().getConversationData(mBaseActivity, conversationId);
 
-        holder.mConversationName.setText(data.mTitle);
+        holder.mConversationName.setText(data.title);
 
         int pixelSize = mBaseActivity.getResources().getDimensionPixelSize(R.dimen.md_additions_list_avatar_size);
-        Bitmap combinedAvatar = AvatarUtils.combine(data.mParticipantsAvatars, pixelSize);
+        Bitmap combinedAvatar = AvatarUtils.combine(
+            new ArrayList<>(data.participantsAvatar.values()),
+            pixelSize);
         RuntimeAssertion.require(combinedAvatar != null);
         holder.mAvatarImage.setImageBitmap(combinedAvatar);
 

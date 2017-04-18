@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.support.annotation.NonNull;
 
 import net.kullo.android.R;
-import net.kullo.android.screens.SettingsActivity;
+import net.kullo.android.screens.ProfileSettingsActivity;
 
 import io.github.dialogsforandroid.DialogAction;
 import io.github.dialogsforandroid.MaterialDialog;
@@ -21,7 +21,7 @@ public class CommonDialogs {
                     .onPositive(new MaterialDialog.SingleButtonCallback() {
                         @Override
                         public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction dialogAction) {
-                            callingActivity.startActivity(new Intent(callingActivity, SettingsActivity.class));
+                            callingActivity.startActivity(new Intent(callingActivity, ProfileSettingsActivity.class));
                         }
                     })
                     .onNegative(new MaterialDialog.SingleButtonCallback() {

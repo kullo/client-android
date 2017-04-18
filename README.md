@@ -9,7 +9,7 @@ repositories can be found here:
 
 Check files from `adb shell`:
 
-    run-as net.kullo.android ls /data/data/net.kullo.android
+    run-as net.kullo.android ls -l /data/data/net.kullo.android
     run-as net.kullo.android ls -l /data/data/net.kullo.android/shared_prefs
 
 Read file contents from `adb shell`:

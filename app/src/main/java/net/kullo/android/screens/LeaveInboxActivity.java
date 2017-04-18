@@ -3,10 +3,12 @@ package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.MainThread;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
@@ -38,8 +40,8 @@ public class LeaveInboxActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    protected void onStart() {
+        super.onStart();
 
         mDialogLeavingInbox = new MaterialDialog.Builder(this)
                 .title(R.string.leaving_inbox_title)
@@ -48,19 +50,27 @@ public class LeaveInboxActivity extends AppCompatActivity {
                 .cancelable(false)
                 .show();
 
-        if (!SessionConnector.get().tryUnregisterPushToken(3000)) {
-            Log.w(TAG, "Push token could not be unregistered.");
-        }
+        KulloApplication.sharedInstance.startConversationParticipants.clear();
 
-        SessionConnector.get().logout(LeaveInboxActivity.this, new Runnable() {
+        SessionConnector.get().tryUnregisterPushTokenAsync(10000, new SessionConnector.UnregisterPushTokenCallback() {
             @Override
-            public void run() {
-                mDialogLeavingInbox.dismiss();
-                goToNextScreen();
+            public void onDone(boolean success) {
+                if (!success) {
+                    Log.w(TAG, "Push token could not be unregistered.");
+                }
+
+                SessionConnector.get().logout(LeaveInboxActivity.this, new Runnable() {
+                    @Override
+                    public void run() {
+                        mDialogLeavingInbox.dismiss();
+                        goToNextScreen();
+                    }
+                });
             }
         });
     }
 
+    @MainThread
     private void goToNextScreen() {
         startActivity(new Intent(LeaveInboxActivity.this, WelcomeActivity.class));
         finish();

@@ -3,8 +3,10 @@ package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -15,7 +17,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,6 +28,7 @@ import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
+import net.kullo.android.littlehelpers.Formatting;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.TextViewContent;
 import net.kullo.android.littlehelpers.Ui;
@@ -39,18 +41,25 @@ import net.kullo.android.ui.NonScrollingGridLayoutManager;
 import net.kullo.android.ui.RecyclerItemClickListener;
 import net.kullo.android.ui.ScreenMetrics;
 import net.kullo.javautils.RuntimeAssertion;
+import net.kullo.libkullo.api.Address;
+import net.kullo.libkullo.api.AttachmentsBlockDownloadProgress;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDateTime;
-import org.joda.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import de.hdodenhof.circleimageview.CircleImageView;
 import io.github.dialogsforandroid.MaterialDialog;
+import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
 public class SingleMessageActivity extends AppCompatActivity {
     @SuppressWarnings("unused") private static final String TAG = "SingleMessageActivity";
@@ -61,24 +70,24 @@ public class SingleMessageActivity extends AppCompatActivity {
     private MessageAttachmentsDownloadedChangedEventObserver mMessageAttachmentsDownloadedChangedEventObserver;
 
     private static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
-    private DateTimeFormatter mFormatterDate;
 
     private AttachmentsAdapter mAttachmentsAdapter = null;
-    private RecyclerItemClickListener mAttachmentsClickListener = null;
     @Nullable private ActionMode mActionMode = null;
 
     // Views
-    private View mOptionalPaddingElement;
-    private CircleImageView mCircleImageView;
-    private TextView mMessageDateTextView;
-    private TextView mSenderNameTextView;
-    private TextView mSenderOrganizationTextView;
-    private TextView mMessageContentTextView;
-    private RecyclerView mAttachmentsList;
-    private Button mDownloadButton;
-    private View mFooterContainer;
-    private ImageButton mToggleFooterButton;
-    private TextView mFooterTextView;
+    @BindView(R.id.sender_avatar) CircleImageView mSenderAvatarImageView;
+    @BindView(R.id.sender_name_organization) TextView mSenderNameOrganizationTextView;
+    @BindView(R.id.sender_address) TextView mSenderAddressTextView;
+    @BindView(R.id.message_date_row1) TextView mMessageDateRow1;
+    @BindView(R.id.message_date_row2) TextView mMessageDateRow2;
+    @BindView(R.id.message_content) TextView mMessageContentTextView;
+    @BindView(R.id.attachments_list) RecyclerView mAttachmentsList;
+    @BindView(R.id.content_bottom_padding_element) View mContentBottomPaddingElement;
+    @BindView(R.id.footer_container) View mFooterContainer;
+    @BindView(R.id.footer_button) ImageButton mToggleFooterButton;
+    @BindView(R.id.footer_text) TextView mFooterTextView;
+
+    private RecyclerView.LayoutManager mAttachmentsLayoutManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -96,12 +105,12 @@ public class SingleMessageActivity extends AppCompatActivity {
         Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
         Ui.setStatusBarColor(this);
+        ButterKnife.bind(this);
 
-        mFormatterDate = ((KulloApplication) getApplication()).getFullDateTimeFormatter();
         mMessageAttachmentsOpener = new MessageAttachmentsOpener(this);
 
         registerObservers();
-        setupUi();
+        setupAttachmentsList();
 
         if (result.state == CreateSessionState.CREATING) {
             RuntimeAssertion.require(result.task != null);
@@ -113,20 +122,31 @@ public class SingleMessageActivity extends AppCompatActivity {
         populateMessageFields();
     }
 
-    private void setupUi() {
-        mCircleImageView = (CircleImageView) findViewById(R.id.sender_avatar);
-        mMessageDateTextView = (TextView) findViewById(R.id.message_date);
-        mSenderNameTextView = (TextView) findViewById(R.id.sender_name);
-        mSenderOrganizationTextView = (TextView) findViewById(R.id.sender_company);
-        mMessageContentTextView = (TextView) findViewById(R.id.message_content);
-        mAttachmentsList = (RecyclerView) findViewById(R.id.attachments_list);
-        mDownloadButton = (Button) findViewById(R.id.download_button);
-        mOptionalPaddingElement = findViewById(R.id.optional_padding_element);
-        mFooterContainer = findViewById(R.id.footer_container);
-        mToggleFooterButton = (ImageButton) findViewById(R.id.footer_button);
-        mFooterTextView = (TextView) findViewById(R.id.footer_text);
-
+    private void setupAttachmentsList() {
         mAttachmentsList.setNestedScrollingEnabled(false);
+        mAttachmentsList.addOnItemTouchListener(new RecyclerItemClickListener(mAttachmentsList) {
+            @Override
+            public void onItemClick(View view, int position) {
+                if (!SessionConnector.get().getMessageAttachmentsDownloaded(mMessageId)) {
+                    SessionConnector.get().downloadAttachments(mMessageId);
+                } else {
+                    long attachmentId = mAttachmentsAdapter.getItem(position);
+                    if (mAttachmentsAdapter.isSelectionActive()) {
+                        toggleAttachmentSelection(attachmentId);
+                    } else {
+                        mMessageAttachmentsOpener.saveAndOpenAttachment(mMessageId, attachmentId);
+                    }
+                }
+            }
+
+            @Override
+            public void onItemLongPress(View view, int position) {
+                if (!SessionConnector.get().getMessageAttachmentsDownloaded(mMessageId)) return;
+
+                long attachmentId = mAttachmentsAdapter.getItem(position);
+                toggleAttachmentSelection(attachmentId);
+            }
+        });
     }
 
     @Override
@@ -144,7 +164,7 @@ public class SingleMessageActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
-        clearSelection();
+        stopActionMode();
         super.onStop();
     }
 
@@ -165,7 +185,21 @@ public class SingleMessageActivity extends AppCompatActivity {
             }
 
             @Override
-            public void progressed(SyncProgress progress) {
+            public void progressed(final SyncProgress progress) {
+                if (progress.getIncomingAttachments().containsKey(mMessageId)) {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (!SessionConnector.get().getMessageAttachmentsDownloaded(mMessageId)) {
+                                AttachmentsBlockDownloadProgress attachmentProgress = progress.getIncomingAttachments().get(mMessageId);
+                                int perMille = Formatting.perMilleRounded(
+                                    attachmentProgress.getDownloadedBytes(),
+                                    attachmentProgress.getTotalBytes());
+                                setAttachmentsDownloadProgress(perMille);
+                            }
+                        }
+                    });
+                }
             }
 
             @Override
@@ -189,14 +223,14 @@ public class SingleMessageActivity extends AppCompatActivity {
                 mDownloadAttachmentsFinishedObserver);
 
         mMessageAttachmentsDownloadedChangedEventObserver = new MessageAttachmentsDownloadedChangedEventObserver() {
+            @MainThread
             @Override
-            public void messageAttachmentsDownloadedChanged(final long mMessageId) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        reloadAttachmentsList();
-                    }
-                });
+            public void messageAttachmentsDownloadedChanged(final long messageId) {
+                if (messageId == mMessageId) {
+                    // Only not-downloaded -> downloaded is implemented at the moment
+                    // so we assume the attachments are downloaded here
+                    reloadAttachmentsList();
+                }
             }
         };
         SessionConnector.get().addEventObserver(
@@ -255,80 +289,60 @@ public class SingleMessageActivity extends AppCompatActivity {
         final String messageTextAsHtml = SessionConnector.get().getMessageTextAsHtml(mMessageId);
         final String messageFooter = SessionConnector.get().getMessageFooter(mMessageId);
         final Bitmap senderAvatar = SessionConnector.get().getSenderAvatar(this, mMessageId);
+        final Address senderAddress = SessionConnector.get().getSenderAddress(mMessageId);
         final String senderName = SessionConnector.get().getSenderName(mMessageId);
         final String senderOrganization = SessionConnector.get().getSenderOrganization(mMessageId);
+        final boolean isMe = (senderAddress.isEqualTo(SessionConnector.get().getCurrentUserAddress()));
 
-        mCircleImageView.setImageBitmap(senderAvatar);
-        mMessageDateTextView.setText(getDateText(dateReceived));
-        mSenderNameTextView.setText(senderName);
-        mSenderOrganizationTextView.setText(senderOrganization);
+        StringBuilder senderNameOrganization = new StringBuilder();
+        senderNameOrganization.append(senderName);
+        if (!senderOrganization.isEmpty()) {
+            senderNameOrganization.append(" (");
+            senderNameOrganization.append(senderOrganization);
+            senderNameOrganization.append(")");
+        }
+
+        mMessageDateRow1.setText(getDateAsText(dateReceived));
+        mMessageDateRow2.setText(getTimeAsText(dateReceived));
+        mSenderAvatarImageView.setImageBitmap(senderAvatar);
+        mSenderNameOrganizationTextView.setText(senderNameOrganization.toString());
+        mSenderAddressTextView.setText(senderAddress.toString());
+        mSenderAddressTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DialogMaker.makeForKulloAddress(SingleMessageActivity.this, senderAddress, isMe).show();
+            }
+        });
 
         setTitle(senderName);
 
         mMessageContentTextView.setMaxLines(Integer.MAX_VALUE);
-        TextViewContent.injectHtmlIntoTextView(this, mMessageContentTextView, messageTextAsHtml);
-
-        reloadAttachmentsList();
+        TextViewContent.injectHtmlIntoTextView(mMessageContentTextView, messageTextAsHtml, new TextViewContent.LinkClickedListener() {
+                @Override
+                protected void onClicked(Uri linkTarget) {
+                    switch (linkTarget.getScheme()) {
+                        case "http": case "https":
+                            startActivity(new Intent(Intent.ACTION_VIEW, linkTarget));
+                            break;
+                        case "kulloInternal": {
+                            String cutPart = "kulloInternal:";
+                            String addressString = linkTarget.toString().replace(cutPart, "");
+                            Address address = Address.create(addressString);
+                            boolean isMe = (SessionConnector.get().getCurrentUserAddress().isEqualTo(address));
+                            DialogMaker.makeForKulloAddress(SingleMessageActivity.this, address, isMe).show();
+                            break;
+                        }
+                        default:
+                            RuntimeAssertion.fail("Unknown scheme");
+                    }
+                }
+            });
 
         if (messageFooter.isEmpty()) {
             hideFooterContainer();
         } else {
             mFooterTextView.setText(messageFooter);
             showFooterContainer(false);
-        }
-    }
-
-    private void showDialogToShowUserSettingsForCompletion() {
-        final MaterialDialog showSettingsDialog = CommonDialogs.buildShowSettingsDialog(this);
-        showSettingsDialog.show();
-    }
-
-    private void reloadAttachmentsList() {
-        final ArrayList<Long> attachmentIds = SessionConnector.get().getMessageAttachmentsIds(mMessageId);
-        final boolean attachmentsDownloaded = SessionConnector.get().getMessageAttachmentsDownloaded(mMessageId);
-
-        if (attachmentIds == null || attachmentIds.size() == 0) {
-            setAttachmentsListVisibility(View.GONE);
-            return;
-        }
-
-        setAttachmentsListVisibility(View.VISIBLE);
-
-        mAttachmentsAdapter = new AttachmentsAdapter(SingleMessageActivity.this, mMessageId, attachmentsDownloaded);
-        mAttachmentsList.setAdapter(mAttachmentsAdapter);
-
-        if (attachmentsDownloaded) {
-            mAttachmentsList.setEnabled(true);
-            mDownloadButton.setVisibility(View.GONE);
-            if (mAttachmentsClickListener == null) {
-                mAttachmentsClickListener = new RecyclerItemClickListener(mAttachmentsList) {
-                    @Override
-                    public void onItemClick(View view, int position) {
-                        long attachmentId = mAttachmentsAdapter.getItem(position);
-                        if (mAttachmentsAdapter.isSelectionActive()) {
-                            toggleAttachmentSelection(attachmentId);
-                        } else {
-                            mMessageAttachmentsOpener.saveAndOpenAttachment(mMessageId, attachmentId);
-                        }
-                    }
-
-                    @Override
-                    public void onItemLongPress(View view, int position) {
-                        long attachmentId = mAttachmentsAdapter.getItem(position);
-                        toggleAttachmentSelection(attachmentId);
-                    }
-                };
-                mAttachmentsList.addOnItemTouchListener(mAttachmentsClickListener);
-            }
-        } else {
-            mAttachmentsList.setEnabled(false);
-            mDownloadButton.setVisibility(View.VISIBLE);
-            mDownloadButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    SessionConnector.get().downloadAttachments(mMessageId);
-                }
-            });
         }
 
         // Set dummy layout manager to avoid error log "E/RecyclerView: No adapter attached; skipping layout"
@@ -339,27 +353,82 @@ public class SingleMessageActivity extends AppCompatActivity {
         mAttachmentsList.post(new Runnable() {
             @Override
             public void run() {
+                // Set layout manager before loading first data
                 int columns = ScreenMetrics.getColumnsForComponent(mAttachmentsList, 100.0f);
-                final NonScrollingGridLayoutManager glm = new NonScrollingGridLayoutManager(SingleMessageActivity.this, columns);
-                mAttachmentsList.setLayoutManager(glm);
+                mAttachmentsLayoutManager = new NonScrollingGridLayoutManager(SingleMessageActivity.this, columns);
+                mAttachmentsList.setLayoutManager(mAttachmentsLayoutManager);
+
+                reloadAttachmentsList();
             }
         });
     }
 
-    private void setAttachmentsListVisibility(int visibility) {
-        mAttachmentsList.setVisibility(visibility);
-        mDownloadButton.setVisibility(visibility);
+    private void showDialogToShowUserSettingsForCompletion() {
+        final MaterialDialog showSettingsDialog = CommonDialogs.buildShowSettingsDialog(this);
+        showSettingsDialog.show();
+    }
+
+
+    // Set -1 to disable download progress
+    @MainThread
+    private void setAttachmentsDownloadProgress(int perMille) {
+        List<View> views = new LinkedList<>();
+        for (int i = 0; i < mAttachmentsLayoutManager.getChildCount(); ++i) {
+            views.add(mAttachmentsLayoutManager.findViewByPosition(i));
+        }
+
+        if (perMille < 0) {
+            for (View view : views) {
+                view.findViewById(R.id.icon_default).setVisibility(View.VISIBLE);
+                view.findViewById(R.id.icon_progress).setVisibility(View.GONE);
+            }
+        } else {
+            for (View view : views) {
+                view.findViewById(R.id.icon_default).setVisibility(View.GONE);
+
+                MaterialProgressBar progressView = (MaterialProgressBar) view.findViewById(R.id.icon_progress);
+                progressView.setVisibility(View.VISIBLE);
+                progressView.setMax(1000);
+                progressView.setProgress(perMille);
+            }
+        }
+    }
+
+    private void reloadAttachmentsList() {
+        final ArrayList<Long> attachmentIds = SessionConnector.get().getMessageAttachmentsIds(mMessageId);
+        final boolean attachmentsDownloaded = SessionConnector.get().getMessageAttachmentsDownloaded(mMessageId);
+
+        if (attachmentIds.size() == 0) {
+            mAttachmentsList.setVisibility(View.GONE);
+            return;
+        }
+
+        mAttachmentsList.setVisibility(View.VISIBLE);
+
+        mAttachmentsAdapter = new AttachmentsAdapter(SingleMessageActivity.this, mMessageId, attachmentsDownloaded);
+        mAttachmentsList.setAdapter(mAttachmentsAdapter);
+
+        if (attachmentsDownloaded) {
+            mAttachmentsList.setEnabled(true);
+        } else {
+            mAttachmentsList.setEnabled(false);
+        }
     }
 
     @NonNull
-    private String getDateText(DateTime dateReceived) {
+    private String getDateAsText(DateTime dateReceived) {
         LocalDateTime localDateReceived = new LocalDateTime(dateReceived, LOCAL_TIME_ZONE);
+        return localDateReceived.toString(KulloApplication.sharedInstance.getShortDateFormatter());
+    }
 
-        return localDateReceived.toString(mFormatterDate);
+    @NonNull
+    private String getTimeAsText(DateTime dateReceived) {
+        LocalDateTime localDateReceived = new LocalDateTime(dateReceived, LOCAL_TIME_ZONE);
+        return localDateReceived.toString(KulloApplication.sharedInstance.getShortTimeFormatter());
     }
 
     private void showFooterContainer(boolean footerExpanded) {
-        mOptionalPaddingElement.setVisibility(View.GONE);
+        mContentBottomPaddingElement.setVisibility(View.GONE);
         mFooterContainer.setVisibility(View.VISIBLE);
 
         if (footerExpanded) {
@@ -384,7 +453,7 @@ public class SingleMessageActivity extends AppCompatActivity {
     }
 
     private void hideFooterContainer() {
-        mOptionalPaddingElement.setVisibility(View.VISIBLE);
+        mContentBottomPaddingElement.setVisibility(View.VISIBLE);
         mFooterContainer.setVisibility(View.GONE);
     }
 
@@ -398,14 +467,14 @@ public class SingleMessageActivity extends AppCompatActivity {
 
             // update action bar title
             final String title = String.format(
-                getResources().getString(R.string.title_n_selected),
+                getResources().getString(R.string.actionmode_title_n_selected),
                 mAttachmentsAdapter.getSelectedItemsCount());
             mActionMode.setTitle(title);
             boolean singleItemActions = mAttachmentsAdapter.getSelectedItemsCount() == 1;
             mActionMode.getMenu().findItem(R.id.action_open_with)
                 .setVisible(singleItemActions);
             mActionMode.getMenu().findItem(R.id.action_save_as)
-                .setVisible(singleItemActions && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT);
+                .setVisible(singleItemActions);
         }
     }
 
@@ -426,18 +495,33 @@ public class SingleMessageActivity extends AppCompatActivity {
             @Override
             public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
                 switch (item.getItemId()) {
-                     case R.id.action_save_as:
-                         mMessageAttachmentsOpener.saveAndDownloadAttachment(mMessageId, mAttachmentsAdapter.getSelectedItems().get(0));
-                         mode.finish();
-                         return true;
-                    case R.id.action_open_with:
-                        mMessageAttachmentsOpener.saveAndOpenWithAttachment(mMessageId, mAttachmentsAdapter.getSelectedItems().get(0));
+                    case R.id.action_save_as: {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                            // Set contains only one element in this branch
+                            long attachmentId = mAttachmentsAdapter.getSelectedItems().iterator().next();
+                            mMessageAttachmentsOpener.saveAndDownloadAttachment(mMessageId, attachmentId);
+                            mode.finish();
+                        } else {
+                            Toast.makeText(SingleMessageActivity.this,
+                                R.string.singlemessage_save_not_available,
+                                Toast.LENGTH_LONG).show();
+                        }
+                        return true;
+                    }
+                    case R.id.action_open_with: {
+                        // Set contains only one element in this branch
+                        long attachmentId = mAttachmentsAdapter.getSelectedItems().iterator().next();
+                        mMessageAttachmentsOpener.saveAndOpenWithAttachment(mMessageId, attachmentId);
                         mode.finish();
                         return true;
-                    case R.id.action_share:
-                        mMessageAttachmentsOpener.saveAndShareAttachments(mMessageId, mAttachmentsAdapter.getSelectedItems());
+                    }
+                    case R.id.action_share: {
+                        List<Long> attachmentsList = new ArrayList<>(mAttachmentsAdapter.getSelectedItems());
+                        Collections.sort(attachmentsList);
+                        mMessageAttachmentsOpener.saveAndShareAttachments(mMessageId, attachmentsList);
                         mode.finish();
                         return true;
+                    }
                     default:
                         return false;
                 }
@@ -450,7 +534,7 @@ public class SingleMessageActivity extends AppCompatActivity {
         });
     }
 
-    public void clearSelection() {
+    public void stopActionMode() {
         if (mAttachmentsAdapter != null && mActionMode != null) {
             mAttachmentsAdapter.clearSelectedItems();
             mActionMode.finish();

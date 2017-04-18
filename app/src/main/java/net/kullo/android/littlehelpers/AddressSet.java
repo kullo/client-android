@@ -10,9 +10,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * Created by simon on 01.09.15.
- */
 public class AddressSet extends HashSet<Address> {
 
     public AddressSet() {
@@ -25,7 +22,7 @@ public class AddressSet extends HashSet<Address> {
 
     @Override
     public boolean contains(Object obj) {
-        Address objAddress = null;
+        Address objAddress;
 
         try {
             objAddress = (Address) obj;
@@ -56,9 +53,8 @@ public class AddressSet extends HashSet<Address> {
 
     @Override
     public boolean remove(Object obj) {
-        Address objAddress = null;
+        Address objAddress;
 
-        Throwable e = null;
         try {
             objAddress = (Address) obj;
         } catch (ClassCastException ex) {
@@ -76,7 +72,7 @@ public class AddressSet extends HashSet<Address> {
         return false;
     }
 
-    static class AddressComparator implements Comparator<Address>
+    private static class AddressComparator implements Comparator<Address>
     {
         // < 0 if lhs is less than rhs
         // 0 if they are equal
@@ -99,13 +95,8 @@ public class AddressSet extends HashSet<Address> {
     }
 
     public List<Address> sorted() {
-        if (this == null) return null;
-
-        List<Address> list = new ArrayList<Address>(this);
-
+        List<Address> list = new ArrayList<>(this);
         Collections.sort(list, new AddressComparator());
-
         return list;
-
     }
 }

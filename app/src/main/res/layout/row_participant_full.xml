@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingEnd="@dimen/md_additions_list_padding"
+    android:paddingStart="@dimen/md_additions_list_padding">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/participant_avatar"
+        android:layout_width="@dimen/md_additions_list_avatar_size"
+        android:layout_height="@dimen/md_additions_list_avatar_size"
+        android:layout_alignParentStart="true"
+        android:layout_marginEnd="@dimen/md_additions_list_padding" />
+
+    <TextView
+        android:id="@+id/participant_name_organization"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:text="Participant Name (Organization)"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@id/participant_avatar"
+        android:maxLines="1"
+        android:ellipsize="end"
+        style="@style/Body2"
+        tools:ignore="HardcodedText" />
+
+    <TextView
+        android:id="@+id/participant_address"
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:layout_toRightOf="@id/participant_avatar"
+        android:layout_below="@id/participant_name_organization"
+        android:text="Participant Address"
+        android:maxLines="1"
+        android:textIsSelectable="false"
+        android:ellipsize="end"
+        style="@style/Body1"
+        tools:ignore="HardcodedText" />
+</RelativeLayout>

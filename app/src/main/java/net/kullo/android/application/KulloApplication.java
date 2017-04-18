@@ -14,12 +14,17 @@ import android.support.annotation.Nullable;
 import android.support.v4.content.FileProvider;
 import android.util.Log;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.GlideBuilder;
+import com.bumptech.glide.load.DecodeFormat;
+import com.bumptech.glide.load.engine.cache.DiskLruCacheFactory;
+
 import net.danlew.android.joda.JodaTimeAndroid;
 import net.kullo.android.kulloapi.ClientConnector;
 import net.kullo.android.kulloapi.KulloUtils;
+import net.kullo.android.littlehelpers.AddressSet;
 import net.kullo.android.littlehelpers.CiStringComparator;
 import net.kullo.android.littlehelpers.KulloConstants;
-import net.kullo.android.notifications.GcmNotificationListenerService;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.LibKullo;
 
@@ -33,7 +38,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import me.leolin.shortcutbadger.ShortcutBadger;
 
@@ -48,6 +55,8 @@ public class KulloApplication extends Application
     public static final String TERMS_URL = "https://www.kullo.net/agb/?version=1";
 
     public static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 1001;
+
+    public AddressSet startConversationParticipants = new AddressSet();
 
     private static final int LATEST_PREFERENCES_VERSION = 3;
 
@@ -75,12 +84,26 @@ public class KulloApplication extends Application
 
         JodaTimeAndroid.init(this);
         LibKullo.init();
+        initGlide();
 
         deleteObsoletePreferences();
         migratePreferences(getSharedPreferences(KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE));
 
         cleanExternalFilesDirAsync();
         cleanCacheDirAsync();
+    }
+
+    private void initGlide() {
+        int INCOMING_ATTACHMENTS_PREVIEW_CACHE_SIZE = 500_000;
+        GlideBuilder builder = new GlideBuilder(this)
+            .setDecodeFormat(DecodeFormat.PREFER_ARGB_8888)
+            .setDiskCache(new DiskLruCacheFactory(new DiskLruCacheFactory.CacheDirectoryGetter() {
+                @Override
+                public File getCacheDirectory() {
+                    return cacheDir(CacheType.IncomingAttachmentsPreview, null);
+                }
+            }, INCOMING_ATTACHMENTS_PREVIEW_CACHE_SIZE));
+        Glide.setup(builder);
     }
 
     private void cleanExternalFilesDirAsync() {
@@ -111,13 +134,20 @@ public class KulloApplication extends Application
         new Thread(new Runnable() {
             @Override
             public void run() {
-                for (CacheType type : CacheType.values()) {
+                for (CacheType type : cacheTypesToClean()) {
                     final File cacheDir = cacheDir(type, null);
-                    Log.d(TAG, "Cleaning " + cacheDir.getAbsolutePath() + " ...");
+                    Log.d(TAG, "Cleaning cache " + cacheDir.getAbsolutePath() + " ...");
                     cleanDirectory(cacheDir, MIN_AGE_SEC);
                 }
             }
         }).run();
+    }
+
+    private static Iterable<CacheType> cacheTypesToClean() {
+        Set<CacheType> out = new HashSet<>();
+        Collections.addAll(out, CacheType.values());
+        out.remove(CacheType.IncomingAttachmentsPreview);
+        return out;
     }
 
     private void cleanDirectory(@NonNull File path, @Nullable Integer minAgeSec) {
@@ -186,6 +216,8 @@ public class KulloApplication extends Application
                 typeSubfolderName = "add_attachment"; break;
             case Capture:
                 typeSubfolderName = "capture"; break;
+            case IncomingAttachmentsPreview:
+                typeSubfolderName = "incoming_attachments_preview"; break;
             case OpenFile:
                 typeSubfolderName = "openfile"; break;
             case ReceivedShares:

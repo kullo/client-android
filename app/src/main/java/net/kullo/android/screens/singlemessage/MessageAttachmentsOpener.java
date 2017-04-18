@@ -1,6 +1,7 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens.singlemessage;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.DialogInterface;
@@ -271,6 +272,7 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
         mReadyFiles.add(new ReadyFile(tmpfile, filename, uri));
     }
 
+    @SuppressLint("InlinedApi")
     private void processFiles() {
         Intent deliverIntent = new Intent();
         deliverIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -285,10 +287,9 @@ public class MessageAttachmentsOpener implements MessageAttachmentsSaveListenerO
                 deliverIntent.setAction(Intent.ACTION_VIEW);
                 break;
             case SAVE_TO:
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    deliverIntent.setAction(Intent.ACTION_CREATE_DOCUMENT);
-                    deliverIntent.addCategory(Intent.CATEGORY_OPENABLE);
-                }
+                RuntimeAssertion.require(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT);
+                deliverIntent.setAction(Intent.ACTION_CREATE_DOCUMENT);
+                deliverIntent.addCategory(Intent.CATEGORY_OPENABLE);
                 break;
             case SHARE:
                 if (mReadyFiles.size() == 1) {

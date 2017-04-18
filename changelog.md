@@ -1,6 +1,23 @@
 Kullo for Android
 -----------------
 
+## v44
+
+ * Displays sender addresses in single message
+ * Conversation info screen that lets you select participants
+   to start a new conversation with
+ * Shows download progress when downloading attachments
+ * Shows image preview for image attachments
+ * Suggests known Kullo addresses
+ * Highlights Kullo addresses in message text
+
+### Components
+
+ * Update libkullo to v62
+ * Update Botan to 2.1.0
+ * Update SmartSqlite to v19
+ * Update Android Support Library to 25.3.1
+
 ## v43 (2017-03-10)
 
  * Badges for unread messages count

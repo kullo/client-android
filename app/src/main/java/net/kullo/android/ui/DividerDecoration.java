@@ -48,18 +48,26 @@ public class DividerDecoration extends RecyclerView.ItemDecoration {
         final int childCount = parent.getChildCount();
         for (int i = 0; i < childCount; i++) {
             final View child = parent.getChildAt(i);
-            final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child
+            if(isDecorated(child, parent)) {
+                final RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child
                     .getLayoutParams();
-            final int top = Math.max(recyclerViewTop, child.getBottom() + params.bottomMargin);
-            final int bottom = Math.min(recyclerViewBottom, top + mDividerIntrinsicHeight);
-            mDividerDrawable.setBounds(left, top, right, bottom);
-            mDividerDrawable.draw(c);
+                final int top = Math.max(recyclerViewTop, child.getBottom() + params.bottomMargin);
+                final int bottom = Math.min(recyclerViewBottom, top + mDividerIntrinsicHeight);
+                mDividerDrawable.setBounds(left, top, right, bottom);
+                mDividerDrawable.draw(c);
+            }
         }
     }
 
     @Override
     public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
         super.getItemOffsets(outRect, view, parent, state);
-        outRect.set(0, 0, 0, mDividerIntrinsicHeight);
+        if (isDecorated(view, parent)) {
+            outRect.set(0, 0, 0, mDividerIntrinsicHeight);
+        }
+    }
+
+    protected boolean isDecorated(View view, RecyclerView parent) {
+        return true;
     }
 }

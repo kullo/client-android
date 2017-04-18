@@ -13,18 +13,26 @@ public abstract class AsyncTask {
     /**
      * Tells the asynchronous task to finish, but doesn't wait for termination.
      * Stops all callbacks, even if the task continues to run.
+     * Thread safe.
      */
     public abstract void cancel();
 
-    /** Returns true iff the task has finished its work. */
+    /**
+     * Returns true iff the task has finished its work.
+     * Thread safe.
+     */
     public abstract boolean isDone();
 
-    /** Blocks until the task has finished executing. */
+    /**
+     * Blocks until the task has finished executing.
+     * Thread safe.
+     */
     public abstract void waitUntilDone();
 
     /**
      * Blocks until the task has finished executing or until the timeout has
      * expired. Returns false on timeout, true otherwise.
+     * Thread safe.
      */
     public abstract boolean waitForMs(int timeout);
 

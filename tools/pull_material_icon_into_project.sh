@@ -60,7 +60,8 @@ if [ ! -d "$DST_ROOT" ]; then
 fi
 
 if ! find "$SRC_ROOT" -name "${NAME}_${COLOR}_${SIZE}dp.${FORMAT}" | grep "$NAME" > /dev/null; then
-    echo "Icon with name '$NAME' (e.g. ic_exit_to_app) was not found in $SRC_ROOT."
+    echo "Icon with name '$NAME' (e.g. ic_exit_to_app), color '$COLOR' and size '${SIZE}' was"
+    echo "not found in $SRC_ROOT"
     exit 1
 fi
 

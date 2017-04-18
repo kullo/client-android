@@ -4,22 +4,28 @@ package net.kullo.android.screens;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.view.ActionMode;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.ClientConnector;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AddressAutocompleteAdapter;
+import net.kullo.android.littlehelpers.AddressSet;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
@@ -31,18 +37,24 @@ import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.ClientAddressExistsListener;
 import net.kullo.libkullo.api.NetworkError;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import io.github.dialogsforandroid.MaterialDialog;
 
 public class StartConversationActivity extends AppCompatActivity {
     @SuppressWarnings("unused") private static final String TAG = "StartConversationAct."; // max. 23 chars
 
-    private TextInputLayout mNewParticipantTextInputLayout;
-    private AutoCompleteTextView mNewParticipantEditText;
-    private ParticipantsAdapter mParticipantsAdapter;
-    private TextView mParticipantsHeader;
-    private MaterialDialog mWaitingDialog;
-    private AsyncTask mAddrExistsTask;
-    private boolean mReadyToLeave;
+    @BindView(R.id.new_participant_text_input_layout) TextInputLayout mNewParticipantTextInputLayout;
+    @BindView(R.id.new_participant) AutoCompleteTextView mNewParticipantEditText;
+    @BindView(R.id.button_add_participant) View mButtonAdd;
+    @BindView(R.id.participants_header) TextView mParticipantsHeader;
+    @BindView(R.id.participants_list) RecyclerView mParticipantsList;
+
+    @Nullable private MaterialDialog mWaitingDialog;
+    @NonNull final private ParticipantsAdapter mParticipantsAdapter = new ParticipantsAdapter(this);
+    @Nullable private AsyncTask mAddressExistsTask;
+    private boolean mUserRequestedToStartConversation;
+    @Nullable private ActionMode mActionMode;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,10 +65,12 @@ public class StartConversationActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_start_conversation);
 
+        ButterKnife.bind(this);
+
         Ui.prepareActivityForTaskManager(this);
         Ui.setupActionbar(this);
         Ui.setStatusBarColor(this);
-        setTitle(getResources().getString(R.string.new_conversation));
+        setTitle(getResources().getString(R.string.start_conversation_new_conversation));
 
         setupLayout();
 
@@ -64,6 +78,9 @@ public class StartConversationActivity extends AppCompatActivity {
             RuntimeAssertion.require(result.task != null);
             result.task.waitUntilDone();
         }
+
+        fillAdapterWithInitialData();
+        updateViewFromAdapterData();
 
         GcmConnector.get().fetchAndRegisterToken(this);
     }
@@ -74,36 +91,26 @@ public class StartConversationActivity extends AppCompatActivity {
 
         GcmConnector.get().removeAllNotifications(this);
 
-        mReadyToLeave = false;
+        mUserRequestedToStartConversation = false;
+    }
+
+    @Override
+    protected void onStop() {
+        stopActionMode();
+        super.onStop();
     }
 
     @Override
     public void onDestroy() {
-        if (mAddrExistsTask != null) mAddrExistsTask.cancel();
+        if (mAddressExistsTask != null) mAddressExistsTask.cancel();
 
         super.onDestroy();
     }
 
     private void setupLayout() {
         // text field
-        mNewParticipantTextInputLayout = (TextInputLayout) findViewById(R.id.new_participant_text_input_layout);
-        RuntimeAssertion.require(mNewParticipantTextInputLayout != null);
-        mNewParticipantEditText = (AutoCompleteTextView) mNewParticipantTextInputLayout.getEditText();
-        RuntimeAssertion.require(mNewParticipantEditText != null);
         mNewParticipantEditText.addTextChangedListener(KulloConstants.KULLO_ADDRESS_AT_THIEF);
         mNewParticipantEditText.setAdapter(new AddressAutocompleteAdapter(this));
-
-        // add button
-        View buttonAdd = findViewById(R.id.button_add_participant);
-        RuntimeAssertion.require(buttonAdd != null);
-        buttonAdd.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                addParticipant();
-            }
-        });
-
-        // keyboard action
         mNewParticipantEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
@@ -112,19 +119,130 @@ public class StartConversationActivity extends AppCompatActivity {
             }
         });
 
-        // list header
-        mParticipantsHeader = (TextView) findViewById(R.id.participants_header);
-        RuntimeAssertion.require(mParticipantsHeader != null);
-        mParticipantsHeader.setVisibility(View.INVISIBLE);
+        // add button
+        mButtonAdd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addParticipant();
+            }
+        });
 
         // participants list
-        mParticipantsAdapter = new ParticipantsAdapter();
+        mParticipantsAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+            @Override
+            public void onChanged() {
+                saveAdapterContentToApp();
+                updateViewFromAdapterData();
+            }
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.participants_list);
-        RuntimeAssertion.require(recyclerView != null);
-        recyclerView.setNestedScrollingEnabled(false);
-        recyclerView.setLayoutManager(new NonScrollingLinearLayoutManager(this));
-        recyclerView.setAdapter(mParticipantsAdapter);
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount) {
+                saveAdapterContentToApp();
+                updateViewFromAdapterData();
+            }
+
+            @Override
+            public void onItemRangeRemoved(int positionStart, int itemCount) {
+                saveAdapterContentToApp();
+                updateViewFromAdapterData();
+            }
+        });
+        mParticipantsAdapter.setOnClickListener(new ParticipantsAdapter.OnClickListener() {
+            @Override
+            public void onClick(View v, int position) {
+                Address participant = mParticipantsAdapter.getItem(position);
+                toggleParticipantSelection(participant);
+            }
+        });
+        mParticipantsAdapter.setOnLongClickListener(new ParticipantsAdapter.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v, int position) {
+                Address participant = mParticipantsAdapter.getItem(position);
+                toggleParticipantSelection(participant);
+                return false;
+            }
+        });
+
+        mParticipantsList.setNestedScrollingEnabled(false);
+        mParticipantsList.setLayoutManager(new NonScrollingLinearLayoutManager(this));
+        mParticipantsList.setAdapter(mParticipantsAdapter);
+    }
+
+    private void toggleParticipantSelection(final Address participant) {
+        mParticipantsAdapter.toggleSelectedItem(participant);
+
+        if (!mParticipantsAdapter.isSelectionActive()) {
+            if (mActionMode != null) mActionMode.finish();
+        } else {
+            if (mActionMode == null) setupParticipantsActionMode();
+
+            // update action bar title
+            final String title = String.format(
+                getResources().getString(R.string.actionmode_title_n_selected),
+                mParticipantsAdapter.getSelectedItemsCount());
+            mActionMode.setTitle(title);
+        }
+    }
+
+    private void setupParticipantsActionMode() {
+        mActionMode = startActionMode(new ActionMode.Callback() {
+            @Override
+            public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+                MenuInflater inflater = mode.getMenuInflater();
+                inflater.inflate(R.menu.actionmode_start_conversation_participants_list, menu);
+                return true;
+            }
+
+            @Override
+            public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+                return false;
+            }
+
+            @Override
+            public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.action_remove: {
+                        while (mParticipantsAdapter.getSelectedItemsCount() > 0) {
+                            // Remove arbitrary item from selection
+                            Address participant = mParticipantsAdapter.getSelectedItems().iterator().next();
+                            mParticipantsAdapter.remove(participant);
+                        }
+                        mode.finish();
+                        return true;
+                    }
+                    default:
+                        return false;
+                }
+            }
+
+            @Override
+            public void onDestroyActionMode(ActionMode mode) {
+                mParticipantsAdapter.clearSelectedItems();
+                mActionMode = null;
+            }
+        });
+    }
+
+    public void stopActionMode() {
+        if (mActionMode != null) {
+            mParticipantsAdapter.clearSelectedItems();
+            mActionMode.finish();
+        }
+    }
+
+    private void fillAdapterWithInitialData() {
+        for (final Address address : KulloApplication.sharedInstance.startConversationParticipants) {
+            mParticipantsAdapter.add(address);
+        }
+    }
+
+    private void updateViewFromAdapterData() {
+        // list header
+        if (mParticipantsAdapter.getItemCount() == 0) {
+            mParticipantsHeader.setVisibility(View.GONE);
+        } else {
+            mParticipantsHeader.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -138,7 +256,7 @@ public class StartConversationActivity extends AppCompatActivity {
                 if (newParticipantAddress.isEmpty()) {
                     proceedLeave();
                 } else {
-                    mReadyToLeave = true;
+                    mUserRequestedToStartConversation = true;
                     addParticipant();
                 }
                 return true;
@@ -154,12 +272,17 @@ public class StartConversationActivity extends AppCompatActivity {
     }
 
     private void proceedLeave() {
-        if (mParticipantsAdapter.getItemCount() > 0) {
-            long conversationId = SessionConnector.get().addNewConversationForKulloAddresses(mParticipantsAdapter.getItems());
+        final AddressSet addressesToBeUsed = mParticipantsAdapter.getItems();
+        if (addressesToBeUsed.size() > 0) {
+            long conversationId = SessionConnector.get().addNewConversationForKulloAddresses(addressesToBeUsed);
 
             Intent intent = new Intent(this, MessagesListActivity.class);
-            intent.putExtra(MessagesListActivity.CONVERSATION_ID, conversationId);
+            intent.putExtra(KulloConstants.CONVERSATION_ID, conversationId);
             startActivity(intent);
+
+            // Clear participant list storage
+            KulloApplication.sharedInstance.startConversationParticipants.clear();
+
             // remove itself from the activity stack
             finish();
         } else {
@@ -167,8 +290,8 @@ public class StartConversationActivity extends AppCompatActivity {
                 mWaitingDialog.dismiss();
             }
             new MaterialDialog.Builder(StartConversationActivity.this)
-                .title(R.string.create_conversation_failed)
-                .content(R.string.participant_needed)
+                .title(R.string.start_conversation_create_conversation_failed)
+                .content(R.string.start_conversation_participant_needed)
                 .neutralText(R.string.ok)
                 .cancelable(false)
                 .show();
@@ -176,32 +299,25 @@ public class StartConversationActivity extends AppCompatActivity {
     }
 
     private void addParticipant() {
-        String newParticipantAddress = mNewParticipantEditText.getText().toString();
+        Address newParticipant = Address.create(mNewParticipantEditText.getText().toString());
 
-        // validation
-        mNewParticipantTextInputLayout.setError(null);
-
-        // prevent conversation with self
-        if (newParticipantAddress.equals(SessionConnector.get().getCurrentUserAddressAsString())) {
-            mNewParticipantTextInputLayout.setError(getResources().getText(R.string.sender_is_recipient));
-            return;
-        }
-
-        Address newParticipant = Address.create(newParticipantAddress);
         if (newParticipant == null) {
-            //validation failed
-            mNewParticipantTextInputLayout.setError(getResources().getText(R.string.login_error_address_invalid));
-
+            mNewParticipantTextInputLayout.setError(getText(R.string.login_error_address_invalid));
+        } else if (newParticipant.isEqualTo(SessionConnector.get().getCurrentUserAddress())) {
+            // prevent conversation with self
+            mNewParticipantTextInputLayout.setError(getText(R.string.start_conversation_sender_is_recipient));
         } else {
+            mNewParticipantTextInputLayout.setError(null);
+
             //show waiting dialog
             mWaitingDialog = new MaterialDialog.Builder(this)
-                    .title(R.string.progress_new_participant)
+                    .title(R.string.start_conversation_progress_new_participant)
                     .content(R.string.please_wait)
                     .progress(true, 0)
                     .cancelable(false)
                     .show();
 
-            mAddrExistsTask = ClientConnector.get().getClient().addressExistsAsync(
+            mAddressExistsTask = ClientConnector.get().getClient().addressExistsAsync(
                     newParticipant,
                     new ClientAddressExistsListener() {
 
@@ -216,16 +332,15 @@ public class StartConversationActivity extends AppCompatActivity {
 
                                     if (exists) {
                                         mParticipantsAdapter.add(address);
-                                        mParticipantsAdapter.notifyDataSetChanged();
+
                                         mNewParticipantEditText.setText("");
-                                        mParticipantsHeader.setVisibility(View.VISIBLE);
-                                        if (mReadyToLeave) {
+                                        if (mUserRequestedToStartConversation) {
                                             proceedLeave();
                                         }
                                     } else {
-                                        mNewParticipantTextInputLayout.setError(getResources().getText(R.string.address_not_exist));
+                                        mNewParticipantTextInputLayout.setError(getResources().getText(R.string.start_conversation_address_not_exist));
                                     }
-                                    mReadyToLeave = false;
+                                    mUserRequestedToStartConversation = false;
                                 }
                             });
                         }
@@ -239,8 +354,8 @@ public class StartConversationActivity extends AppCompatActivity {
                                         mWaitingDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
                                             public void onDismiss(DialogInterface dialog) {
                                                 new MaterialDialog.Builder(StartConversationActivity.this)
-                                                        .title(R.string.address_check_failed_error_header)
-                                                        .content(R.string.address_check_failed_connection_error)
+                                                        .title(R.string.start_conversation_address_check_failed_error_header)
+                                                        .content(R.string.start_conversation_address_check_failed_connection_error)
                                                         .neutralText(R.string.ok)
                                                         .cancelable(false)
                                                         .show();
@@ -248,7 +363,7 @@ public class StartConversationActivity extends AppCompatActivity {
 
                                         mWaitingDialog.dismiss();
                                     }
-                                    mReadyToLeave = false;
+                                    mUserRequestedToStartConversation = false;
                                 }
                             });
                         }
@@ -256,4 +371,7 @@ public class StartConversationActivity extends AppCompatActivity {
         }
     }
 
+    private void saveAdapterContentToApp() {
+        KulloApplication.sharedInstance.startConversationParticipants = mParticipantsAdapter.getItems();
+    }
 }

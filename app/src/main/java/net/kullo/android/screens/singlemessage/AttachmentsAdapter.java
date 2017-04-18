@@ -2,16 +2,27 @@
 package net.kullo.android.screens.singlemessage;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.os.Handler;
 import android.support.annotation.UiThread;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.BitmapEncoder;
+import com.bumptech.glide.load.resource.bytes.BytesResource;
+
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloIdsAdapter;
+import net.kullo.android.util.adapters.KulloIdsAdapter;
 import net.kullo.android.kulloapi.SessionConnector;
+import net.kullo.android.kulloapi.attachments.AttachmentFromCacheDecoder;
+import net.kullo.android.kulloapi.attachments.AttachmentFromDatabaseLoader;
+import net.kullo.android.kulloapi.attachments.AttachmentFromOriginalDecoder;
+import net.kullo.android.kulloapi.attachments.AttachmentIdentifier;
 import net.kullo.android.littlehelpers.Formatting;
+import net.kullo.android.littlehelpers.Images;
 
 public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
     private Context mContext;
@@ -36,11 +47,18 @@ public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
     }
 
     @Override
-    public void onBindViewHolder(AttachmentsViewHolder attachmentsViewHolder, int position) {
+    public void onBindViewHolder(final AttachmentsViewHolder attachmentsViewHolder, int position) {
         final long attachmentId = getItem(position);
 
-        String filename = SessionConnector.get().getMessageAttachmentFilename(mMessageId, attachmentId);
-        String sizeText = Formatting.filesizeHuman(SessionConnector.get().getMessageAttachmentFilesize(mMessageId, attachmentId));
+        final String filename = SessionConnector.get().getMessageAttachmentFilename(mMessageId, attachmentId);
+        final String mimeType = SessionConnector.get().getMessageAttachmentMimeType(mMessageId, attachmentId);
+        final long size = SessionConnector.get().getMessageAttachmentFilesize(mMessageId, attachmentId);
+        final String sizeText = Formatting.filesizeHuman(size);
+
+        final AttachmentIdentifier attachment = new AttachmentIdentifier();
+        attachment.messageId = mMessageId;
+        attachment.attachmentId = attachmentId;
+
         attachmentsViewHolder.mFilename.setText(filename);
         attachmentsViewHolder.mFilesize.setText(sizeText);
 
@@ -48,6 +66,29 @@ public class AttachmentsAdapter extends KulloIdsAdapter<AttachmentsViewHolder> {
             attachmentsViewHolder.mContainer.setAlpha(0.5f);
         } else {
             attachmentsViewHolder.mContainer.setAlpha(1.0f);
+        }
+
+        if (mAttachmentsDownloaded && Images.THUMBNAILABLE_TYPES.contains(mimeType)) {
+            attachmentsViewHolder.mIcon.setVisibility(View.GONE);
+            attachmentsViewHolder.mImagePreview.setVisibility(View.VISIBLE);
+
+            // make sure ImageView is layed out
+            new Handler().post(new Runnable() {
+                @Override
+                public void run() {
+                    Glide.with(mContext)
+                        .using(new AttachmentFromDatabaseLoader(), BytesResource.class)
+                        .load(attachment)
+                        .as(Bitmap.class)
+                        .decoder(new AttachmentFromOriginalDecoder(mContext))
+                        .encoder(new BitmapEncoder())
+                        .cacheDecoder(new AttachmentFromCacheDecoder(mContext))
+                        .into(attachmentsViewHolder.mImagePreview);
+                }
+            });
+        } else {
+            attachmentsViewHolder.mIcon.setVisibility(View.VISIBLE);
+            attachmentsViewHolder.mImagePreview.setVisibility(View.GONE);
         }
 
         if (isSelected(attachmentId)) {

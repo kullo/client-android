@@ -73,7 +73,7 @@ public class CropImageActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     loadInputBitmapIntoViewAsync();
                 } else {
-                    setResult(SettingsActivity.ACTIVITY_RESULT_PERMISSION_DENIED_READ_STORAGE);
+                    setResult(ProfileSettingsActivity.ACTIVITY_RESULT_PERMISSION_DENIED_READ_STORAGE);
                     finish();
                 }
                 break;

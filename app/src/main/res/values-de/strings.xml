@@ -24,8 +24,13 @@ ellipsis (…)
     <string name="error_title">Ein Fehler ist aufgetreten</string>
     <string name="kullo_address">Kullo-Adresse</string>
     <string name="kullo_masterkey">MasterKey</string>
+    <string name="name">Name</string>
+    <string name="organization">Organisation</string>
+    <string name="organization_opt">Organisation (optional)</string>
+    <string name="footer">Impressum</string>
     <!-- use \u0020… in German -->
     <string name="text_view_ellipsis">\u0020…</string>
+    <string name="actionmode_title_n_selected">%1$d ausgewählt</string>
 
     <!-- general actions -->
     <string name="action_delete">Löschen</string>
@@ -41,7 +46,7 @@ ellipsis (…)
     <string name="network_error_unknown">Unbekannter Fehler.</string>
 
     <!-- welcome -->
-    <string name="welcome_open_inbox">Posteingang öffnen</string>
+    <string name="welcome_open_inbox">Postfach öffnen</string>
     <string name="welcome_action_open">Öffnen</string>
     <string name="welcome_already_address">Du hast bereits eine Kullo-Adresse?</string>
     <string name="welcome_need_address">Du benötigst eine neue Kullo-Adresse?</string>
@@ -56,10 +61,12 @@ ellipsis (…)
     <string name="create_session_migrating">Optimiere Postfach …</string>
 
     <!-- logout -->
-    <string name="leaving_inbox_title">Verlasse Posteingang …</string>
+    <string name="leave_inbox_confirmation_title">Postfach verlassen?</string>
+    <string name="leave_inbox_confirmation_description">Du erhältst dann keine Push-Benachrichtigungen mehr für %s.</string>
+    <string name="leave_inbox_confirmation_positive">@android:string/ok</string>
+    <string name="leave_inbox_confirmation_negative">Abbrechen</string>
+    <string name="leaving_inbox_title">Verlasse Postfach …</string>
     <string name="leaving_inbox_description">Es wird zum Willkommens-Bildschirm gewechselt</string>
-    <string name="logging_out_title">Ausloggen …</string>
-    <string name="logging_out_description">Lokale Nachrichten und Benutzerinformationen werden gelöscht</string>
 
     <!-- registration -->
     <string name="generate_keys_title">Erzeuge Schlüssel %1$s</string>
@@ -77,11 +84,11 @@ ellipsis (…)
 
     <!-- nav drawer -->
     <string name="menu_conversations">Nachrichten</string>
-    <string name="menu_settings">Einstellungen</string>
+    <string name="menu_profile_settings">Profil</string>
     <string name="menu_feedback">Feedback</string>
-    <string name="menu_account">Konto</string>
+    <string name="menu_masterkey">MasterKey</string>
     <string name="menu_about">Über</string>
-    <string name="menu_leave_inbox">Posteingang verlassen</string>
+    <string name="menu_leave_inbox">Postfach verlassen</string>
     <string name="open_drawer">Menü öffnen</string>
     <string name="close_drawer">Menü schließen</string>
     <string name="account_overlay_network_error">Netzwerkfehler beim Abrufen der Accountinformationen</string>
@@ -92,20 +99,28 @@ ellipsis (…)
 
 
     <!-- conversations list -->
-    <string name="footer">Impressum</string>
     <string name="action_toggle_message_size">Inflate</string>
     <string name="empty_conversation_title">Neu</string>
-    <string name="download_attachments">Herunterladen</string>
-    <string name="conversations_empty_state_text">Derzeit sind keine Konversationen in diesem Posteingang. Synchronisiere um Nachrichten vom Server zu laden oder starte eine neue Konversation.</string>
+    <string name="conversations_empty_state_text">Derzeit sind keine Konversationen in diesem Postfach. Synchronisiere um Nachrichten vom Server zu laden oder starte eine neue Konversation.</string>
     <string name="conversation_options">Konversation bearbeiten</string>
-    <string name="title_n_selected">%1$d ausgewählt</string>
-    <string name="conversations_confirm_delete_conversations_title">Konversationen löschen</string>
-    <string name="conversations_confirm_delete_conversations_body">Wirklich %1$d Konversationen mit insgesamt %2$d Nachrichten löschen?</string>
-    <string name="conversations_toast_n_empty_deleted">Lösche %1$d leere Konversationen</string>
+    <string name="conversations_confirm_delete_title_1">Konversation löschen</string>
+    <string name="conversations_confirm_delete_title_n">Konversationen löschen</string>
+    <string name="conversations_confirm_delete_body_part1_1">Wirklich eine Konversation</string>
+    <string name="conversations_confirm_delete_body_part1_n">Wirklich %d Konversationen</string>
+    <string name="conversations_confirm_delete_body_part2_1">mit insgesamt einer Nachricht löschen?</string>
+    <string name="conversations_confirm_delete_body_part2_n">mit insgesamt %d Nachrichten löschen?</string>
+    <string name="conversations_toast_deleting_empty_1">Lösche eine leere Konversation</string>
+    <string name="conversations_toast_deleting_empty_n">Lösche %d leere Konversationen</string>
 
     <!-- messages list -->
+    <string name="conversation_info_teaser_conversation_with">Konversation mit %s</string>
+    <string name="conversation_info_teaser_with_x_participants">%d Teilnehmern</string>
     <string name="message_options">Nachricht bearbeiten</string>
     <string name="empty_messages_list">Es befinden sich keine Nachrichten in dieser Konversation.</string>
+
+    <!-- conversation info -->
+    <string name="conversation_info_title">Infos zur Konversation</string>
+    <string name="action_start_conversation_with">Neue Konversation mit</string>
 
     <!-- message attachments -->
     <string name="attachments_unknown_mimetype_title">Unbekannter Dateityp</string>
@@ -121,13 +136,12 @@ ellipsis (…)
     <string name="action_write">Schreiben</string>
     <string name="singlemessage_file_save_to_canceled">Speichern abgebrochen</string>
     <string name="singlemessage_file_save_failed">Speichern fehlgeschlagen</string>
+    <string name="singlemessage_save_not_available">Speichern ist erst ab Android 4.4 verfügbar. Das tut uns Leid!</string>
 
     <!-- settings -->
     <string name="settings_remove_avatar">Avatar löschen</string>
     <string name="settings_save_confirmation">Einstellungen gespeichert</string>
     <string name="settings_name_empty_error">Name darf nicht leer sein</string>
-    <string name="name">Name</string>
-    <string name="organization">Organisation</string>
     <string name="select_image_source">Bildquelle auswählen</string>
     <string name="capture_image_canceled">Bildauswahl abgebrochen</string>
     <string name="action_rotate_image">Drehen</string>
@@ -160,14 +174,17 @@ ellipsis (…)
     <string name="impressum_content_full">Anbieter\nKullo GmbH\nKranzplatz 5–6\n65183 Wiesbaden\n\nVertretung\nVertretungsberechtigte Geschäftsführer:\nSimon Warta, Daniel Seither\n\nKontakt\n0175 1930541\nsimon@kullo.net\nsimon#kullo.net\n\nHandelsregister\nRegistergericht: Amtsgericht Wiesbaden\nRegisternummer: HRB 27626\n\nUmsatzsteuer-Identifikationsnummer\nDE294537976</string>
 
     <!-- start conversation -->
-    <string name="new_conversation">Neue Konversation</string>
-    <string name="add_participant">+</string>
-    <string name="recipients">Empfänger</string>
-    <string name="address_not_exist">Adresse existiert nicht</string>
-    <string name="address_check_failed_error_header">Adressverifikation fehlgeschlagen</string>
-    <string name="address_check_failed_connection_error">Adresse konnte nicht verifiziert werden. Bist du online? Ist die Adresse korrekt?</string>
-    <string name="sender_is_recipient">Du kannst keine Nachricht an dich selbst schreiben</string>
-    <string name="progress_new_participant">Adressprüfung</string>
+    <string name="start_conversation_new_conversation">Neue Konversation</string>
+    <string name="start_conversation_add_participant">+</string>
+    <string name="start_conversation_recipients">Empfänger</string>
+    <string name="start_conversation_address_not_exist">Adresse existiert nicht</string>
+    <string name="start_conversation_address_check_failed_error_header">Adressverifikation fehlgeschlagen</string>
+    <string name="start_conversation_address_check_failed_connection_error">Adresse konnte nicht verifiziert werden. Bist du online? Ist die Adresse korrekt?</string>
+    <string name="start_conversation_sender_is_recipient">Du kannst keine Nachricht an dich selbst schreiben</string>
+    <string name="start_conversation_progress_new_participant">Adressprüfung</string>
+    <string name="start_conversation_create_conversation_failed">Konversation konnte nicht erstellt werden</string>
+    <string name="start_conversation_participant_needed">Mindestens ein Teilnehmer ist nötig</string>
+    <string name="start_conversation_action_remove">Entfernen</string>
 
     <!-- compose -->
     <string name="activity_title_compose">Schreiben</string>
@@ -181,8 +198,6 @@ ellipsis (…)
     <string name="new_message_receivers_label">An</string>
     <string name="select_file_canceled">Dateiauswahl abgebrochen</string>
     <string name="no_tmp_dir_found">Kein temporäres Verzeichnis gefunden</string>
-    <string name="organization_opt">Organisation (optional)</string>
-    <string name="participant_needed">Mindestens ein Teilnehmer ist nötig</string>
     <string name="compose_error_loading_file">Ausgewählte Datei konnte nicht geladen werden</string>
     <string name="compose_scale_image_title">Bild verkleinern</string>
     <string name="compose_scale_images_title">Bilder verkleinern</string>
@@ -205,4 +220,10 @@ ellipsis (…)
     <!-- notifications -->
     <string name="notification_title_new_message">Kullo</string>
     <string name="notification_body_new_message">Neue Kullo-Nachricht erhalten</string>
+
+    <!-- address dialog -->
+    <string name="address_dialog_option_write">Nachricht schreiben</string>
+    <string name="address_dialog_option_add">Zu neuer Konversation hinzufügen</string>
+    <string name="address_dialog_option_copy">Kullo-Adresse kopieren</string>
+    <string name="address_dialog_confirmation_copied">%s kopiert</string>
 </resources>

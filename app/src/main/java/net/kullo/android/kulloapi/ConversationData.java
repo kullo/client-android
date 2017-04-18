@@ -6,12 +6,17 @@ import android.graphics.Bitmap;
 import net.kullo.android.littlehelpers.AddressSet;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ConversationData {
-    public String mTitle;
-    public AddressSet mParticipants;
-    public List<String> mParticipantsTitles = new ArrayList<>();
-    public List<Bitmap> mParticipantsAvatars = new ArrayList<>();
-    public int mCountUnread;
+    public String title;
+    public AddressSet participants;
+    public List<String> participantsTitle = new ArrayList<>();
+    public Map<String, String> participantsName = new HashMap<>();
+    public Map<String, String> participantsOrganization = new HashMap<>();
+    // Use String keys as Address type does not implement Java equality methods
+    public Map<String, Bitmap> participantsAvatar = new HashMap<>();
+    public int countUnread;
 }

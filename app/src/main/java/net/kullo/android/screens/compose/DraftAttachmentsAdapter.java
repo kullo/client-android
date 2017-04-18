@@ -9,7 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import net.kullo.android.R;
-import net.kullo.android.kulloapi.KulloIdsAdapter;
+import net.kullo.android.util.adapters.KulloIdsAdapter;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.Formatting;
 import net.kullo.android.ui.ClickableRecyclerViewViewHolder;
@@ -60,8 +60,8 @@ public class DraftAttachmentsAdapter extends KulloIdsAdapter<DraftAttachmentsVie
             @Override
             public void onItemClicked(int adapterPosition) {
                 if (onItemClickListener != null) {
-                    long id = getItemId(adapterPosition);
-                    onItemClickListener.onItemClicked(adapterPosition, id);
+                    long attachmentId = getItem(adapterPosition);
+                    onItemClickListener.onItemClicked(adapterPosition, attachmentId);
                 }
             }
         });
@@ -69,8 +69,8 @@ public class DraftAttachmentsAdapter extends KulloIdsAdapter<DraftAttachmentsVie
             @Override
             public boolean onItemLongClicked(int adapterPosition) {
                 if (onItemLongClickListener != null) {
-                    long id = getItemId(adapterPosition);
-                    return onItemLongClickListener.onItemLongClicked(adapterPosition, id);
+                    long attachmentId = getItem(adapterPosition);
+                    return onItemLongClickListener.onItemLongClicked(adapterPosition, attachmentId);
                 }
                 return false;
             }

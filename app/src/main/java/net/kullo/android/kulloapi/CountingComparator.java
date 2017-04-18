@@ -1,21 +1,15 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.kulloapi;
 
-import net.kullo.javautils.RuntimeAssertion;
-import net.kullo.libkullo.api.Session;
-
 import java.util.Comparator;
 
 /**
  * A comparator that logs what it is doing.
  */
-abstract public class KulloComparator implements Comparator<Long> {
+abstract public class CountingComparator implements Comparator<Long> {
     private int mCount = 0;
-    protected final Session mSession;
 
-    KulloComparator(Session session) {
-        RuntimeAssertion.require(session != null);
-        mSession = session;
+    CountingComparator() {
     }
 
     // To be called on a compare() implementation

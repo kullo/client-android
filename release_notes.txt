@@ -1,3 +1,11 @@
+Version 45
+
+● Mark messages as read in messages list when fully visible for 3 seconds
+● Improve support for setting PNG avatars
+
+● Nachrichten werden in der Nachrichtenliste als gelesen markiert nachdem sie 3 Sekunden komplett sichtbar waren
+● Bessere Unterstützen von PNG-Avataren
+
 Version 44
 
 ● Displays sender addresses in single message

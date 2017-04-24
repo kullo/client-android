@@ -19,6 +19,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.TextView;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloActivity;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.ClientConnector;
 import net.kullo.android.kulloapi.CreateSessionResult;
@@ -41,7 +42,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.github.dialogsforandroid.MaterialDialog;
 
-public class StartConversationActivity extends AppCompatActivity {
+public class StartConversationActivity extends KulloActivity {
     @SuppressWarnings("unused") private static final String TAG = "StartConversationAct."; // max. 23 chars
 
     @BindView(R.id.new_participant_text_input_layout) TextInputLayout mNewParticipantTextInputLayout;
@@ -248,9 +249,6 @@ public class StartConversationActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case android.R.id.home:
-                finish();
-                return true;
             case R.id.action_new_conversation:
                 String newParticipantAddress = mNewParticipantEditText.getText().toString();
                 if (newParticipantAddress.isEmpty()) {

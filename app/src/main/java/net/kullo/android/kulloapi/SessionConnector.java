@@ -86,6 +86,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionConnector {
@@ -826,6 +827,10 @@ public class SessionConnector {
         }
     }
 
+    public interface AddAttachmentToDraftCallback {
+        void run(boolean success);
+    }
+
     // ATTACHMENTS
     @NonNull
     @MainThread
@@ -833,31 +838,36 @@ public class SessionConnector {
             final long conversationId,
             @NonNull final String filePath,
             @NonNull final String mimeType,
-            @Nullable final Runnable doneCallback) {
-        RuntimeAssertion.require(mSession != null);
+            @Nullable final AddAttachmentToDraftCallback callback) {
+        final AsyncTask task;
 
-        AsyncTask task = mSession.draftAttachments().addAsync(conversationId, filePath, mimeType, new DraftAttachmentsAddListener() {
-            @Override
-            public void progressed(long convId, long attId, long bytesProcessed, long bytesTotal) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
 
-            }
-
-            @Override
-            public void finished(long convId, long attId, String path) {
-                for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
-                    ((DraftAttachmentsAddListenerObserver) observer).finished(convId, attId, path);
+            task = mSession.draftAttachments().addAsync(conversationId, filePath, mimeType, new DraftAttachmentsAddListener() {
+                @Override
+                public void progressed(long convId, long attId, long bytesProcessed, long bytesTotal) {
                 }
 
-                if (doneCallback != null) doneCallback.run();
-            }
+                @Override
+                public void finished(long convId, long attId, String path) {
+                    for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
+                        ((DraftAttachmentsAddListenerObserver) observer).finished(convId, attId, path);
+                    }
 
-            @Override
-            public void error(long convId, String path, LocalError error) {
-                for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
-                    ((DraftAttachmentsAddListenerObserver) observer).error(error.toString());
+                    if (callback != null) callback.run(true);
                 }
-            }
-        });
+
+                @Override
+                public void error(long convId, String path, LocalError error) {
+                    for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
+                        ((DraftAttachmentsAddListenerObserver) observer).error(error);
+                    }
+
+                    if (callback != null) callback.run(false);
+                }
+            });
+        }
 
         mTaskHolder.add(task);
         return task;
@@ -1136,20 +1146,29 @@ public class SessionConnector {
     }
 
     @MainThread
-    @SuppressWarnings("ConstantConditions")
     public void setMessageRead(long messageId) {
-        boolean changed;
+        setMessagesRead(Collections.singleton(messageId));
+    }
+
+    @MainThread
+    @SuppressWarnings("ConstantConditions")
+    public void setMessagesRead(@NonNull final Set<Long> messageIds) {
+        if (messageIds.isEmpty()) return;
+
+        boolean anythingChanged = false;
         boolean newValue = true;
 
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
 
-            boolean oldValue = mSession.messages().isRead(messageId);
-            changed = oldValue != newValue;
-            mSession.messages().setRead(messageId, newValue);
+            for (long messageId : messageIds) {
+                boolean oldValue = mSession.messages().isRead(messageId);
+                anythingChanged |= (oldValue != newValue);
+                mSession.messages().setRead(messageId, newValue);
+            }
         }
 
-        if (changed) {
+        if (anythingChanged) {
             new Handler().post(new Runnable() {
                 @Override
                 public void run() {

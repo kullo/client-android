@@ -2,11 +2,10 @@
 package net.kullo.android.screens;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.view.MenuItem;
 import android.widget.TextView;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloActivity;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.SessionConnector;
@@ -14,7 +13,7 @@ import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.javautils.RuntimeAssertion;
 
-public class MasterKeyActivity extends AppCompatActivity {
+public class MasterKeyActivity extends KulloActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,16 +49,5 @@ public class MasterKeyActivity extends AppCompatActivity {
 
         addressView.setText(SessionConnector.get().getCurrentUserAddress().toString());
         masterkeyView.setText(SessionConnector.get().getCurrentUserMasterKeyAsPem());
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home: // back button
-                finish();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
     }
 }

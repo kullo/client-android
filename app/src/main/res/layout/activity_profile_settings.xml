@@ -34,7 +34,7 @@ http://stackoverflow.com/a/8639921
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp">
 
-                <EditText
+                <android.support.design.widget.TextInputEditText
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/name"
@@ -50,7 +50,7 @@ http://stackoverflow.com/a/8639921
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp">
 
-                <EditText
+                <android.support.design.widget.TextInputEditText
                     android:id="@+id/edit_kullo_organization_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -67,7 +67,7 @@ http://stackoverflow.com/a/8639921
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp">
 
-                <EditText
+                <android.support.design.widget.TextInputEditText
                     android:id="@+id/edit_kullo_footer_text"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -81,7 +81,7 @@ http://stackoverflow.com/a/8639921
                 android:layout_height="120dp"
                 android:scaleType="centerCrop"
                 android:src="@drawable/kullo_settings_avatar"
-                android:backgroundTint="@color/kulloAccentColor"
+                android:background="@drawable/background_for_transparent_images"
                 />
 
         </LinearLayout>

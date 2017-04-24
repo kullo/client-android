@@ -1,6 +1,9 @@
+package net.kullo.android.thirdparty;
+
 /*
  * Copyright (C) 2011 Micah Hainline
- * Copyright (C) 2012 Triposo
+ *               2012 Triposo
+ *               2015,2017 Simon Warta (Kullo GmbH)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +17,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package net.kullo.android.thirdparty;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.AppCompatTextView;
 import android.text.Layout;
 import android.text.Layout.Alignment;
@@ -32,7 +33,7 @@ import android.util.AttributeSet;
 
 import net.kullo.android.R;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,9 +46,9 @@ public class EllipsizingTextView extends AppCompatTextView {
         void ellipsizeStateChanged(boolean ellipsized);
     }
 
-    private final List<EllipsizeListener> ellipsizeListeners = new ArrayList<EllipsizeListener>();
-    private boolean isEllipsized;
-    private boolean isStale;
+    private final List<EllipsizeListener> ellipsizeListeners = new LinkedList<>();
+    @Nullable private Boolean isEllipsized = null;
+    private boolean isDirty = true;
     private boolean programmaticChange;
     private CharSequence fullText;
     private int maxLines;
@@ -79,6 +80,15 @@ public class EllipsizingTextView extends AppCompatTextView {
         this.endPunctuationPattern = pattern;
     }
 
+    /**
+     * Reset to defaults, e.g. when used in a list where views are recycled
+     */
+    public void prepareForReuse() {
+        ellipsizeListeners.clear();
+        isEllipsized = null;
+        isDirty = true;
+    }
+
     public void addEllipsizeListener(EllipsizeListener listener) {
         if (listener == null) {
             throw new NullPointerException();
@@ -90,15 +100,11 @@ public class EllipsizingTextView extends AppCompatTextView {
         ellipsizeListeners.remove(listener);
     }
 
-    public boolean isEllipsized() {
-        return isEllipsized;
-    }
-
     @Override
     public void setMaxLines(int maxLines) {
         super.setMaxLines(maxLines);
         this.maxLines = maxLines;
-        isStale = true;
+        isDirty = true;
     }
 
     @SuppressLint("Override")
@@ -123,7 +129,7 @@ public class EllipsizingTextView extends AppCompatTextView {
         super.onTextChanged(text, start, before, after);
         if (!programmaticChange) {
             fullText = text;
-            isStale = true;
+            isDirty = true;
         }
     }
 
@@ -131,20 +137,20 @@ public class EllipsizingTextView extends AppCompatTextView {
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         if (ellipsizingLastFullyVisibleLine()) {
-            isStale = true;
+            isDirty = true;
         }
     }
 
     public void setPadding(int left, int top, int right, int bottom) {
         super.setPadding(left, top, right, bottom);
         if (ellipsizingLastFullyVisibleLine()) {
-            isStale = true;
+            isDirty = true;
         }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (isStale) {
+        if (isDirty) {
             resetText();
         }
         super.onDraw(canvas);
@@ -188,8 +194,8 @@ public class EllipsizingTextView extends AppCompatTextView {
                 programmaticChange = false;
             }
         }
-        isStale = false;
-        if (ellipsized != isEllipsized) {
+        isDirty = false;
+        if (isEllipsized == null || isEllipsized != ellipsized) {
             isEllipsized = ellipsized;
             for (EllipsizeListener listener : ellipsizeListeners) {
                 listener.ellipsizeStateChanged(ellipsized);

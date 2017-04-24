@@ -13,11 +13,9 @@ import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.content.FileProvider;
-import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -25,6 +23,7 @@ import android.widget.Toast;
 
 import net.kullo.android.R;
 import net.kullo.android.application.CacheType;
+import net.kullo.android.application.KulloActivity;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
@@ -38,7 +37,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProfileSettingsActivity extends AppCompatActivity {
+public class ProfileSettingsActivity extends KulloActivity {
     public static final String TAG = ProfileSettingsActivity.class.getSimpleName();
     public static final int ACTIVITY_RESULT_PERMISSION_DENIED_READ_STORAGE = 8001;
 
@@ -116,17 +115,6 @@ public class ProfileSettingsActivity extends AppCompatActivity {
         SessionConnector.get().sync();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home: // back button
-                finish();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
-
     private void setupLayout() {
         mName = (TextInputLayout) findViewById(R.id.edit_kullo_name);
         mOrganization = (TextInputLayout) findViewById(R.id.edit_kullo_organization);
@@ -164,7 +152,7 @@ public class ProfileSettingsActivity extends AppCompatActivity {
 
     private void showErrorUsernameIfEmpty() {
         if (mNameEditText.getText().toString().isEmpty()) {
-            mName.setError(this.getResources().getString(R.string.settings_name_empty_error));
+            mName.setError(getString(R.string.settings_name_empty_error));
             mName.setErrorEnabled(true);
         } else {
             mName.setError(null);

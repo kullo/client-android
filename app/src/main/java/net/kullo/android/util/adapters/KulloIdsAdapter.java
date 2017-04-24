@@ -1,9 +1,8 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.util.adapters;
 
+import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
-
-import net.kullo.javautils.RuntimeAssertion;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,9 +47,7 @@ public abstract class KulloIdsAdapter<VH extends RecyclerView.ViewHolder>
         notifyItemInserted(insertionPosition);
     }
 
-    public void replaceAll(Collection<Long> collection) {
-        RuntimeAssertion.require(collection != null);
-
+    public void replaceAll(@NonNull Collection<Long> collection) {
         mSelectedItems.clear();
         mItems.clear();
         mItems.addAll(collection);

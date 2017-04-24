@@ -75,7 +75,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".screens.MessagesListActivity" />
+            android:name=".screens.MessagesListActivity"
+            android:parentActivityName=".screens.ConversationsListActivity"/>
         <activity
             android:name=".screens.SingleMessageActivity" />
         <activity
@@ -94,13 +95,16 @@
         </activity>
         <activity
             android:name=".screens.StartConversationActivity"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            android:parentActivityName=".screens.ConversationsListActivity"/>
         <activity
             android:name=".screens.AboutActivity"
-            android:label="@string/menu_about" />
+            android:label="@string/menu_about"
+            android:parentActivityName=".screens.ConversationsListActivity"/>
         <activity
             android:name=".screens.ProfileSettingsActivity"
-            android:label="@string/menu_profile_settings" />
+            android:label="@string/menu_profile_settings"
+            android:parentActivityName=".screens.ConversationsListActivity"/>
         <activity
             android:name=".screens.ShareReceiverActivity">
             <intent-filter>
@@ -124,7 +128,8 @@
             android:label="@string/crop_image" />
         <activity
             android:name=".screens.MasterKeyActivity"
-            android:label="@string/menu_masterkey" />
+            android:label="@string/menu_masterkey"
+            android:parentActivityName=".screens.ConversationsListActivity"/>
         <activity android:name=".screens.DebugActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -133,10 +138,12 @@
         </activity>
         <activity
             android:name=".screens.ImpressumActivity"
-            android:label="@string/activity_title_impressum" />
+            android:label="@string/activity_title_impressum"
+            android:parentActivityName=".screens.AboutActivity"/>
         <activity
             android:name=".screens.LicensesActivity"
-            android:label="@string/activity_title_licenses" />
+            android:label="@string/activity_title_licenses"
+            android:parentActivityName=".screens.AboutActivity"/>
 
         <!-- ensure activity is not destroyed when rotation changes (http://stackoverflow.com/q/3329318/2013738) -->
         <activity

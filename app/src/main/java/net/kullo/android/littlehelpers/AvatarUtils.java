@@ -64,13 +64,27 @@ public class AvatarUtils {
         return bitmap;
     }
 
-    public static byte[] bitmapToJpegBinaryWithDownsamplingQualityAndMaxByteArraySize(Bitmap bitmap, int quality, int maxByteArraySize) {
+    // Try to encode as PNG. Returns null if encoding is larger than maxByteArraySize
+    @Nullable
+    public static byte[] encodeAsPng(Bitmap bitmap, int maxByteArraySize) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 0, stream);
+        byte[] byteArray = stream.toByteArray();
+
+        if (byteArray.length <= maxByteArraySize) {
+            return byteArray;
+        } else {
+            return null;
+        }
+    }
+
+    public static byte[] encodeAsJpeg(Bitmap bitmap, int quality, int maxByteArraySize) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream);
         byte[] byteArray = stream.toByteArray();
 
         if (byteArray.length > maxByteArraySize) {
-            return bitmapToJpegBinaryWithDownsamplingQualityAndMaxByteArraySize(bitmap, quality - KulloConstants.AVATAR_QUALITY_DOWNSAMPLING_STEPS, KulloConstants.AVATAR_MAX_SIZE);
+            return encodeAsJpeg(bitmap, quality - KulloConstants.AVATAR_QUALITY_DOWNSAMPLING_STEPS, KulloConstants.AVATAR_MAX_SIZE);
         } else {
             return byteArray;
         }

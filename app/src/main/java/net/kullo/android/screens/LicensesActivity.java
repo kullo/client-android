@@ -1,17 +1,16 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.screens;
 
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.MenuItem;
 import android.webkit.WebView;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloActivity;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.javautils.RuntimeAssertion;
 
-public class LicensesActivity extends AppCompatActivity {
+public class LicensesActivity extends KulloActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,16 +24,5 @@ public class LicensesActivity extends AppCompatActivity {
         WebView webview = (WebView) findViewById(R.id.webview);
         RuntimeAssertion.require(webview != null);
         webview.loadUrl(KulloApplication.LICENSES_FILE);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home: // back button
-                finish();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
     }
 }

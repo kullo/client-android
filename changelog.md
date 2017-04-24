@@ -1,7 +1,17 @@
 Kullo for Android
 -----------------
 
-## v44
+## v45
+
+ * Mark messages as read in messages list when fully visible for 3 seconds
+ * Improve support for setting PNG avatars
+ * Handle errors when adding attachments to draft
+
+### Requirements
+
+ * Google Play Services 10.0
+
+## v44 (2017-04-18)
 
  * Displays sender addresses in single message
  * Conversation info screen that lets you select participants

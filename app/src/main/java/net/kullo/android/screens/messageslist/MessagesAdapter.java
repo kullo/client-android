@@ -4,15 +4,16 @@ package net.kullo.android.screens.messageslist;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.support.annotation.UiThread;
+import android.support.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
-import net.kullo.android.util.adapters.KulloIdsAdapter;
 import net.kullo.android.kulloapi.SessionConnector;
+import net.kullo.android.thirdparty.EllipsizingTextView;
+import net.kullo.android.util.adapters.KulloIdsAdapter;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -21,21 +22,28 @@ import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
+    public interface FullyVisibleCallback {
+        void onUnreadAndFullyVisible(Long item);
+        void onNotUnreadAndFullyVisible(Long item);
+    }
+
     public static final String TAG = "MessagesAdapter";
     private static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
     private final DateTimeFormatter mFormatterClock;
     private final DateTimeFormatter mFormatterCalendarDate;
     private final Activity mBaseActivity;
-    private final Long mConversationId;
     private boolean mShowCardsExpanded;
 
-    public MessagesAdapter(final Activity baseActivity, Long conversationId) {
+    @Nullable private FullyVisibleCallback mFullyVisibleCallback;
+
+    public MessagesAdapter(final Activity baseActivity) {
         super();
         mBaseActivity = baseActivity;
-        mConversationId = conversationId;
         mShowCardsExpanded = false;
 
         mFormatterCalendarDate = ((KulloApplication) mBaseActivity.getApplication()).getShortDateFormatter();
@@ -49,6 +57,18 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
 
     public boolean isShowCardsExpanded() {
         return mShowCardsExpanded;
+    }
+
+    private void onUnreadAndFullyVisible(Long item) {
+        if (mFullyVisibleCallback != null) mFullyVisibleCallback.onUnreadAndFullyVisible(item);
+    }
+
+    private void onNotUnreadAndFullyVisible(Long item) {
+        if (mFullyVisibleCallback != null) mFullyVisibleCallback.onNotUnreadAndFullyVisible(item);
+    }
+
+    public void setFullyVisibleCallback(@Nullable FullyVisibleCallback callback) {
+        mFullyVisibleCallback = callback;
     }
 
     @Override
@@ -70,32 +90,42 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
         final Bitmap senderAvatar = SessionConnector.get().getSenderAvatar(mBaseActivity, messageId);
         final String senderName = SessionConnector.get().getSenderName(messageId);
         final ArrayList<Long> attachmentIds = SessionConnector.get().getMessageAttachmentsIds(messageId);
+        final boolean hasAttachments = !attachmentIds.isEmpty();
 
         messagesViewHolder.mMessageDateTextView.setText(getDateText(dateReceived));
         messagesViewHolder.mSenderAvatarImage.setImageBitmap(senderAvatar);
         messagesViewHolder.mSenderNameTextView.setText(senderName);
         messagesViewHolder.mUnreadIcon.setVisibility(unread ? View.VISIBLE : View.GONE);
-        messagesViewHolder.mHasAttachmentsIcon.setVisibility(!attachmentIds.isEmpty() ? View.VISIBLE : View.GONE);
+        messagesViewHolder.mHasAttachmentsIcon.setVisibility(hasAttachments ? View.VISIBLE : View.GONE);
+
+        messagesViewHolder.mMessageTextTextView.prepareForReuse();
 
         if (mShowCardsExpanded) {
-            messagesViewHolder.mMessageTextTextView.setMaxLines(Integer.MAX_VALUE);
+            messagesViewHolder.mMessageTextTextView.setMaxLines(10);
             messagesViewHolder.mMessageTextTextView.setText(text);
         } else {
-            final String textCompressed = text.replaceAll("\\s+", " ");
+            final String textCompressed = WHITESPACE_PATTERN.matcher(text).replaceAll(" ");
             messagesViewHolder.mMessageTextTextView.setMaxLines(2);
             messagesViewHolder.mMessageTextTextView.setText(textCompressed);
         }
 
-        // draw background if item is selected
+        messagesViewHolder.mMessageTextTextView.addEllipsizeListener(new EllipsizingTextView.EllipsizeListener() {
+            @Override
+            public void ellipsizeStateChanged(boolean ellipsized) {
+                boolean messageIsUnreadAndFullyVisible = unread && !hasAttachments && !ellipsized;
+                if (messageIsUnreadAndFullyVisible) {
+                    onUnreadAndFullyVisible(messageId);
+                } else {
+                    onNotUnreadAndFullyVisible(messageId);
+                }
+            }
+        });
+
         if (isSelected(messageId)) {
             messagesViewHolder.itemView.setBackgroundColor(mBaseActivity.getResources().getColor(R.color.kulloSelectionColor));
         } else {
             messagesViewHolder.itemView.setBackgroundColor(Color.TRANSPARENT);
         }
-    }
-
-    private void addMessageIds() {
-        replaceAll(SessionConnector.get().getAllMessageIdsSorted(mConversationId));
     }
 
     private String getDateText(DateTime dateReceived) {
@@ -111,11 +141,5 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
         }
 
         return dateString;
-    }
-
-    @UiThread
-    public void updateDataSet() {
-        addMessageIds();
-        notifyDataSetChanged();
     }
 }

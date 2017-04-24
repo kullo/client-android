@@ -2,8 +2,9 @@
 package net.kullo.android.observers.listenerobservers;
 
 import net.kullo.android.observers.ListenerObserver;
+import net.kullo.libkullo.api.LocalError;
 
 public interface DraftAttachmentsAddListenerObserver extends ListenerObserver {
     void finished(long convId, long attId, String path);
-    void error(String error);
+    void error(LocalError error);
 }

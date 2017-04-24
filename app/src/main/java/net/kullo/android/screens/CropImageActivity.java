@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -142,10 +143,24 @@ public class CropImageActivity extends AppCompatActivity {
         Bitmap bitmap = mCropImageView.getCroppedBitmap();
         Bitmap resizedBitmap = AvatarUtils.resizeBitmapWithShorterSideResizedTo(KulloConstants.AVATAR_DIMENSION, bitmap);
         Bitmap sourceAvatar = AvatarUtils.cropFromCenterForThumbnail(resizedBitmap, KulloConstants.AVATAR_DIMENSION);
-        byte[] avatar = AvatarUtils.bitmapToJpegBinaryWithDownsamplingQualityAndMaxByteArraySize(
-                    sourceAvatar, KulloConstants.AVATAR_BEST_QUALITY, KulloConstants.AVATAR_MAX_SIZE);
+
+        byte[] avatarAsPng = null;
+        if (sourceAvatar.hasAlpha()) {
+            avatarAsPng = AvatarUtils.encodeAsPng(sourceAvatar, KulloConstants.AVATAR_MAX_SIZE);
+        }
+
+        final String mimeType;
+        final byte[] avatar;
+        if (avatarAsPng != null) {
+            avatar = avatarAsPng;
+            mimeType = "image/png";
+        } else {
+            avatar = AvatarUtils.encodeAsJpeg(sourceAvatar, KulloConstants.AVATAR_BEST_QUALITY, KulloConstants.AVATAR_MAX_SIZE);
+            mimeType = "image/jpeg";
+        }
+
         SessionConnector.get().setCurrentUserAvatar(avatar);
-        SessionConnector.get().setCurrentUserAvatarMimeType("image/jpeg");
+        SessionConnector.get().setCurrentUserAvatarMimeType(mimeType);
     }
 
     private void rotateImage() {

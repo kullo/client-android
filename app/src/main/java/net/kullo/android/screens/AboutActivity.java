@@ -3,19 +3,18 @@ package net.kullo.android.screens;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloActivity;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.littlehelpers.AppVersion;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.javautils.RuntimeAssertion;
 
-public class AboutActivity extends AppCompatActivity {
+public class AboutActivity extends KulloActivity {
     @SuppressWarnings("unused") private static final String TAG = "AboutActivity";
 
     @Override
@@ -73,17 +72,6 @@ public class AboutActivity extends AppCompatActivity {
 
         String pushText = getResources().getString(R.string.about_push_notifications_text);
         ((TextView) findViewById(R.id.about_push_notifications_text)).setText(String.format(pushText, googlePlayStatusText));
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home: // back button
-                finish();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
     }
 
     public void openImpressumClicked(View view) {

@@ -214,6 +214,9 @@ ellipsis (…)
     <string name="compose_scale_option_unchanged">Original file</string>
     <string name="compose_scale_progress_title">Scaling</string>
     <string name="compose_scale_progress_description">Images are being scaled down…</string>
+    <string name="compose_add_attachment_error_unknown">Unknown error while adding file</string>
+    <string name="compose_add_attachment_error_filesystem">Error reading file</string>
+    <string name="compose_add_attachment_error_toobig">File too big</string>
 
     <!-- share receiver -->
     <string name="sharereceiver_title_share_text">Share text</string>

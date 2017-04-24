@@ -47,12 +47,14 @@ import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.eventobservers.DraftAttachmentAddedEventObserver;
 import net.kullo.android.observers.eventobservers.DraftAttachmentRemovedEventObserver;
 import net.kullo.android.observers.eventobservers.DraftEventObserver;
+import net.kullo.android.observers.listenerobservers.DraftAttachmentsAddListenerObserver;
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.compose.DraftAttachmentOpener;
 import net.kullo.android.screens.compose.DraftAttachmentsAdapter;
 import net.kullo.android.ui.NonScrollingGridLayoutManager;
 import net.kullo.android.ui.ScreenMetrics;
 import net.kullo.javautils.RuntimeAssertion;
+import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
@@ -80,6 +82,7 @@ public class ComposeActivity extends AppCompatActivity {
     private RecyclerView mAttachmentsList;
     @Nullable private MaterialDialog mProgressSync;
     private DraftEventObserver mDraftEventObserver;
+    private DraftAttachmentsAddListenerObserver mDraftAttachmentsAddListenerObserver;
     private SyncerListenerObserver mSyncerListenerObserver;
     private DraftAttachmentsAdapter mDraftAttachmentsAdapter;
     private DraftAttachmentOpener mDraftAttachmentOpener;
@@ -191,6 +194,48 @@ public class ComposeActivity extends AppCompatActivity {
         handleShares(intent);
 
         GcmConnector.get().fetchAndRegisterToken(this);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        mComposeReceivers.setText(SessionConnector.get().getConversationNameOrPlaceHolder(mConversationId));
+
+        updateDraftTextFromStorage();
+
+        registerObservers();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        GcmConnector.get().removeAllNotifications(this);
+
+        restoreTextSelection();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        storeTextSelection();
+        saveDraft(false);
+        Log.d(TAG, "Activity paused. Draft saved.");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        unregisterObservers();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        unregisterSyncFinishedListenerObserver();
+        mDraftAttachmentOpener.unregisterSaveFinishedListenerObserver();
     }
 
     private void selectDraftAttachment(long id) {
@@ -348,11 +393,11 @@ public class ComposeActivity extends AppCompatActivity {
                                 scaleDownImagesInFilesList(copiedFiles, pixelLimit, new Runnable() {
                                     @Override
                                     public void run() {
-                                        copyFilesToDatabase(copiedFiles, null);
+                                        copyNextFileToDatabase(copiedFiles, null);
                                     }
                                 });
                             } else {
-                                copyFilesToDatabase(copiedFiles, null);
+                                copyNextFileToDatabase(copiedFiles, null);
                             }
                         }
                     })
@@ -364,7 +409,7 @@ public class ComposeActivity extends AppCompatActivity {
                     })
                     .show();
         } else {
-            copyFilesToDatabase(copiedFiles, null);
+            copyNextFileToDatabase(copiedFiles, null);
         }
     }
 
@@ -434,7 +479,7 @@ public class ComposeActivity extends AppCompatActivity {
 
     // Method calls itself until all files are copied and than calls the callback once
     @MainThread
-    void copyFilesToDatabase(
+    void copyNextFileToDatabase(
             @NonNull final Deque<PreparedAttachment> copiedFiles,
             @Nullable final Runnable allDoneCallback) {
         if (copiedFiles.isEmpty()) {
@@ -445,13 +490,15 @@ public class ComposeActivity extends AppCompatActivity {
         final PreparedAttachment attachment = copiedFiles.pollFirst();
         final String path = attachment.tmpFile.getAbsolutePath();
         final String mimeType = attachment.mimeType;
-        SessionConnector.get().addAttachmentToDraft(mConversationId, path, mimeType, new Runnable() {
+        SessionConnector.get().addAttachmentToDraft(mConversationId, path, mimeType, new SessionConnector.AddAttachmentToDraftCallback() {
             @Override
-            public void run() {
+            public void run(boolean success) {
+                // ignore errors and continue
+
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        copyFilesToDatabase(copiedFiles, allDoneCallback);
+                        copyNextFileToDatabase(copiedFiles, allDoneCallback);
                     }
                 });
             }
@@ -507,30 +554,6 @@ public class ComposeActivity extends AppCompatActivity {
         if (mComposeText.getMinimumHeight() != newMinimumHeight) {
             mComposeText.setMinimumHeight(newMinimumHeight);
         }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        mComposeReceivers.setText(SessionConnector.get().getConversationNameOrPlaceHolder(mConversationId));
-
-        updateDraftTextFromStorage();
-
-        mDraftEventObserver = new DraftEventObserver() {
-            @Override
-            public void draftStateChanged(long conversationId) {
-                Log.w(TAG, "möp");
-            }
-
-            @Override
-            public void draftTextChanged(long conversationId) {
-                mComposeText.setText(SessionConnector.get().getDraftText(conversationId));
-            }
-        };
-        SessionConnector.get().addEventObserver(
-                DraftEventObserver.class,
-                mDraftEventObserver);
     }
 
     @Override
@@ -606,39 +629,6 @@ public class ComposeActivity extends AppCompatActivity {
                 callback.onCopiedToCache(preparedAttachments);
             }
         }.execute();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        GcmConnector.get().removeAllNotifications(this);
-
-        restoreTextSelection();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        storeTextSelection();
-        saveDraft(false);
-        Log.d(TAG, "Activity paused. Draft saved.");
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        SessionConnector.get().removeEventObserver(
-                DraftEventObserver.class,
-                mDraftEventObserver);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        unregisterSyncFinishedListenerObserver();
-        mDraftAttachmentOpener.unregisterSaveFinishedListenerObserver();
     }
 
     private void updateDraftTextFromStorage() {
@@ -858,5 +848,57 @@ public class ComposeActivity extends AppCompatActivity {
             Log.e(TAG, "Could not copy " + selectedFileUri + " to " + tmpFile);
             return null;
         }
+    }
+
+    private void registerObservers() {
+        mDraftEventObserver = new DraftEventObserver() {
+            @Override
+            public void draftStateChanged(long conversationId) {
+                Log.w(TAG, "möp");
+            }
+
+            @Override
+            public void draftTextChanged(long conversationId) {
+                mComposeText.setText(SessionConnector.get().getDraftText(conversationId));
+            }
+        };
+        SessionConnector.get().addEventObserver(DraftEventObserver.class, mDraftEventObserver);
+
+        mDraftAttachmentsAddListenerObserver = new DraftAttachmentsAddListenerObserver() {
+            @Override
+            public void finished(long convId, long attId, String path) {
+
+            }
+
+            @Override
+            public void error(final LocalError error) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String text;
+                        switch (error) {
+                            case FILETOOBIG:
+                                text = getString(R.string.compose_add_attachment_error_toobig);
+                                break;
+                            case FILESYSTEM:
+                                text = getString(R.string.compose_add_attachment_error_filesystem);
+                                break;
+                            case UNKNOWN:
+                                text = getString(R.string.compose_add_attachment_error_unknown);
+                                break;
+                            default:
+                                throw new AssertionError("Unhandled enum value");
+                        }
+                        Toast.makeText(ComposeActivity.this, text, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        };
+        SessionConnector.get().addListenerObserver(DraftAttachmentsAddListenerObserver.class, mDraftAttachmentsAddListenerObserver);
+    }
+
+    private void unregisterObservers() {
+        SessionConnector.get().removeEventObserver(DraftEventObserver.class, mDraftEventObserver);
+        SessionConnector.get().removeListenerObserver(DraftAttachmentsAddListenerObserver.class, mDraftAttachmentsAddListenerObserver);
     }
 }

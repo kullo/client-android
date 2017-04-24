@@ -8,7 +8,6 @@ import android.support.annotation.Nullable;
 import android.support.annotation.UiThread;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -22,6 +21,7 @@ import android.widget.Toast;
 
 import net.kullo.android.R;
 import net.kullo.android.application.CommonDialogs;
+import net.kullo.android.application.KulloActivity;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
 import net.kullo.android.kulloapi.DialogMaker;
@@ -39,17 +39,23 @@ import net.kullo.android.screens.messageslist.ConversationAdapter;
 import net.kullo.android.screens.messageslist.MessagesAdapter;
 import net.kullo.android.ui.DividerDecoration;
 import net.kullo.android.ui.RecyclerItemClickListener;
+import net.kullo.android.util.ItemVisibilityObserver;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import io.github.dialogsforandroid.MaterialDialog;
 import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
-public class MessagesListActivity extends AppCompatActivity {
+public class MessagesListActivity extends KulloActivity {
     public static final String TAG = "MessagesListActivity";
 
     private MessagesAdapter mMessagesAdapter;
@@ -66,10 +72,14 @@ public class MessagesListActivity extends AppCompatActivity {
     private MaterialProgressBar mProgressBarDeterminate;
     private MaterialProgressBar mProgressBarIndeterminate;
     private RecyclerView mMessagesList;
+    private LinearLayoutManager mLayoutManager;
     private TextView mConversationEmptyLabel;
 
     // when requested, scroll to top will be performed at the end of onResume()
     private boolean mScrollToTopRequested;
+    private static int MESSAGE_VISIBILITY_BEFORE_READ_MS = 3000;
+    private ItemVisibilityObserver<Long> mVisibleMessagesObserver = new ItemVisibilityObserver<>(MESSAGE_VISIBILITY_BEFORE_READ_MS);
+    private Timer mVisibleItemsObserverTimer;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -88,6 +98,7 @@ public class MessagesListActivity extends AppCompatActivity {
         Ui.setupActionbar(this);
 
         setupMessagesList();
+        setupVisibleMessagesObserver();
 
         mProgressBarDeterminate = (MaterialProgressBar) findViewById(R.id.progressbar_determinate);
         mProgressBarIndeterminate = (MaterialProgressBar) findViewById(R.id.progressbar_indeterminate);
@@ -181,7 +192,7 @@ public class MessagesListActivity extends AppCompatActivity {
 
         // Fill adapter with the most recent data
         RuntimeAssertion.require(mMessagesAdapter != null);
-        mMessagesAdapter.updateDataSet();
+        mMessagesAdapter.replaceAll(SessionConnector.get().getAllMessageIdsSorted(mConversationId));
     }
 
     // Called immediately before onResume()
@@ -202,6 +213,27 @@ public class MessagesListActivity extends AppCompatActivity {
         super.onResume();
         GcmConnector.get().removeAllNotifications(this);
 
+        mVisibleMessagesObserver.resetTimes();
+
+        mVisibleItemsObserverTimer = new Timer(true);
+        mVisibleItemsObserverTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Set<Long> visibleItems = getFullyVisibleMessages();
+                        Log.d(TAG, "Visible: " + visibleItems);
+                        mVisibleMessagesObserver.resetTimesExcept(visibleItems);
+
+                        Set<Long> readyItems = mVisibleMessagesObserver.getReadyItems();
+                        Log.d(TAG, "Ready: " + readyItems);
+                        SessionConnector.get().setMessagesRead(readyItems);
+                    }
+                });
+            }
+        }, MESSAGE_VISIBILITY_BEFORE_READ_MS / 5, MESSAGE_VISIBILITY_BEFORE_READ_MS / 5);
+
         if (SessionConnector.get().isSyncing()) {
             updateSwipeLayout(true);
 
@@ -220,6 +252,34 @@ public class MessagesListActivity extends AppCompatActivity {
         }
     }
 
+    @UiThread
+    private Set<Long> getFullyVisibleMessages() {
+        int posInConversationFirst = mLayoutManager.findFirstCompletelyVisibleItemPosition();
+        int posInConversationLast = mLayoutManager.findLastCompletelyVisibleItemPosition();
+
+        if (posInConversationFirst == RecyclerView.NO_POSITION || posInConversationLast == RecyclerView.NO_POSITION) {
+            return Collections.emptySet();
+        } else {
+            // all positions given in messages adapter indices
+            int posFirst = Math.max(0, posInConversationFirst - 1);
+            int posLast = Math.max(0, posInConversationLast - 1);
+
+            Set<Long> visibleItems = new HashSet<>();
+            for (int pos = posFirst; pos <= posLast; ++pos) {
+                visibleItems.add(mMessagesAdapter.getItem(pos));
+            }
+            return visibleItems;
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        mVisibleItemsObserverTimer.cancel();
+        mVisibleItemsObserverTimer = null;
+    }
+
     @Override
     protected void onStop() {
         super.onStop();
@@ -234,6 +294,22 @@ public class MessagesListActivity extends AppCompatActivity {
                 mMessageStateObserver);
 
         unregisterSyncFinishedListenerObserver();
+    }
+
+    @UiThread
+    private void setupVisibleMessagesObserver() {
+
+        mMessagesAdapter.setFullyVisibleCallback(new MessagesAdapter.FullyVisibleCallback() {
+            @Override
+            public void onUnreadAndFullyVisible(Long item) {
+                mVisibleMessagesObserver.add(item);
+            }
+
+            @Override
+            public void onNotUnreadAndFullyVisible(Long item) {
+                mVisibleMessagesObserver.remove(item);
+            }
+        });
     }
 
     @UiThread
@@ -260,15 +336,15 @@ public class MessagesListActivity extends AppCompatActivity {
         Ui.setStatusBarColor(mainLayout);
 
         mMessagesList = (RecyclerView) findViewById(R.id.messagesList);
-        final LinearLayoutManager llm = new LinearLayoutManager(this);
-        llm.setOrientation(LinearLayoutManager.VERTICAL);
-        mMessagesList.setLayoutManager(llm);
+        mLayoutManager = new LinearLayoutManager(this);
+        mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        mMessagesList.setLayoutManager(mLayoutManager);
 
         // Add decoration for dividers between list items
         int dividerLeftMargin = getResources().getDimensionPixelSize(R.dimen.md_additions_list_divider_margin_left);
         mMessagesList.addItemDecoration(new DividerDecoration(this, dividerLeftMargin));
 
-        mMessagesAdapter = new MessagesAdapter(this, mConversationId);
+        mMessagesAdapter = new MessagesAdapter(this);
         mMessagesAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
             public void onChanged() {
@@ -342,9 +418,6 @@ public class MessagesListActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case android.R.id.home:
-                finish();
-                return true;
             case R.id.action_refresh:
                 SessionConnector.get().sync();
                 return true;

@@ -5,12 +5,12 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.support.annotation.WorkerThread;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
-import com.google.android.gms.gcm.GcmListenerService;
+import com.google.firebase.messaging.FirebaseMessagingService;
+import com.google.firebase.messaging.RemoteMessage;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
@@ -18,25 +18,29 @@ import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.screens.ConversationsListActivity;
 
+import java.util.Map;
+
 // All private methods on this call are called from onMessageReceived
 // onMessageReceived is running in the background, see
 // "Methods are invoked asynchronously." (https://developers.google.com/android/reference/com/google/android/gms/gcm/GcmListenerService.html)
-public class GcmNotificationListenerService extends GcmListenerService {
-    private static final String TAG = "GcmListenerService";
+public class MessagingService extends FirebaseMessagingService {
+    private static final String TAG = MessagingService.class.getSimpleName();
 
     @WorkerThread
     @Override
-    public void onMessageReceived(String from, Bundle data) {
+    public void onMessageReceived(RemoteMessage message) {
+        Map<String, String> data = message.getData();
+
         Log.i(TAG, "Push notification received: " + data.toString());
 
         try {
-            int count = Integer.parseInt(data.getString("badge"));
+            int count = Integer.parseInt(data.get("badge"));
             KulloApplication.sharedInstance.handleBadge(count);
         } catch (NumberFormatException e) {
             Log.d(TAG, "No integer found in badge. Ignoring.");
         }
 
-        String action = data.getString("action");
+        String action = data.get("action");
 
         if (action != null && action.equals("new_message")) {
             if (((KulloApplication) getApplication()).foregroundActivitiesCount() == 0) {

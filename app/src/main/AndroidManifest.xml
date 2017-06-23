@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="net.kullo.android">
 
     <!--
@@ -25,11 +26,6 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <uses-permission android:name="android.permission.VIBRATE" />
-
-    <!-- GCM -->
-    <permission android:name="net.kullo.android.permission.C2D_MESSAGE"
-        android:protectionLevel="signature" />
-    <uses-permission android:name="net.kullo.android.permission.C2D_MESSAGE" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -73,10 +69,15 @@
                 <action android:name="net.kullo.action.SYNC" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+            <meta-data android:name="android.app.default_searchable"
+                android:value=".screens.SearchActivity" />
         </activity>
         <activity
             android:name=".screens.MessagesListActivity"
-            android:parentActivityName=".screens.ConversationsListActivity"/>
+            android:parentActivityName=".screens.ConversationsListActivity">
+            <meta-data android:name="android.app.default_searchable"
+                android:value=".screens.SearchActivity" />
+        </activity>
         <activity
             android:name=".screens.SingleMessageActivity" />
         <activity
@@ -92,6 +93,15 @@
                 <data android:scheme="kullo" />
                 <!-- kullo: -->
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".screens.SearchActivity"
+            android:parentActivityName=".screens.ConversationsListActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+            <meta-data android:name="android.app.searchable"
+                android:resource="@xml/searchable"/>
         </activity>
         <activity
             android:name=".screens.StartConversationActivity"
@@ -162,33 +172,23 @@
         </provider>
 
         <!-- NOTIFICATIONS -->
-        <receiver
-            android:name="com.google.android.gms.gcm.GcmReceiver"
-            android:exported="true"
-            android:permission="com.google.android.c2dm.permission.SEND">
-            <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
-                <category android:name="net.kullo.android" />
-            </intent-filter>
-        </receiver>
-
+        <!-- FirebaseMessagingService/FirebaseInstanceIdService perform security checks
+             at runtime, no need for explicit permissions despite exported="true"
+             (See http://stackoverflow.com/q/43927149/2013738) -->
         <service
-            android:name=".notifications.GcmNotificationListenerService"
-            android:exported="false">
+            android:name=".notifications.InstanceIdService"
+            tools:ignore="ExportedService">
             <intent-filter>
-                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
             </intent-filter>
         </service>
         <service
-            android:name=".notifications.GcmInstanceIDListenerService"
-            android:exported="false">
+            android:name=".notifications.MessagingService"
+            tools:ignore="ExportedService">
             <intent-filter>
-                <action android:name="com.google.android.gms.iid.InstanceID" />
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
-        <service
-            android:name=".notifications.GcmRegistrationIntentService"
-            android:exported="false" />
         <!-- END NOTIFICATIONS -->
 
     </application>

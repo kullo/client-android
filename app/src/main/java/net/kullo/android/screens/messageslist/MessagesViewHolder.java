@@ -24,7 +24,7 @@ public class MessagesViewHolder extends RecyclerView.ViewHolder {
 
         mSenderAvatarImage = (CircleImageView) itemView.findViewById(R.id.img_sender);
         mSenderNameTextView = (TextView) itemView.findViewById(R.id.sender_name_organization);
-        mMessageDateTextView = (TextView) itemView.findViewById(R.id.message_date);
+        mMessageDateTextView = (TextView) itemView.findViewById(R.id.date);
         mMessageTextTextView = (EllipsizingTextView) itemView.findViewById(R.id.message_content);
         mUnreadIcon = (ImageView) itemView.findViewById(R.id.unread_icon);
         mHasAttachmentsIcon = (ImageView) itemView.findViewById(R.id.has_attachments_icon);

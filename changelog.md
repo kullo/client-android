@@ -1,7 +1,17 @@
 Kullo for Android
 -----------------
 
-## v45
+## v46 (2017-06-23)
+
+ * Add full text search for messages
+ * Migrate to Firebase Cloud Messaging
+
+### Components
+
+ * Update libkullo to v65
+ * Update SmartSqlite to v20
+
+## v45 (2017-04-24)
 
  * Mark messages as read in messages list when fully visible for 3 seconds
  * Improve support for setting PNG avatars

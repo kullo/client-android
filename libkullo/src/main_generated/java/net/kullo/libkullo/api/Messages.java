@@ -25,11 +25,13 @@ public abstract class Messages {
 
     public abstract boolean isRead(long msgId);
 
-    public abstract void setRead(long msgId, boolean value);
+    /** returns true iff value changed in this call */
+    public abstract boolean setRead(long msgId, boolean value);
 
     public abstract boolean isDone(long msgId);
 
-    public abstract void setDone(long msgId, boolean value);
+    /** returns true iff value changed in this call */
+    public abstract boolean setDone(long msgId, boolean value);
 
     public abstract DateTime dateSent(long msgId);
 
@@ -38,9 +40,9 @@ public abstract class Messages {
     public abstract String text(long msgId);
 
     /**
-     * Escapes special characters and converts text links to 'a' tags
+     * Escapes special characters and wraps links into 'a' tags
      *
-     * An application using this must preserve the white space in the HTML code,
+     * An application using this must preserve the whitespace in the HTML code,
      * i.e. treat \n and \r\n as line breaks and not strip leading or trailing
      * spaces in lines.
      * This can be archived for example by wrapping this in a html block with
@@ -50,13 +52,24 @@ public abstract class Messages {
      * Kullo internal scheme "kulloInternal:" followed by the unescaped address.
      * Those links must be handled by the Kullo client and must not be passed to
      * other applications since the URI scheme is not standardized and the hash
-     * symbol not compatible with a lot of applications.
+     * symbol is not compatible with a lot of applications.
      *
-     * Weblinks are prioritized over Kullo adress links and links do not overlap.
+     * Web links are prioritized over Kullo address links and links do not overlap.
      */
     public abstract String textAsHtml(long msgId, boolean includeKulloAddresses);
 
     public abstract String footer(long msgId);
+
+    /**
+     * Full-text search for messages
+     *
+     * searchText: The text to search for. Does prefix matching.
+     * convId: Conversation ID to filter by conversation, or -1 to search all.
+     * sender: Filter by sender, if set.
+     * boundary: boundary used in result highlighting; auto-generated if unset
+     * limitResults: The maximum number of results to return.
+     */
+    public abstract AsyncTask searchAsync(String searchText, long convId, SenderPredicate sender, int limitResults, String boundary, MessagesSearchListener listener);
 
     private static final class CppProxy extends Messages
     {
@@ -130,12 +143,12 @@ public abstract class Messages {
         private native boolean native_isRead(long _nativeRef, long msgId);
 
         @Override
-        public void setRead(long msgId, boolean value)
+        public boolean setRead(long msgId, boolean value)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            native_setRead(this.nativeRef, msgId, value);
+            return native_setRead(this.nativeRef, msgId, value);
         }
-        private native void native_setRead(long _nativeRef, long msgId, boolean value);
+        private native boolean native_setRead(long _nativeRef, long msgId, boolean value);
 
         @Override
         public boolean isDone(long msgId)
@@ -146,12 +159,12 @@ public abstract class Messages {
         private native boolean native_isDone(long _nativeRef, long msgId);
 
         @Override
-        public void setDone(long msgId, boolean value)
+        public boolean setDone(long msgId, boolean value)
         {
             assert !this.destroyed.get() : "trying to use a destroyed object";
-            native_setDone(this.nativeRef, msgId, value);
+            return native_setDone(this.nativeRef, msgId, value);
         }
-        private native void native_setDone(long _nativeRef, long msgId, boolean value);
+        private native boolean native_setDone(long _nativeRef, long msgId, boolean value);
 
         @Override
         public DateTime dateSent(long msgId)
@@ -192,5 +205,13 @@ public abstract class Messages {
             return native_footer(this.nativeRef, msgId);
         }
         private native String native_footer(long _nativeRef, long msgId);
+
+        @Override
+        public AsyncTask searchAsync(String searchText, long convId, SenderPredicate sender, int limitResults, String boundary, MessagesSearchListener listener)
+        {
+            assert !this.destroyed.get() : "trying to use a destroyed object";
+            return native_searchAsync(this.nativeRef, searchText, convId, sender, limitResults, boundary, listener);
+        }
+        private native AsyncTask native_searchAsync(long _nativeRef, String searchText, long convId, SenderPredicate sender, int limitResults, String boundary, MessagesSearchListener listener);
     }
 }

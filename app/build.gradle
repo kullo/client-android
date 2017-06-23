@@ -19,8 +19,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 16
         targetSdkVersion TARGET_SDK_VERSION
-        versionCode 4500
-        versionName "45"
+        versionCode 4602
+        versionName "46"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -66,8 +66,11 @@ dependencies {
 
     compile 'me.zhanghai.android.materialprogressbar:library:1.4.1'
 
-    // Available versions: ls -l $ANDROID_HOME/extras/google/m2repository/com/google/android/gms/play-services-gcm
-    compile "com.google.android.gms:play-services-gcm:10.0.1"
+    // Available versions:
+    // ls -l $ANDROID_HOME/extras/google/m2repository/com/google/firebase/firebase-messaging
+    // ls -l $ANDROID_HOME/extras/google/m2repository/com/google/android/gms/play-services-base
+    compile "com.google.firebase:firebase-messaging:10.0.1"
+    compile 'com.google.android.gms:play-services-base:10.0.1'
 
     compile project(':libkullo')
     compile project(':javautils')

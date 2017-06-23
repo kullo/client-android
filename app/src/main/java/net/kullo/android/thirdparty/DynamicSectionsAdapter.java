@@ -29,7 +29,7 @@ abstract public class DynamicSectionsAdapter<
         ItemViewHolder extends RecyclerView.ViewHolder,
         SectionHeaderViewHolder extends RecyclerView.ViewHolder,
         SectionFooterViewHolder extends RecyclerView.ViewHolder
-        > extends RecyclerView.Adapter<WrapperViewHolder<ItemViewHolder, SectionHeaderViewHolder, SectionFooterViewHolder>> {
+        > extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final String TAG = "DynamicSectionsAdapter";
 
@@ -149,42 +149,39 @@ abstract public class DynamicSectionsAdapter<
     }
 
     @Override
-    final public WrapperViewHolder<ItemViewHolder, SectionHeaderViewHolder, SectionFooterViewHolder>
+    final public RecyclerView.ViewHolder
     onCreateViewHolder(ViewGroup parent, int viewType) {
         switch (viewType) {
             case VIEW_TYPE_HEADER: {
-                SectionHeaderViewHolder viewHolder = onCreateSectionHeaderViewHolder(parent);
-                return new WrapperViewHolder<>(WrapperViewHolder.Type.Header, viewHolder);
+                return onCreateSectionHeaderViewHolder(parent);
             }
             case VIEW_TYPE_FOOTER: {
-                SectionFooterViewHolder viewHolder = onCreateSectionFooterViewHolder(parent);
-                return new WrapperViewHolder<>(WrapperViewHolder.Type.Footer, viewHolder);
+                return onCreateSectionFooterViewHolder(parent);
             }
             default: {
-                ItemViewHolder viewHolder = mItemsAdapter.onCreateViewHolder(parent, viewType);
-                return new WrapperViewHolder<>(WrapperViewHolder.Type.Item, viewHolder);
+                return mItemsAdapter.onCreateViewHolder(parent, viewType);
             }
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    final public void onBindViewHolder(WrapperViewHolder<ItemViewHolder, SectionHeaderViewHolder, SectionFooterViewHolder> holder, int position) {
+    final public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         Pair<Integer, Long> element = mIndex.get(position);
         int originalAdapterPosition = element.first;
         long sectionId = element.second;
         switch (originalAdapterPosition) {
             case ELEMENT_IS_HEADER: {
-                onBindHeaderViewHolder(holder.headerViewHolder, sectionId);
+                onBindHeaderViewHolder((SectionHeaderViewHolder) holder, sectionId);
             }
             break;
             case ELEMENT_IS_FOOTER: {
-                onBindFooterViewHolder(holder.footerViewHolder, sectionId);
+                onBindFooterViewHolder((SectionFooterViewHolder) holder, sectionId);
             }
             break;
             default: {
                 mItemsAdapter.onBindViewHolder(
-                    holder.itemViewHolder,
-                    originalAdapterPosition);
+                    (ItemViewHolder) holder, originalAdapterPosition);
             }
         }
     }

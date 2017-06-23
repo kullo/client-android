@@ -75,7 +75,7 @@ public class ConversationInfoActivity extends AppCompatActivity {
         mConversationData = SessionConnector.get().getConversationData(this, mConversationId);
         setupParticipantsList();
 
-        GcmConnector.get().fetchAndRegisterToken(this);
+        GcmConnector.get().ensureSessionHasTokenRegisteredAsync();
     }
 
     @Override

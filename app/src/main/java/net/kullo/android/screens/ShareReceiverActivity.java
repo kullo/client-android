@@ -114,7 +114,7 @@ public class ShareReceiverActivity extends AppCompatActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchAndRegisterToken(this);
+        GcmConnector.get().ensureSessionHasTokenRegisteredAsync();
 
         Intent intent = getIntent();
         String action = intent.getAction();

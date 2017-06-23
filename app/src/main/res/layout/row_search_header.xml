@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingBottom="16dp"
+    android:paddingLeft="8dp"
+    android:paddingRight="16dp"
+    android:paddingTop="16dp">
+
+    <RadioGroup
+        android:id="@+id/message_direction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:checkedButton="@+id/direction_all"
+        android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@id/direction_all"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="16dp"
+            android:onClick="onMessageDirectionChanged"
+            android:text="@string/search_direction_all" />
+
+        <RadioButton
+            android:id="@+id/direction_received"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="16dp"
+            android:onClick="onMessageDirectionChanged"
+            android:text="@string/search_direction_received" />
+
+        <RadioButton
+            android:id="@+id/direction_sent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="onMessageDirectionChanged"
+            android:text="@string/search_direction_sent" />
+    </RadioGroup>
+
+</RelativeLayout>

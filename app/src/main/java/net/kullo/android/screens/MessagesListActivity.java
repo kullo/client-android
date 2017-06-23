@@ -124,7 +124,7 @@ public class MessagesListActivity extends KulloActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchAndRegisterToken(this);
+        GcmConnector.get().ensureSessionHasTokenRegisteredAsync();
     }
 
     @Override
@@ -254,15 +254,24 @@ public class MessagesListActivity extends KulloActivity {
 
     @UiThread
     private Set<Long> getFullyVisibleMessages() {
+        final int ROWS_BEFORE_MESSAGES = 1;
+
         int posInConversationFirst = mLayoutManager.findFirstCompletelyVisibleItemPosition();
         int posInConversationLast = mLayoutManager.findLastCompletelyVisibleItemPosition();
 
         if (posInConversationFirst == RecyclerView.NO_POSITION || posInConversationLast == RecyclerView.NO_POSITION) {
             return Collections.emptySet();
+        } else if (mMessagesAdapter.getItemCount() == 0) {
+            return Collections.emptySet();
         } else {
             // all positions given in messages adapter indices
-            int posFirst = Math.max(0, posInConversationFirst - 1);
-            int posLast = Math.max(0, posInConversationLast - 1);
+            int posFirst = posInConversationFirst - ROWS_BEFORE_MESSAGES;
+            int posLast = posInConversationLast - ROWS_BEFORE_MESSAGES;
+
+            // when rows before messages are visible, we need to push the starting point down
+            if (posFirst < 0) {
+                posFirst = 0;
+            }
 
             Set<Long> visibleItems = new HashSet<>();
             for (int pos = posFirst; pos <= posLast; ++pos) {
@@ -347,13 +356,17 @@ public class MessagesListActivity extends KulloActivity {
         mMessagesAdapter = new MessagesAdapter(this);
         mMessagesAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
             @Override
-            public void onChanged() {
-                // called on addition of elements
+            public void onChanged() { // Initial loading of data
                 updateEmptyLabel();
             }
+
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount) {
+                updateEmptyLabel();
+            }
+
             @Override
             public void onItemRangeRemoved(int positionStart, int itemCount) {
-                // called on removal of elements
                 updateEmptyLabel();
             }
         });
@@ -400,7 +413,6 @@ public class MessagesListActivity extends KulloActivity {
         });
 
         mConversationEmptyLabel = (TextView) findViewById(R.id.empty_list_label);
-        updateEmptyLabel();
     }
 
     private void updateEmptyLabel() {
@@ -433,6 +445,7 @@ public class MessagesListActivity extends KulloActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.appbar_menu_messages_list, menu);
+        setupSearchAction(menu.findItem(R.id.action_search), mConversationId);
 
         if (mMessagesAdapter.isShowCardsExpanded()) {
             menu.findItem(R.id.action_toggle_message_size).setIcon(R.drawable.kullo_unfold_less);

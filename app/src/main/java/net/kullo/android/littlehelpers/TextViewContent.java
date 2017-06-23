@@ -1,8 +1,6 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.android.littlehelpers;
 
-import android.app.Activity;
-import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.text.Spannable;
@@ -11,6 +9,7 @@ import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
+import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.TextView;
 
@@ -123,5 +122,47 @@ public class TextViewContent {
     @NonNull
     private static String unescapeHtmlSpecialChars(@NonNull final String text) {
         return StringUtils.replaceEach(text, HTML_UNESCAPE_FROM, HTML_UNESCAPE_TO);
+    }
+
+    @NonNull
+    public static Spannable highlightSearchResult(@NonNull final String snippetRaw, @NonNull final String boundary) {
+        final String patternString = "\\(" + boundary + "\\)(.+?)\\(/" + boundary + "\\)";
+        final Pattern pattern = Pattern.compile(patternString);
+        final Matcher matcher = pattern.matcher(snippetRaw);
+
+        List<PositionedSpan> spans = new LinkedList<>();
+        int inputPosCurrent = 0;
+
+        StringBuilder outText = new StringBuilder();
+        while (matcher.find()) {
+            int inputPosHighlightStart = matcher.start();
+            int inputPosHighlightEnd = matcher.end();
+
+            if (inputPosHighlightStart > inputPosCurrent) {
+                outText.append(snippetRaw.substring(inputPosCurrent, inputPosHighlightStart));
+            }
+
+            // append link
+            final String highlightText = matcher.group(1);
+            int outputPosHighlightStart = outText.length();
+            int outputPosHighlightEnd = outText.length() + highlightText.length();
+
+            spans.add(new PositionedSpan(
+                new StyleSpan(android.graphics.Typeface.BOLD),
+                outputPosHighlightStart,
+                outputPosHighlightEnd));
+            outText.append(highlightText);
+
+            inputPosCurrent = inputPosHighlightEnd;
+        }
+        // append rest
+        outText.append(snippetRaw.substring(inputPosCurrent, snippetRaw.length()));
+
+        Spannable out = new SpannableString(outText);
+        for (PositionedSpan posSpan : spans) {
+            out.setSpan(posSpan.span, posSpan.start, posSpan.end,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        return out;
     }
 }

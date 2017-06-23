@@ -2,17 +2,20 @@
 package net.kullo.android.littlehelpers;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.screens.conversationslist.ConversationsAdapter;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormatter;
 
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 public class Formatting {
     // Use binary multiplier 1024 here to avoid having a "102 MB" file in Kullo
@@ -21,6 +24,12 @@ public class Formatting {
     @SuppressWarnings("FieldCanBeLocal") private static final long GIGA = 1024*1024*1024;
     @SuppressWarnings("FieldCanBeLocal") private static final long MEGA = 1024*1024;
     @SuppressWarnings("FieldCanBeLocal") private static final long KILO = 1024;
+
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
+
+    private static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
+    private static final DateTimeFormatter FORMATTER_CALENDAR_DATE = KulloApplication.sharedInstance.getShortDateFormatter();
+    private static final DateTimeFormatter FORMATTER_CLOCK = KulloApplication.sharedInstance.getShortTimeFormatter();
 
     public static String filesizeHuman(long bytes) {
         Locale locale = Locale.getDefault();
@@ -71,5 +80,24 @@ public class Formatting {
     public static int perMilleRounded(long processedCount, long totalCount) {
         if (totalCount <= 0) return 0;
         return Math.round(1000 * ((float) processedCount / totalCount));
+    }
+
+    public static String compressedText(@NonNull final String text) {
+        return WHITESPACE_PATTERN.matcher(text).replaceAll(" ");
+    }
+
+    public static String shortDateText(DateTime dateReceived) {
+        LocalDateTime localDateReceived = new LocalDateTime(dateReceived, LOCAL_TIME_ZONE);
+
+        String dateString;
+        if(localDateReceived.toLocalDate().equals(new LocalDate())) {
+            dateString = localDateReceived.toString(FORMATTER_CLOCK);
+        } else if(localDateReceived.toLocalDate().equals((new LocalDate()).minusDays(1))) {
+            dateString = KulloApplication.sharedInstance.getString(R.string.yesterday);
+        } else {
+            dateString = localDateReceived.toString(FORMATTER_CALENDAR_DATE);
+        }
+
+        return dateString;
     }
 }

@@ -1,3 +1,11 @@
+Version 46
+
+● Add full text search for messages
+● Use Firebase Cloud Messaging for push notifications
+
+● Volltextsuche für Nachrichten verfügbar
+● Umstellung auf Firebase Cloud Messaging für Push-Benachrichtigungen
+
 Version 45
 
 ● Mark messages as read in messages list when fully visible for 3 seconds

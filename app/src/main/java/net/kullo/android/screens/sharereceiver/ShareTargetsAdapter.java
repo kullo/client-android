@@ -18,7 +18,8 @@ import net.kullo.javautils.RuntimeAssertion;
 import java.util.ArrayList;
 
 public class ShareTargetsAdapter extends KulloIdsAdapter<ShareTargetViewHolder> {
-    public static final String TAG = "ShareTargetsAdapter";
+    @SuppressWarnings("unused")
+    private static final String TAG = "ShareTargetsAdapter";
 
     private Activity mBaseActivity;
 

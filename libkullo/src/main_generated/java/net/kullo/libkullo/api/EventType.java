@@ -4,9 +4,18 @@
 package net.kullo.libkullo.api;
 
 public enum EventType {
+    /** Conversation added */
     CONVERSATIONADDED,
-    CONVERSATIONCHANGED,
+    /** Conversation removed */
     CONVERSATIONREMOVED,
+    /** Any property of Conversations has changed for a single conversation */
+    CONVERSATIONCHANGED,
+    /**
+     * Timestamp of the latest message in a single conversation changed. This may affect
+     * the order of the conversations list. Whenever this is emitted, ConversationChanged
+     * is also emitted.
+     */
+    CONVERSATIONLATESTMESSAGETIMESTAMPCHANGED,
     DRAFTSTATECHANGED,
     DRAFTTEXTCHANGED,
     DRAFTATTACHMENTADDED,
@@ -16,6 +25,10 @@ public enum EventType {
     MESSAGESTATECHANGED,
     MESSAGEATTACHMENTSDOWNLOADEDCHANGED,
     MESSAGEREMOVED,
-    LATESTSENDERCHANGED,
+    /**
+     * One of the user settings keys changed. Emitted once for every key that changed.
+     * TODO: pass key with this event
+     */
+    USERSETTINGSCHANGED,
     ;
 }

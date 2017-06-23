@@ -193,7 +193,7 @@ public class ComposeActivity extends AppCompatActivity {
 
         handleShares(intent);
 
-        GcmConnector.get().fetchAndRegisterToken(this);
+        GcmConnector.get().ensureSessionHasTokenRegisteredAsync();
     }
 
     @Override

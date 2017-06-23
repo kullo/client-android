@@ -61,12 +61,16 @@ import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.MasterKey;
 import net.kullo.libkullo.api.MessageAttachmentsContentListener;
 import net.kullo.libkullo.api.MessageAttachmentsSaveToListener;
+import net.kullo.libkullo.api.MessagesSearchListener;
+import net.kullo.libkullo.api.MessagesSearchResult;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.PushToken;
 import net.kullo.libkullo.api.PushTokenEnvironment;
 import net.kullo.libkullo.api.PushTokenType;
 import net.kullo.libkullo.api.Registration;
 import net.kullo.libkullo.api.RegistrationRegisterAccountListener;
+import net.kullo.libkullo.api.SearchPredicateOperator;
+import net.kullo.libkullo.api.SenderPredicate;
 import net.kullo.libkullo.api.Session;
 import net.kullo.libkullo.api.SessionAccountInfoListener;
 import net.kullo.libkullo.api.SessionListener;
@@ -587,6 +591,56 @@ public class SessionConnector {
             out.add(address.toString());
         }
         return out;
+    }
+
+    public interface SearchCallback {
+        @MainThread
+        void finished(ArrayList<MessagesSearchResult> results);
+    }
+
+    public enum MessageDirection {
+        ALL,
+        INCOMING,
+        OUTGOING,
+    }
+
+    @MainThread
+    public void search(@NonNull final String query, @NonNull final MessageDirection direction, long conversationId, @NonNull final SearchCallback callback) {
+        synchronized (mSessionGuard) {
+            RuntimeAssertion.require(mSession != null);
+
+            SenderPredicate senderPredicate;
+            switch (direction) {
+                case ALL:
+                    senderPredicate = null;
+                    break;
+                case INCOMING:
+                    senderPredicate = new SenderPredicate(
+                        SearchPredicateOperator.ISNOT,
+                        mSession.userSettings().address().toString());
+                    break;
+                case OUTGOING:
+                    senderPredicate = new SenderPredicate(
+                        SearchPredicateOperator.IS,
+                        mSession.userSettings().address().toString());
+                    break;
+                default:
+                    senderPredicate = null;
+                    RuntimeAssertion.fail();
+            }
+
+            mTaskHolder.add(mSession.messages().searchAsync(query, conversationId, senderPredicate, 100, null, new MessagesSearchListener() {
+                @Override
+                public void finished(final ArrayList<MessagesSearchResult> results) {
+                    new Handler(KulloApplication.sharedInstance.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.finished(results);
+                        }
+                    });
+                }
+            }));
+        }
     }
 
     public interface GetAccountInfoCallback {
@@ -1151,20 +1205,15 @@ public class SessionConnector {
     }
 
     @MainThread
-    @SuppressWarnings("ConstantConditions")
     public void setMessagesRead(@NonNull final Set<Long> messageIds) {
         if (messageIds.isEmpty()) return;
 
         boolean anythingChanged = false;
-        boolean newValue = true;
 
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-
             for (long messageId : messageIds) {
-                boolean oldValue = mSession.messages().isRead(messageId);
-                anythingChanged |= (oldValue != newValue);
-                mSession.messages().setRead(messageId, newValue);
+                anythingChanged |= mSession.messages().setRead(messageId, true);
             }
         }
 
@@ -1402,49 +1451,15 @@ public class SessionConnector {
 
     @MainThread
     // Tries to register a push token and does not wait for return value
-    public void registerPushToken(String registrationToken) {
+    // Ensure that token is not set when calling this
+    public void registerPushTokenAsync(@NonNull String registrationToken) {
         RuntimeAssertion.require(mSession != null);
+        RuntimeAssertion.require(mPushToken == null);
 
-        // Token changed? unregister old one
-        if (mPushToken != null) {
-            // Caution: Do not trigger ANR
-            // https://developer.android.com/training/articles/perf-anr.html#anr
-            if (!tryUnregisterPushToken(3000)) {
-                Log.w(TAG, "Could not unregister old push token.");
-            }
-        }
-
-        // store token within session instance
-        mPushToken = new PushToken(
-                PushTokenType.GCM, registrationToken, PushTokenEnvironment.ANDROID);
+        mPushToken = new PushToken(PushTokenType.GCM, registrationToken,
+            PushTokenEnvironment.ANDROID);
 
         mTaskHolder.add(mSession.registerPushToken(mPushToken));
-    }
-
-    // Runs callback on UI thread
-    // Blocks UI thread up to `timeoutMs` milliseconds. This is intentional to ensure
-    // all API calls are run on the UI thread.
-    @MainThread
-    public boolean tryUnregisterPushToken(int timeoutMs) {
-        if (mPushToken == null) {
-            return true;
-        }
-
-        AsyncTask unregisterTask;
-        synchronized (mSessionGuard) {
-            RuntimeAssertion.require(mSession != null);
-            unregisterTask = mSession.unregisterPushToken(mPushToken);
-        }
-        unregisterTask.waitForMs(timeoutMs);
-
-        if (unregisterTask.isDone()) {
-            mPushToken = null;
-            return true;
-        } else {
-            unregisterTask.cancel(); // give up
-            mPushToken = null;
-            return false;
-        }
     }
 
     public interface UnregisterPushTokenCallback {

@@ -32,7 +32,7 @@ public class MasterKeyActivity extends KulloActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchAndRegisterToken(this);
+        GcmConnector.get().ensureSessionHasTokenRegisteredAsync();
     }
 
     @Override

@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -117,7 +118,7 @@ public class SingleMessageActivity extends AppCompatActivity {
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchAndRegisterToken(this);
+        GcmConnector.get().ensureSessionHasTokenRegisteredAsync();
 
         populateMessageFields();
     }
@@ -253,10 +254,14 @@ public class SingleMessageActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case android.R.id.home:
-                finish();
+            case android.R.id.home: {
+                long conversationId = SessionConnector.get().getMessageConversation(mMessageId);
+                final Intent upIntent = new Intent(this, MessagesListActivity.class);
+                upIntent.putExtra(KulloConstants.CONVERSATION_ID, conversationId);
+                NavUtils.navigateUpTo(this, upIntent);
                 return true;
-            case R.id.action_write:
+            }
+            case R.id.action_write: {
                 if (SessionConnector.get().userSettingsAreValidForSync()) {
                     long conversationId = SessionConnector.get().getMessageConversation(mMessageId);
                     Intent intent = new Intent(this, ComposeActivity.class);
@@ -266,6 +271,7 @@ public class SingleMessageActivity extends AppCompatActivity {
                     showDialogToShowUserSettingsForCompletion();
                 }
                 return true;
+            }
             default:
                 return super.onOptionsItemSelected(item);
         }

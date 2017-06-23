@@ -5,15 +5,19 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.Context;
-import android.content.Intent;
+import android.os.Handler;
+import android.support.annotation.AnyThread;
 import android.support.annotation.CheckResult;
+import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.firebase.iid.FirebaseInstanceId;
 
+import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.javautils.RuntimeAssertion;
 
@@ -35,13 +39,14 @@ public class GcmConnector {
         return SINGLETON;
     }
 
-    /* members */
-    @Nullable private Boolean mGooglePlayOk = null;
+    // non-final members, access from synchronized methods only
+    @Nullable private Boolean mGooglePlayAvailable = null;
     @Nullable private NotAvailableReason mGooglePlayNotAvailableReason = null;
 
     // check gplay at app start, prompt user if not there
     @CheckResult
-    public Dialog checkGooglePlayAvailabilityAndPrompt(Activity activity) {
+    @Nullable
+    synchronized public Dialog checkGooglePlayAvailabilityAndPrompt(Activity activity) {
         GoogleApiAvailability playAPI = GoogleApiAvailability.getInstance();
         int result = playAPI.isGooglePlayServicesAvailable(activity);
         if (result != ConnectionResult.SUCCESS) {
@@ -70,30 +75,30 @@ public class GcmConnector {
                 return null;
             }
         } else {
-            mGooglePlayOk = true;
+            mGooglePlayAvailable = true;
             return null;
         }
     }
 
-    public boolean googlePlayAvailable() {
-        RuntimeAssertion.require(mGooglePlayOk != null);
-        return mGooglePlayOk;
+    @AnyThread
+    synchronized public boolean googlePlayAvailable() {
+        if (mGooglePlayAvailable == null) {
+            GoogleApiAvailability playApi = GoogleApiAvailability.getInstance();
+            int result = playApi.isGooglePlayServicesAvailable(KulloApplication.sharedInstance);
+            mGooglePlayAvailable = (result == ConnectionResult.SUCCESS);
+        }
+
+        return mGooglePlayAvailable;
     }
 
-    public NotAvailableReason googlePlayNotAvailableReason() {
+    @AnyThread
+    synchronized public NotAvailableReason googlePlayNotAvailableReason() {
         return mGooglePlayNotAvailableReason;
     }
 
-    // if conditions are right, launch service that will retrieve a new token
-    public void fetchAndRegisterToken(Context context) {
+    @MainThread
+    public void ensureSessionHasTokenRegisteredAsync() {
         RuntimeAssertion.require(SessionConnector.get().sessionAvailable());
-        checkGooglePlay(context);
-
-        RuntimeAssertion.require(mGooglePlayOk != null);
-        if (!mGooglePlayOk) {
-            Log.i(TAG, "Device does not have Google Play Services. Skipping Push notifications.");
-            return;
-        }
 
         // check if session already has a valid token, if it does return
         // if the token changes, GcmInstanceIdListenerService will notify the token service
@@ -101,20 +106,37 @@ public class GcmConnector {
             return;
         }
 
-        // launch token service
-        Intent intent = new Intent(context, GcmRegistrationIntentService.class);
-        context.startService(intent);
+        if (!googlePlayAvailable()) {
+            Log.i(TAG, "Device does not have Google Play Services. Skipping Push notifications.");
+            return;
+        }
+
+        getAndRegisterTokenAsync();
+    }
+
+    @AnyThread
+    void getAndRegisterTokenAsync() {
+        RuntimeAssertion.require(googlePlayAvailable());
+
+        final String newPushToken = FirebaseInstanceId.getInstance().getToken();
+        Log.i(TAG, "Push token: " + newPushToken);
+
+        if (newPushToken == null) return;
+
+        new Handler(KulloApplication.sharedInstance.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                SessionConnector.get().tryUnregisterPushTokenAsync(10_000, new SessionConnector.UnregisterPushTokenCallback() {
+                    @Override
+                    public void onDone(boolean success) {
+                        SessionConnector.get().registerPushTokenAsync(newPushToken);
+                    }
+                });
+            }
+        });
     }
 
     public void removeAllNotifications(Context context) {
         ((NotificationManager)context.getSystemService(Context.NOTIFICATION_SERVICE)).cancelAll();
-    }
-
-    private void checkGooglePlay(Context context) {
-        if (mGooglePlayOk == null) {
-            GoogleApiAvailability playAPI = GoogleApiAvailability.getInstance();
-            int result = playAPI.isGooglePlayServicesAvailable(context);
-            mGooglePlayOk = (result == ConnectionResult.SUCCESS);
-        }
     }
 }

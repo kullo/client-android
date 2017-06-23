@@ -34,6 +34,7 @@ ellipsis (…)
 
     <!-- general actions -->
     <string name="action_delete">Löschen</string>
+    <string name="action_search">Suchen</string>
     <string name="action_sync">Synchronisieren</string>
     <string name="action_finish">Fertigstellen</string>
     <string name="action_done">Fertig</string>
@@ -229,4 +230,12 @@ ellipsis (…)
     <string name="address_dialog_option_add">Zu neuer Konversation hinzufügen</string>
     <string name="address_dialog_option_copy">Kullo-Adresse kopieren</string>
     <string name="address_dialog_confirmation_copied">%s kopiert</string>
+
+    <!-- search -->
+    <string name="search_hint">Durchsuche Kullo</string>
+    <string name="search_title">Suche</string>
+    <string name="search_direction_all">alle</string>
+    <string name="search_direction_received">empfangen</string>
+    <string name="search_direction_sent">gesendet</string>
+    <string name="search_no_results">Keine Ergebnisse für \'%s\'</string>
 </resources>

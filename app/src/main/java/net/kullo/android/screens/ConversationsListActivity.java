@@ -13,7 +13,6 @@ import android.support.design.widget.NavigationView;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -32,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloActivity;
 import net.kullo.android.kulloapi.ConversationsComparatorDsc;
 import net.kullo.android.kulloapi.CreateSessionResult;
 import net.kullo.android.kulloapi.CreateSessionState;
@@ -74,13 +74,12 @@ import io.github.dialogsforandroid.MaterialDialog;
 import me.zhanghai.android.materialprogressbar.MaterialProgressBar;
 
 @SuppressWarnings("RedundantIfStatement")
-public class ConversationsListActivity extends AppCompatActivity implements
+public class ConversationsListActivity extends KulloActivity implements
         NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "ConversationsListAct."; // max. 23 chars
 
     @BindView(R.id.drawer_layout) DrawerLayout mDrawerLayout;
     private Toolbar mToolbar;
-    private boolean mIsPaused;
     private ConversationsEventObserver mConversationsEventObserver;
     private SyncerListenerObserver mSyncerListenerObserver;
 
@@ -94,6 +93,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
     private ConversationsAdapter mConversationsAdapter;
     private DynamicSectionsAdapter mAdapter;
     private ActionMode mActionMode = null;
+    @BindView(R.id.empty_state_view) View emptyStateView;
 
     // DRAWER
 
@@ -140,7 +140,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
             result.task.waitUntilDone();
         }
 
-        GcmConnector.get().fetchAndRegisterToken(this);
+        GcmConnector.get().ensureSessionHasTokenRegisteredAsync();
 
         new Handler().post(new Runnable() {
             @Override
@@ -182,8 +182,6 @@ public class ConversationsListActivity extends AppCompatActivity implements
 
         handleSyncFromIntent();
 
-        mIsPaused = false;
-
         if (SessionConnector.get().isSyncing()) {
             updateSwipeLayout(true);
 
@@ -205,7 +203,6 @@ public class ConversationsListActivity extends AppCompatActivity implements
         super.onPause();
         // make sure that selection is clear if we leave this view
         stopActionMode();
-        mIsPaused = true;
     }
 
     @Override
@@ -336,13 +333,27 @@ public class ConversationsListActivity extends AppCompatActivity implements
         mRecyclerView.setLayoutManager(llm);
 
         mConversationsAdapter = new ConversationsAdapter(this);
+        mConversationsAdapter.registerAdapterDataObserver(new RecyclerView.AdapterDataObserver() {
+            @Override
+            public void onChanged() {
+                updateEmptyStateView();
+            }
+
+            @Override
+            public void onItemRangeInserted(int positionStart, int itemCount) {
+                updateEmptyStateView();
+            }
+
+            @Override
+            public void onItemRangeRemoved(int positionStart, int itemCount) {
+                updateEmptyStateView();
+            }
+        });
 
         mAdapter = new DynamicSectionsAdapter<ConversationViewHolder, ConversationsSectionHeaderViewHolder, NullViewHolder>(mConversationsAdapter) {
 
             @Override
             protected long getSectionId(int originalAdapterPosition) {
-                Log.d(TAG, "Running getSectionId for pos = " + originalAdapterPosition);
-
                 long conversationId = mConversationsAdapter.getItem(originalAdapterPosition);
                 DateTime latestMessageTimestamp = SessionConnector.get().getLatestMessageTimestamp(conversationId);
 
@@ -617,6 +628,7 @@ public class ConversationsListActivity extends AppCompatActivity implements
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.appbar_menu_conversations_list, menu);
+        setupSearchAction(menu.findItem(R.id.action_search), -1);
         return true;
     }
 
@@ -668,16 +680,11 @@ public class ConversationsListActivity extends AppCompatActivity implements
         });
     }
 
-    private void setVisibilityControlsIfListIsEmpty() {
-        ImageView swipeToRefreshImage = (ImageView) findViewById(R.id.swipe_to_refresh_image);
-        TextView swipeToRefreshText = (TextView) findViewById(R.id.swipe_to_refresh_text);
-
+    private void updateEmptyStateView() {
         if (mConversationsAdapter.getItemCount() == 0) {
-            swipeToRefreshImage.setVisibility(View.VISIBLE);
-            swipeToRefreshText.setVisibility(View.VISIBLE);
+            emptyStateView.setVisibility(View.VISIBLE);
         } else {
-            swipeToRefreshImage.setVisibility(View.GONE);
-            swipeToRefreshText.setVisibility(View.GONE);
+            emptyStateView.setVisibility(View.GONE);
         }
     }
 
@@ -691,8 +698,6 @@ public class ConversationsListActivity extends AppCompatActivity implements
         List<Long> conversationIds = SessionConnector.get().getAllConversationIds(true);
         mConversationsAdapter.replaceAll(conversationIds);
         Log.d(TAG, "Replaced all conversations");
-
-        setVisibilityControlsIfListIsEmpty();
     }
 
     private void selectConversation(final Long conversationId) {

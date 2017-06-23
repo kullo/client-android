@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.SessionConnector;
+import net.kullo.android.littlehelpers.Formatting;
 import net.kullo.android.thirdparty.EllipsizingTextView;
 import net.kullo.android.util.adapters.KulloIdsAdapter;
 
@@ -22,20 +23,15 @@ import org.joda.time.LocalDateTime;
 import org.joda.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
+    public static final String TAG = "MessagesAdapter";
+
     public interface FullyVisibleCallback {
         void onUnreadAndFullyVisible(Long item);
         void onNotUnreadAndFullyVisible(Long item);
     }
 
-    public static final String TAG = "MessagesAdapter";
-    private static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
-    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
-
-    private final DateTimeFormatter mFormatterClock;
-    private final DateTimeFormatter mFormatterCalendarDate;
     private final Activity mBaseActivity;
     private boolean mShowCardsExpanded;
 
@@ -45,9 +41,6 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
         super();
         mBaseActivity = baseActivity;
         mShowCardsExpanded = false;
-
-        mFormatterCalendarDate = ((KulloApplication) mBaseActivity.getApplication()).getShortDateFormatter();
-        mFormatterClock = ((KulloApplication) mBaseActivity.getApplication()).getShortTimeFormatter();
     }
 
     public void toggleMessageSize() {
@@ -92,7 +85,7 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
         final ArrayList<Long> attachmentIds = SessionConnector.get().getMessageAttachmentsIds(messageId);
         final boolean hasAttachments = !attachmentIds.isEmpty();
 
-        messagesViewHolder.mMessageDateTextView.setText(getDateText(dateReceived));
+        messagesViewHolder.mMessageDateTextView.setText(Formatting.shortDateText(dateReceived));
         messagesViewHolder.mSenderAvatarImage.setImageBitmap(senderAvatar);
         messagesViewHolder.mSenderNameTextView.setText(senderName);
         messagesViewHolder.mUnreadIcon.setVisibility(unread ? View.VISIBLE : View.GONE);
@@ -104,9 +97,8 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
             messagesViewHolder.mMessageTextTextView.setMaxLines(10);
             messagesViewHolder.mMessageTextTextView.setText(text);
         } else {
-            final String textCompressed = WHITESPACE_PATTERN.matcher(text).replaceAll(" ");
             messagesViewHolder.mMessageTextTextView.setMaxLines(2);
-            messagesViewHolder.mMessageTextTextView.setText(textCompressed);
+            messagesViewHolder.mMessageTextTextView.setText(Formatting.compressedText(text));
         }
 
         messagesViewHolder.mMessageTextTextView.addEllipsizeListener(new EllipsizingTextView.EllipsizeListener() {
@@ -126,20 +118,5 @@ public class MessagesAdapter extends KulloIdsAdapter<MessagesViewHolder> {
         } else {
             messagesViewHolder.itemView.setBackgroundColor(Color.TRANSPARENT);
         }
-    }
-
-    private String getDateText(DateTime dateReceived) {
-        LocalDateTime localDateReceived = new LocalDateTime(dateReceived, LOCAL_TIME_ZONE);
-
-        String dateString;
-        if(localDateReceived.toLocalDate().equals(new LocalDate())) {
-            dateString = localDateReceived.toString(mFormatterClock);
-        } else if(localDateReceived.toLocalDate().equals((new LocalDate()).minusDays(1))) {
-            dateString = mBaseActivity.getResources().getString(R.string.yesterday);
-        } else {
-            dateString = localDateReceived.toString(mFormatterCalendarDate);
-        }
-
-        return dateString;
     }
 }

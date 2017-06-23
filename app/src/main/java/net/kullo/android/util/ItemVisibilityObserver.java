@@ -36,10 +36,6 @@ public class ItemVisibilityObserver<ItemType> {
         insertionTimes.remove(item);
     }
 
-    public void removeAllExcept(@NonNull Set<ItemType> donNotRemove) {
-        storage.retainAll(donNotRemove);
-    }
-
     public void clear() {
         storage.clear();
         insertionTimes.clear();

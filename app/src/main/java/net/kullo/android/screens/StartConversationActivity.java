@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.TextInputLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.ActionMode;
 import android.view.KeyEvent;
@@ -32,6 +31,7 @@ import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.screens.startconversation.ParticipantsAdapter;
 import net.kullo.android.ui.NonScrollingLinearLayoutManager;
+import net.kullo.android.util.adapters.RecyclerItemClickListener;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.AsyncTask;
@@ -83,7 +83,7 @@ public class StartConversationActivity extends KulloActivity {
         fillAdapterWithInitialData();
         updateViewFromAdapterData();
 
-        GcmConnector.get().fetchAndRegisterToken(this);
+        GcmConnector.get().ensureSessionHasTokenRegisteredAsync();
     }
 
     @Override
@@ -148,14 +148,15 @@ public class StartConversationActivity extends KulloActivity {
                 updateViewFromAdapterData();
             }
         });
-        mParticipantsAdapter.setOnClickListener(new ParticipantsAdapter.OnClickListener() {
+        mParticipantsAdapter.setOnClickListener(new RecyclerItemClickListener() {
             @Override
             public void onClick(View v, int position) {
-                Address participant = mParticipantsAdapter.getItem(position);
-                toggleParticipantSelection(participant);
+                if (mActionMode != null) {
+                    Address participant = mParticipantsAdapter.getItem(position);
+                    toggleParticipantSelection(participant);
+                }
             }
-        });
-        mParticipantsAdapter.setOnLongClickListener(new ParticipantsAdapter.OnLongClickListener() {
+
             @Override
             public boolean onLongClick(View v, int position) {
                 Address participant = mParticipantsAdapter.getItem(position);

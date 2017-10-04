@@ -3,11 +3,14 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /** Listener used in Client.createSessionAsync() */
 public abstract class ClientCreateSessionListener {
-    public abstract void migrationStarted(Address address);
+    public abstract void migrationStarted(@NonNull Address address);
 
-    public abstract void finished(Session session);
+    public abstract void finished(@NonNull Session session);
 
-    public abstract void error(Address address, LocalError error);
+    public abstract void error(@NonNull Address address, @NonNull LocalError error);
 }

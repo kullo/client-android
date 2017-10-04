@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public final class Event {
 
 
@@ -15,7 +18,7 @@ public final class Event {
     /*package*/ final long attachmentId;
 
     public Event(
-            EventType event,
+            @NonNull EventType event,
             long conversationId,
             long messageId,
             long attachmentId) {
@@ -25,6 +28,7 @@ public final class Event {
         this.attachmentId = attachmentId;
     }
 
+    @NonNull
     public EventType getEvent() {
         return event;
     }

@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public final class SenderPredicate {
 
 
@@ -11,16 +14,18 @@ public final class SenderPredicate {
     /*package*/ final String senderAddress;
 
     public SenderPredicate(
-            SearchPredicateOperator predicateOperator,
-            String senderAddress) {
+            @NonNull SearchPredicateOperator predicateOperator,
+            @NonNull String senderAddress) {
         this.predicateOperator = predicateOperator;
         this.senderAddress = senderAddress;
     }
 
+    @NonNull
     public SearchPredicateOperator getPredicateOperator() {
         return predicateOperator;
     }
 
+    @NonNull
     public String getSenderAddress() {
         return senderAddress;
     }

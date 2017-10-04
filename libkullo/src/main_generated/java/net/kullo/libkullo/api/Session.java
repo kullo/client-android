@@ -3,34 +3,48 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Session {
+    @NonNull
     public abstract UserSettings userSettings();
 
+    @NonNull
     public abstract Conversations conversations();
 
+    @NonNull
     public abstract Messages messages();
 
+    @NonNull
     public abstract MessageAttachments messageAttachments();
 
+    @NonNull
     public abstract Senders senders();
 
+    @NonNull
     public abstract Drafts drafts();
 
+    @NonNull
     public abstract DraftAttachments draftAttachments();
 
+    @NonNull
     public abstract Syncer syncer();
 
-    public abstract AsyncTask accountInfoAsync(SessionAccountInfoListener listener);
+    @NonNull
+    public abstract AsyncTask accountInfoAsync(@NonNull SessionAccountInfoListener listener);
 
-    public abstract AsyncTask registerPushToken(PushToken token);
+    @NonNull
+    public abstract AsyncTask registerPushToken(@NonNull PushToken token);
 
-    public abstract AsyncTask unregisterPushToken(PushToken token);
+    @NonNull
+    public abstract AsyncTask unregisterPushToken(@NonNull PushToken token);
 
     /** Notify the session of events. Only call this from the UI thread! */
-    public abstract ArrayList<Event> notify(InternalEvent internalEvent);
+    @NonNull
+    public abstract ArrayList<Event> notify(@NonNull InternalEvent internalEvent);
 
     private static final class CppProxy extends Session
     {

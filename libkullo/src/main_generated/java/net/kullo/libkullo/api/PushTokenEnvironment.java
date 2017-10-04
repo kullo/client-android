@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public enum PushTokenEnvironment {
     /** GCM: when run on Android */
     ANDROID,

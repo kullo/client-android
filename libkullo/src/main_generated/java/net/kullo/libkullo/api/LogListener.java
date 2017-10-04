@@ -3,8 +3,11 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /** Listener used in Registry.setLogListener() */
 public abstract class LogListener {
     /** Called whenever libkullo produces a log message. */
-    public abstract void writeLogMessage(String file, int line, String function, LogType type, String message, String thread, String stacktrace);
+    public abstract void writeLogMessage(@NonNull String file, int line, @NonNull String function, @NonNull LogType type, @NonNull String message, @NonNull String thread, @NonNull String stacktrace);
 }

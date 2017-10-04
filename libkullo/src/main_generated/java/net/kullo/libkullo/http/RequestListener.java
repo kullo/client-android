@@ -3,9 +3,12 @@
 
 package net.kullo.libkullo.http;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class RequestListener {
+    @NonNull
     public abstract byte[] read(long maxSize);
 
     private static final class CppProxy extends RequestListener

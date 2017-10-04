@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public enum NetworkError {
     /** Client too old or otherwise blocked; should check for update */
     FORBIDDEN,

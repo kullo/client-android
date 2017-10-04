@@ -3,6 +3,8 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Registry for helpers that are used by libkullo. */
@@ -11,10 +13,10 @@ public abstract class Registry {
      * Sets the log listener. If null is passed, default behavior is restored,
      * which means writing the log messages to stdout.
      */
-    public static native void setLogListener(LogListener listener);
+    public static native void setLogListener(@Nullable LogListener listener);
 
     /** Sets a new TaskRunner. Must be done before any async method is called. */
-    public static native void setTaskRunner(TaskRunner taskRunner);
+    public static native void setTaskRunner(@NonNull TaskRunner taskRunner);
 
     private static final class CppProxy extends Registry
     {

@@ -3,50 +3,60 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Settings specific to the local user */
 public abstract class UserSettings {
     /** Kullo address (e.g. "john.doe#kullo.net") */
+    @NonNull
     public abstract Address address();
 
+    @NonNull
     public abstract MasterKey masterKey();
 
     /** Real name (e.g. "John Doe"). Defaults to "". */
+    @NonNull
     public abstract String name();
 
-    public abstract void setName(String name);
+    public abstract void setName(@NonNull String name);
 
     /** Organization (e.g. "Doe Inc."). Defaults to "". */
+    @NonNull
     public abstract String organization();
 
-    public abstract void setOrganization(String organization);
+    public abstract void setOrganization(@NonNull String organization);
 
     /** Message footer (e.g. "42 Doe Ave., Doetown 12345"). Defaults to "". */
+    @NonNull
     public abstract String footer();
 
-    public abstract void setFooter(String footer);
+    public abstract void setFooter(@NonNull String footer);
 
     /** MIME type of the avatar (e.g. "image/jpeg"). Defaults to "". */
+    @NonNull
     public abstract String avatarMimeType();
 
-    public abstract void setAvatarMimeType(String mimeType);
+    public abstract void setAvatarMimeType(@NonNull String mimeType);
 
     /**
      * Binary contents of the avatar image file of type avatarMimeType.
      * Defaults to a zero-length vector.
      */
+    @NonNull
     public abstract byte[] avatar();
 
-    public abstract void setAvatar(byte[] avatar);
+    public abstract void setAvatar(@NonNull byte[] avatar);
 
     /**
      * When to show the next backup reminder. Returns null if no reminder date
      * is set. Defaults to a date in the past.
      */
+    @Nullable
     public abstract DateTime nextMasterKeyBackupReminder();
 
-    public abstract void setNextMasterKeyBackupReminder(DateTime reminderDate);
+    public abstract void setNextMasterKeyBackupReminder(@Nullable DateTime reminderDate);
 
     private static final class CppProxy extends UserSettings
     {

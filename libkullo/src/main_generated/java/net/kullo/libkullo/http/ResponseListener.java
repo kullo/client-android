@@ -3,6 +3,8 @@
 
 package net.kullo.libkullo.http;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class ResponseListener {
@@ -10,9 +12,10 @@ public abstract class ResponseListener {
      * Called when there's progress made on upload or download.
      * The request can be canceled by returning the appropriate code.
      */
-    public abstract ProgressResult progressed(TransferProgress progress);
+    @NonNull
+    public abstract ProgressResult progressed(@NonNull TransferProgress progress);
 
-    public abstract void dataReceived(byte[] data);
+    public abstract void dataReceived(@NonNull byte[] data);
 
     private static final class CppProxy extends ResponseListener
     {

@@ -41,6 +41,7 @@ import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.javautils.StrictBase64;
 import net.kullo.libkullo.api.AccountInfo;
 import net.kullo.libkullo.api.Address;
+import net.kullo.libkullo.api.AddressHelpers;
 import net.kullo.libkullo.api.AddressNotAvailableReason;
 import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.Challenge;
@@ -59,6 +60,7 @@ import net.kullo.libkullo.api.EventType;
 import net.kullo.libkullo.api.InternalEvent;
 import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.MasterKey;
+import net.kullo.libkullo.api.MasterKeyHelpers;
 import net.kullo.libkullo.api.MessageAttachmentsContentListener;
 import net.kullo.libkullo.api.MessageAttachmentsSaveToListener;
 import net.kullo.libkullo.api.MessagesSearchListener;
@@ -363,7 +365,7 @@ public class SessionConnector {
         editor.putString(KulloConstants.ACTIVE_USER, addressString);
         editor.putString(KulloConstants.LAST_ACTIVE_USER, addressString);
 
-        ArrayList<String> blockList = credentials.getMasterKey().dataBlocks();
+        ArrayList<String> blockList = credentials.getMasterKey().getBlocks();
         RuntimeAssertion.require(blockList.size() == KulloConstants.BLOCK_KEYS_AS_LIST.size());
         for (int index = 0; index < blockList.size(); index++) {
             editor.putString(addressString + KulloConstants.SEPARATOR + KulloConstants.BLOCK_KEYS_AS_LIST.get(index), blockList.get(index));
@@ -384,8 +386,8 @@ public class SessionConnector {
         }
 
         // Check validity of loaded login data
-        Address address = Address.create(addressString);
-        MasterKey masterKey = MasterKey.createFromDataBlocks(blockList);
+        Address address = AddressHelpers.create(addressString);
+        MasterKey masterKey = MasterKeyHelpers.createFromDataBlocks(blockList);
         if (address == null || masterKey == null) {
             return null;
         }
@@ -867,7 +869,7 @@ public class SessionConnector {
     }
 
     public long startConversationWithSingleRecipient(String recipientString) {
-        Address recipient = Address.create(recipientString);
+        Address recipient = AddressHelpers.create(recipientString);
         if (recipient == null) throw new RuntimeException("Invalid recipient address");
         AddressSet recipients = new AddressSet(Collections.singleton(recipient));
         return addNewConversationForKulloAddresses(recipients);
@@ -1032,7 +1034,7 @@ public class SessionConnector {
     public String getCurrentUserMasterKeyAsPem() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            return mSession.userSettings().masterKey().pem();
+            return MasterKeyHelpers.toPem(mSession.userSettings().masterKey());
         }
     }
 
@@ -1195,7 +1197,7 @@ public class SessionConnector {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
             Address me = mSession.userSettings().address();
-            return !mSession.senders().address(messageId).isEqualTo(me);
+            return !me.equals(mSession.senders().address(messageId));
         }
     }
 
@@ -1408,7 +1410,7 @@ public class SessionConnector {
     public void registerAddressAsync(@NonNull final String addressString) {
         RuntimeAssertion.require(mRegistration != null);
 
-        Address address = Address.create(addressString);
+        Address address = AddressHelpers.create(addressString);
         RuntimeAssertion.require(address != null);
 
         mTaskHolder.add(mRegistration.registerAccountAsync(

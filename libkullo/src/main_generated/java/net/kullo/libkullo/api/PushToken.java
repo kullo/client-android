@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public final class PushToken {
 
 
@@ -13,23 +16,26 @@ public final class PushToken {
     /*package*/ final PushTokenEnvironment environment;
 
     public PushToken(
-            PushTokenType type,
-            String token,
-            PushTokenEnvironment environment) {
+            @NonNull PushTokenType type,
+            @NonNull String token,
+            @NonNull PushTokenEnvironment environment) {
         this.type = type;
         this.token = token;
         this.environment = environment;
     }
 
+    @NonNull
     public PushTokenType getType() {
         return type;
     }
 
     /** GCM: the token; APNS: the hex-encoded token */
+    @NonNull
     public String getToken() {
         return token;
     }
 
+    @NonNull
     public PushTokenEnvironment getEnvironment() {
         return environment;
     }

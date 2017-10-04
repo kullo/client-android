@@ -3,6 +3,8 @@
 
 package net.kullo.libkullo.http;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.ArrayList;
 
 public final class Request {
@@ -15,22 +17,25 @@ public final class Request {
     /*package*/ final ArrayList<HttpHeader> headers;
 
     public Request(
-            HttpMethod method,
-            String url,
-            ArrayList<HttpHeader> headers) {
+            @NonNull HttpMethod method,
+            @NonNull String url,
+            @NonNull ArrayList<HttpHeader> headers) {
         this.method = method;
         this.url = url;
         this.headers = headers;
     }
 
+    @NonNull
     public HttpMethod getMethod() {
         return method;
     }
 
+    @NonNull
     public String getUrl() {
         return url;
     }
 
+    @NonNull
     public ArrayList<HttpHeader> getHeaders() {
         return headers;
     }

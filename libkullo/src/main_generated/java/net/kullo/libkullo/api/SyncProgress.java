@@ -3,6 +3,8 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.HashMap;
 
 /** Encodes a progress update during syncing. Unknown totals are set to 0. */
@@ -36,7 +38,7 @@ public final class SyncProgress {
     /*package*/ final long runTimeMs;
 
     public SyncProgress(
-            SyncPhase phase,
+            @NonNull SyncPhase phase,
             long incomingMessagesProcessed,
             long incomingMessagesTotal,
             long incomingMessagesNew,
@@ -45,7 +47,7 @@ public final class SyncProgress {
             long incomingMessagesDeleted,
             long incomingAttachmentsDownloadedBytes,
             long incomingAttachmentsTotalBytes,
-            HashMap<Long, AttachmentsBlockDownloadProgress> incomingAttachments,
+            @NonNull HashMap<Long, AttachmentsBlockDownloadProgress> incomingAttachments,
             long outgoingMessagesUploadedBytes,
             long outgoingMessagesTotalBytes,
             long runTimeMs) {
@@ -64,6 +66,7 @@ public final class SyncProgress {
         this.runTimeMs = runTimeMs;
     }
 
+    @NonNull
     public SyncPhase getPhase() {
         return phase;
     }
@@ -102,6 +105,7 @@ public final class SyncProgress {
         return incomingAttachmentsTotalBytes;
     }
 
+    @NonNull
     public HashMap<Long, AttachmentsBlockDownloadProgress> getIncomingAttachments() {
         return incomingAttachments;
     }

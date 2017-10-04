@@ -3,9 +3,12 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /** Listener used in DraftAttachments.saveToAsync() */
 public abstract class DraftAttachmentsSaveToListener {
-    public abstract void finished(long convId, long attId, String path);
+    public abstract void finished(long convId, long attId, @NonNull String path);
 
-    public abstract void error(long convId, long attId, String path, LocalError error);
+    public abstract void error(long convId, long attId, @NonNull String path, @NonNull LocalError error);
 }

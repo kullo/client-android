@@ -1,3 +1,13 @@
+Version 47
+
+<en-GB>
+● Many invisible refinements under the hood
+</en-GB>
+
+<de-DE>
+● Einige unsichtbare Verbesserungen unter der Haube
+</de-DE>
+
 Version 46
 
 ● Add full text search for messages

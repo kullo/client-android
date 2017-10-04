@@ -3,6 +3,8 @@
 
 package net.kullo.libkullo.http;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.ArrayList;
 
 public final class Response {
@@ -15,14 +17,15 @@ public final class Response {
     /*package*/ final ArrayList<HttpHeader> headers;
 
     public Response(
-            ResponseError error,
+            @Nullable ResponseError error,
             int statusCode,
-            ArrayList<HttpHeader> headers) {
+            @NonNull ArrayList<HttpHeader> headers) {
         this.error = error;
         this.statusCode = statusCode;
         this.headers = headers;
     }
 
+    @Nullable
     public ResponseError getError() {
         return error;
     }
@@ -31,6 +34,7 @@ public final class Response {
         return statusCode;
     }
 
+    @NonNull
     public ArrayList<HttpHeader> getHeaders() {
         return headers;
     }

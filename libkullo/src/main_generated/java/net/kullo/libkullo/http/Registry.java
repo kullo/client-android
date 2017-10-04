@@ -3,10 +3,12 @@
 
 package net.kullo.libkullo.http;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Registry {
-    public static native void setHttpClientFactory(HttpClientFactory factory);
+    public static native void setHttpClientFactory(@NonNull HttpClientFactory factory);
 
     private static final class CppProxy extends Registry
     {

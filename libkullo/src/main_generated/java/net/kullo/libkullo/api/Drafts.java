@@ -3,13 +3,17 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Drafts {
+    @NonNull
     public abstract String text(long convId);
 
-    public abstract void setText(long convId, String text);
+    public abstract void setText(long convId, @NonNull String text);
 
+    @NonNull
     public abstract DraftState state(long convId);
 
     /**

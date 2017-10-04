@@ -3,11 +3,14 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class MessageAttachments {
     /** Returns all attachments for the given message */
+    @NonNull
     public abstract ArrayList<Long> allForMessage(long msgId);
 
     /**
@@ -17,25 +20,30 @@ public abstract class MessageAttachments {
     public abstract boolean allAttachmentsDownloaded(long msgId);
 
     /** Filename (e.g. "hello.png") */
+    @NonNull
     public abstract String filename(long msgId, long attId);
 
     /** MIME type (e.g. "image/png") */
+    @NonNull
     public abstract String mimeType(long msgId, long attId);
 
     /** File size in bytes */
     public abstract long size(long msgId, long attId);
 
     /** SHA-512 hash of the attachment contents */
+    @NonNull
     public abstract String hash(long msgId, long attId);
 
     /** Gets the content of the attachment as a BLOB */
-    public abstract AsyncTask contentAsync(long msgId, long attId, MessageAttachmentsContentListener listener);
+    @NonNull
+    public abstract AsyncTask contentAsync(long msgId, long attId, @NonNull MessageAttachmentsContentListener listener);
 
     /**
      * Saves the content of the attachment to a file. Path contains the absolute
      * path where the file should be saved, including the filename.
      */
-    public abstract AsyncTask saveToAsync(long msgId, long attId, String path, MessageAttachmentsSaveToListener listener);
+    @NonNull
+    public abstract AsyncTask saveToAsync(long msgId, long attId, @NonNull String path, @NonNull MessageAttachmentsSaveToListener listener);
 
     private static final class CppProxy extends MessageAttachments
     {

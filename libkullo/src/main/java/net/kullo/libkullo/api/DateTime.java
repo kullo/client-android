@@ -1,6 +1,8 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+
 public class DateTime extends DateTimeBase implements Comparable<DateTime> {
     public DateTime(
             short year, byte month, byte day,
@@ -25,7 +27,7 @@ public class DateTime extends DateTimeBase implements Comparable<DateTime> {
     }
 
     @Override
-    public int compareTo(DateTime other) {
+    public int compareTo(@NonNull DateTime other) {
         return InternalDateTimeUtils.compare(this, other);
     }
 }

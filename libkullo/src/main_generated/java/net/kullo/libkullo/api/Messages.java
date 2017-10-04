@@ -3,24 +3,28 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Messages {
     /** Returns all messages for the given conversation */
+    @NonNull
     public abstract ArrayList<Long> allForConversation(long convId);
 
     /**
      * Returns the message id of the latest record for the given sender address.
      * Returns -1 for addresses without a sender record.
      */
-    public abstract long latestForSender(Address address);
+    public abstract long latestForSender(@NonNull Address address);
 
     /** Deletes a message */
     public abstract void remove(long msgId);
 
     public abstract long conversation(long msgId);
 
+    @NonNull
     public abstract ArrayList<Delivery> deliveryState(long msgId);
 
     public abstract boolean isRead(long msgId);
@@ -33,10 +37,13 @@ public abstract class Messages {
     /** returns true iff value changed in this call */
     public abstract boolean setDone(long msgId, boolean value);
 
+    @NonNull
     public abstract DateTime dateSent(long msgId);
 
+    @NonNull
     public abstract DateTime dateReceived(long msgId);
 
+    @NonNull
     public abstract String text(long msgId);
 
     /**
@@ -56,8 +63,10 @@ public abstract class Messages {
      *
      * Web links are prioritized over Kullo address links and links do not overlap.
      */
+    @NonNull
     public abstract String textAsHtml(long msgId, boolean includeKulloAddresses);
 
+    @NonNull
     public abstract String footer(long msgId);
 
     /**
@@ -69,7 +78,8 @@ public abstract class Messages {
      * boundary: boundary used in result highlighting; auto-generated if unset
      * limitResults: The maximum number of results to return.
      */
-    public abstract AsyncTask searchAsync(String searchText, long convId, SenderPredicate sender, int limitResults, String boundary, MessagesSearchListener listener);
+    @NonNull
+    public abstract AsyncTask searchAsync(@NonNull String searchText, long convId, @Nullable SenderPredicate sender, int limitResults, @Nullable String boundary, @NonNull MessagesSearchListener listener);
 
     private static final class CppProxy extends Messages
     {

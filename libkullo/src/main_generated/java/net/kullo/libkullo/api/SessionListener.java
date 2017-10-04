@@ -3,8 +3,11 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /** Listener used in Client.createSessionAsync() */
 public abstract class SessionListener {
     /** event must be passed to Session.notify() from UI thread */
-    public abstract void internalEvent(InternalEvent event);
+    public abstract void internalEvent(@NonNull InternalEvent event);
 }

@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.http;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public enum ResponseError {
     CANCELED,
     TIMEOUT,

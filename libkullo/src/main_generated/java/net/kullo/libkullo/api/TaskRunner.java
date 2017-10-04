@@ -3,10 +3,13 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public abstract class TaskRunner {
     /**
      * Runs the given task asynchronously (simplest case: in a new thread)
      * and returns immediately.
      */
-    public abstract void runTaskAsync(Task task);
+    public abstract void runTaskAsync(@NonNull Task task);
 }

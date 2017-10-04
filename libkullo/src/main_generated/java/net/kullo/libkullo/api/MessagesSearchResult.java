@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public final class MessagesSearchResult {
 
 
@@ -21,10 +24,10 @@ public final class MessagesSearchResult {
     public MessagesSearchResult(
             long msgId,
             long convId,
-            String senderAddress,
-            DateTime dateReceived,
-            String snippet,
-            String boundary) {
+            @NonNull String senderAddress,
+            @NonNull DateTime dateReceived,
+            @NonNull String snippet,
+            @NonNull String boundary) {
         this.msgId = msgId;
         this.convId = convId;
         this.senderAddress = senderAddress;
@@ -41,10 +44,12 @@ public final class MessagesSearchResult {
         return convId;
     }
 
+    @NonNull
     public String getSenderAddress() {
         return senderAddress;
     }
 
+    @NonNull
     public DateTime getDateReceived() {
         return dateReceived;
     }
@@ -53,10 +58,12 @@ public final class MessagesSearchResult {
      * Snippet contains search strings wrapped in "(XYZ)" and "(/XYZ)" where XYZ
      * is a random boundary in the format [a-zA-Z0-9]+ generated in every search
      */
+    @NonNull
     public String getSnippet() {
         return snippet;
     }
 
+    @NonNull
     public String getBoundary() {
         return boundary;
     }

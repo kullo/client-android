@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.http;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public abstract class HttpClient {
     /**
      * Synchronously send the given request.
@@ -12,5 +15,6 @@ public abstract class HttpClient {
      * * requestListener must be non-null if method is PATCH, POST or PUT
      * * responseListener may be null
      */
-    public abstract Response sendRequest(Request request, int timeoutMs, RequestListener requestListener, ResponseListener responseListener);
+    @NonNull
+    public abstract Response sendRequest(@NonNull Request request, int timeoutMs, @Nullable RequestListener requestListener, @Nullable ResponseListener responseListener);
 }

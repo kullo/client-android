@@ -3,6 +3,8 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Can be obtained through Client.generateKeysAsync(). */
@@ -20,7 +22,8 @@ public abstract class Registration {
      *
      * If no challenge is needed, set challengeAnswer to ""
      */
-    public abstract AsyncTask registerAccountAsync(Address address, String acceptedTerms, Challenge challenge, String challengeAnswer, RegistrationRegisterAccountListener listener);
+    @NonNull
+    public abstract AsyncTask registerAccountAsync(@NonNull Address address, @Nullable String acceptedTerms, @Nullable Challenge challenge, @NonNull String challengeAnswer, @NonNull RegistrationRegisterAccountListener listener);
 
     private static final class CppProxy extends Registration
     {

@@ -3,8 +3,10 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.ArrayList;
 
 public abstract class MessagesSearchListener {
-    public abstract void finished(ArrayList<MessagesSearchResult> results);
+    public abstract void finished(@NonNull ArrayList<MessagesSearchResult> results);
 }

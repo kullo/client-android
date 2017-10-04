@@ -8,7 +8,7 @@ import net.kullo.libkullo.internal.okhttp.HttpClientFactoryImpl;
 
 public final class LibKullo {
     static {
-        System.loadLibrary("crystax");
+        System.loadLibrary("c++_shared");
         System.loadLibrary("kullo");
     }
 

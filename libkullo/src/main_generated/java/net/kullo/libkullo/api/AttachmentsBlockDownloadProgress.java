@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /** A block of attachments from a single message */
 public final class AttachmentsBlockDownloadProgress {
 

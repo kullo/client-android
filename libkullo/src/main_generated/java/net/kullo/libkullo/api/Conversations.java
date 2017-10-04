@@ -3,19 +3,22 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Conversations {
     /** Returns all conversation IDs in no particular order */
+    @NonNull
     public abstract ArrayList<Long> all();
 
     /**
      * Returns the conversation with the given participants (excluding the local
      * user), or -1 if the conversation doesn't exist
      */
-    public abstract long get(HashSet<Address> participants);
+    public abstract long get(@NonNull HashSet<Address> participants);
 
     /**
      * Adds a new conversation with the given participants (excluding the local
@@ -23,7 +26,7 @@ public abstract class Conversations {
      * addresses should have been validated through Client::addressExistsAsync()
      * before passing them into add().
      */
-    public abstract long add(HashSet<Address> participants);
+    public abstract long add(@NonNull HashSet<Address> participants);
 
     /**
      * Triggers removal of the given conversation. This will also remove all
@@ -33,6 +36,7 @@ public abstract class Conversations {
     public abstract void triggerRemoval(long convId);
 
     /** Returns the participants (excluding the local user) */
+    @NonNull
     public abstract HashSet<Address> participants(long convId);
 
     /** Total number of messages */
@@ -54,9 +58,11 @@ public abstract class Conversations {
      * Timestamp of the latest message (for sorting). Returns the result of
      * emptyConversationTimestamp() if the conversation has no messages.
      */
+    @NonNull
     public abstract DateTime latestMessageTimestamp(long convId);
 
     /** A date many years in the future, used in latestMessageTimestamp */
+    @NonNull
     public static native DateTime emptyConversationTimestamp();
 
     private static final class CppProxy extends Conversations

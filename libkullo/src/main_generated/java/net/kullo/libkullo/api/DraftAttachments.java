@@ -3,37 +3,46 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class DraftAttachments {
     /** Returns all attachments for the given draft */
+    @NonNull
     public abstract ArrayList<Long> allForDraft(long convId);
 
     /** Adds a new attachment to a draft */
-    public abstract AsyncTask addAsync(long convId, String path, String mimeType, DraftAttachmentsAddListener listener);
+    @NonNull
+    public abstract AsyncTask addAsync(long convId, @NonNull String path, @NonNull String mimeType, @NonNull DraftAttachmentsAddListener listener);
 
     /** Removes an attachment from a draft */
     public abstract void remove(long convId, long attId);
 
+    @NonNull
     public abstract String filename(long convId, long attId);
 
-    public abstract void setFilename(long convId, long attId, String filename);
+    public abstract void setFilename(long convId, long attId, @NonNull String filename);
 
+    @NonNull
     public abstract String mimeType(long convId, long attId);
 
     public abstract long size(long convId, long attId);
 
+    @NonNull
     public abstract String hash(long convId, long attId);
 
     /** Gets the content of the attachment as a BLOB */
-    public abstract AsyncTask contentAsync(long convId, long attId, DraftAttachmentsContentListener listener);
+    @NonNull
+    public abstract AsyncTask contentAsync(long convId, long attId, @NonNull DraftAttachmentsContentListener listener);
 
     /**
      * Saves the content of the attachment to a file. Path contains the absolute
      * path where the file should be saved, including the filename.
      */
-    public abstract AsyncTask saveToAsync(long convId, long attId, String path, DraftAttachmentsSaveToListener listener);
+    @NonNull
+    public abstract AsyncTask saveToAsync(long convId, long attId, @NonNull String path, @NonNull DraftAttachmentsSaveToListener listener);
 
     private static final class CppProxy extends DraftAttachments
     {

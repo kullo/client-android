@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /** Listener used in Client.generateKeysAsync() */
 public abstract class ClientGenerateKeysListener {
     /** Progress of key generation, in percent. */
@@ -12,5 +15,5 @@ public abstract class ClientGenerateKeysListener {
      * Called when key generation is done. Use registration to register an
      * account.
      */
-    public abstract void finished(Registration registration);
+    public abstract void finished(@NonNull Registration registration);
 }

@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /** Listener used in Syncer */
 public abstract class SyncerListener {
     /** Called when the syncer's state changes from idle to syncing. */
@@ -12,10 +15,10 @@ public abstract class SyncerListener {
      * Called when a part of a draft that should be sent is too big.
      * The syncer will continue syncing the other requested items.
      */
-    public abstract void draftPartTooBig(long convId, DraftPart part, long currentSize, long maxSize);
+    public abstract void draftPartTooBig(long convId, @NonNull DraftPart part, long currentSize, long maxSize);
 
     /** Called to inform about the progress of the current sync */
-    public abstract void progressed(SyncProgress progress);
+    public abstract void progressed(@NonNull SyncProgress progress);
 
     /**
      * Called when all requested syncs have finished. Not called when error() is
@@ -27,5 +30,5 @@ public abstract class SyncerListener {
      * Called when an error occurred during syncing which makes continuing the
      * sync impossible.
      */
-    public abstract void error(NetworkError error);
+    public abstract void error(@NonNull NetworkError error);
 }

@@ -8,8 +8,9 @@ import android.support.annotation.Nullable;
 
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
+import net.kullo.libkullo.api.AddressHelpers;
 import net.kullo.libkullo.api.DateTime;
-import net.kullo.libkullo.api.MasterKey;
+import net.kullo.libkullo.api.MasterKeyHelpers;
 import net.kullo.libkullo.api.SyncProgress;
 
 import java.util.ArrayList;
@@ -61,11 +62,11 @@ public class KulloUtils {
     }
 
     public static boolean isValidKulloAddress(String address) {
-        return (Address.create(address) != null);
+        return (AddressHelpers.create(address) != null);
     }
 
     public static boolean isValidMasterKeyBlock(String block) {
-        return MasterKey.isValidBlock(block);
+        return MasterKeyHelpers.isValidBlock(block);
     }
 
     @NonNull

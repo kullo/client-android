@@ -1,6 +1,21 @@
 Kullo for Android
 -----------------
 
+## v47 (2017-10-04)
+
+ * Migrate to Android NDK
+
+### Components
+
+ * Update libkullo to v66
+ * Update SmartSqlite to v21
+ * Update Botan to 2.3.0
+ * Update Android Support Library to 25.4.0
+
+### Requirements
+
+ * Google Play Services 10.2
+
 ## v46 (2017-06-23)
 
  * Add full text search for messages

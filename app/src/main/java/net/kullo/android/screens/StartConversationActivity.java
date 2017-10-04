@@ -34,6 +34,7 @@ import net.kullo.android.ui.NonScrollingLinearLayoutManager;
 import net.kullo.android.util.adapters.RecyclerItemClickListener;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
+import net.kullo.libkullo.api.AddressHelpers;
 import net.kullo.libkullo.api.AsyncTask;
 import net.kullo.libkullo.api.ClientAddressExistsListener;
 import net.kullo.libkullo.api.NetworkError;
@@ -298,11 +299,11 @@ public class StartConversationActivity extends KulloActivity {
     }
 
     private void addParticipant() {
-        Address newParticipant = Address.create(mNewParticipantEditText.getText().toString());
+        Address newParticipant = AddressHelpers.create(mNewParticipantEditText.getText().toString());
 
         if (newParticipant == null) {
             mNewParticipantTextInputLayout.setError(getText(R.string.login_error_address_invalid));
-        } else if (newParticipant.isEqualTo(SessionConnector.get().getCurrentUserAddress())) {
+        } else if (newParticipant.equals(SessionConnector.get().getCurrentUserAddress())) {
             // prevent conversation with self
             mNewParticipantTextInputLayout.setError(getText(R.string.start_conversation_sender_is_recipient));
         } else {

@@ -1,12 +1,14 @@
 /* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
 package net.kullo.reduce;
 
+import android.support.annotation.CheckResult;
+
 public class Reduce {
     private static int ALGORITHM_SCALE = 0;
     private static int ALGORITHM_RESIZE = 1;
 
     static {
-        System.loadLibrary("crystax");
+        System.loadLibrary("c++_shared");
         System.loadLibrary("reduce-jni");
     }
 
@@ -15,18 +17,20 @@ public class Reduce {
         return new Size(size[0], size[1]);
     }
 
-    public static void scale(
+    @CheckResult
+    public static int scale(
             final String srcFilepath,
             final String dstFilepath,
             final Size dstSize) {
-        jniScale(srcFilepath, dstFilepath, dstSize.width, dstSize.height, ALGORITHM_SCALE);
+        return jniScale(srcFilepath, dstFilepath, dstSize.width, dstSize.height, ALGORITHM_SCALE);
     }
 
-    public static void resize(
+    @CheckResult
+    public static int resize(
             final String srcFilepath,
             final String dstFilepath,
             final Size dstSize) {
-        jniScale(srcFilepath, dstFilepath, dstSize.width, dstSize.height, ALGORITHM_RESIZE);
+        return jniScale(srcFilepath, dstFilepath, dstSize.width, dstSize.height, ALGORITHM_RESIZE);
     }
 
     native private static int[] jniDestinationSizeForPixelLimit(
@@ -34,7 +38,8 @@ public class Reduce {
             int srcHeight,
             int pixelLimit);
 
-    native private static void jniScale(
+    @CheckResult
+    native private static int jniScale(
             final String srcFilepath,
             final String dstFilepath,
             int with,

@@ -3,13 +3,16 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /** Listener used in Registration.registerAccountAsync() */
 public abstract class RegistrationRegisterAccountListener {
-    public abstract void challengeNeeded(Address address, Challenge challenge);
+    public abstract void challengeNeeded(@NonNull Address address, @NonNull Challenge challenge);
 
-    public abstract void addressNotAvailable(Address address, AddressNotAvailableReason reason);
+    public abstract void addressNotAvailable(@NonNull Address address, @NonNull AddressNotAvailableReason reason);
 
-    public abstract void finished(Address address, MasterKey masterKey);
+    public abstract void finished(@NonNull Address address, @NonNull MasterKey masterKey);
 
-    public abstract void error(Address address, NetworkError error);
+    public abstract void error(@NonNull Address address, @NonNull NetworkError error);
 }

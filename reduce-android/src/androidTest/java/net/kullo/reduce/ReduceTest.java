@@ -24,6 +24,7 @@ public class ReduceTest {
 
     @Test
     public void loadLibrary() throws Exception {
+        @SuppressWarnings("unused")
         Reduce instance = new Reduce();
     }
 
@@ -111,7 +112,7 @@ public class ReduceTest {
     public void scale() {
         String inPath = getResourcePath(R.raw.couch, "jpg");
         String outPath = getOutPath("jpg");
-        Reduce.scale(inPath, outPath, new Size(300, 200));
+        assertEquals(0, Reduce.scale(inPath, outPath, new Size(300, 200)));
 
         Bitmap result = BitmapFactory.decodeFile(outPath);
         assertEquals(300, result.getWidth());
@@ -122,7 +123,7 @@ public class ReduceTest {
     public void resize() {
         String inPath = getResourcePath(R.raw.couch, "jpg");
         String outPath = getOutPath("jpg");
-        Reduce.resize(inPath, outPath, new Size(300, 200));
+        assertEquals(0, Reduce.resize(inPath, outPath, new Size(300, 200)));
 
         Bitmap result = BitmapFactory.decodeFile(outPath);
         assertEquals(300, result.getWidth());

@@ -3,6 +3,8 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class InternalDateTimeUtils {
@@ -10,19 +12,21 @@ public abstract class InternalDateTimeUtils {
     public static native boolean isValid(short year, byte month, byte day, byte hour, byte minute, byte second, short tzOffsetMinutes);
 
     /** Returns the current time in the UTC timezone */
+    @NonNull
     public static native DateTime nowUtc();
 
     /**
      * Returns the RFC3339 representation
      * yyyy-mm-ddThh:mm:ss[.f+](Z|(+|-)hh:mm) (case-insensitive)
      */
-    public static native String toString(DateTime dateTime);
+    @NonNull
+    public static native String toString(@NonNull DateTime dateTime);
 
     /**
      * Compares two DateTime objects, taking time zones etc. into account.
      * Returns -1 iff lhs < rhs, 0 iff lhs == rhs, 1 iff lhs > rhs.
      */
-    public static native byte compare(DateTime lhs, DateTime rhs);
+    public static native byte compare(@NonNull DateTime lhs, @NonNull DateTime rhs);
 
     private static final class CppProxy extends InternalDateTimeUtils
     {

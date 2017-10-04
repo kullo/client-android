@@ -3,18 +3,25 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class Senders {
+    @NonNull
     public abstract String name(long msgId);
 
     /** Returns null if the msgId is invalid */
+    @Nullable
     public abstract Address address(long msgId);
 
+    @NonNull
     public abstract String organization(long msgId);
 
+    @NonNull
     public abstract String avatarMimeType(long msgId);
 
+    @NonNull
     public abstract byte[] avatar(long msgId);
 
     private static final class CppProxy extends Senders

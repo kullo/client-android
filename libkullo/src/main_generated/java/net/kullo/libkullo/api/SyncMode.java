@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 public enum SyncMode {
     /** Do the minimal work required to send all unsent prepared drafts */
     SENDONLY,

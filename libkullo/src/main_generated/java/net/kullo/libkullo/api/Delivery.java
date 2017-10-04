@@ -3,16 +3,22 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Delivery information for a single recipient. */
 public abstract class Delivery {
+    @NonNull
     public abstract Address recipient();
 
+    @NonNull
     public abstract DeliveryState state();
 
+    @Nullable
     public abstract DeliveryReason reason();
 
+    @Nullable
     public abstract DateTime date();
 
     private static final class CppProxy extends Delivery

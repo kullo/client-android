@@ -28,8 +28,10 @@ import net.kullo.android.observers.listenerobservers.ClientCheckCredentialsListe
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
+import net.kullo.libkullo.api.AddressHelpers;
 import net.kullo.libkullo.api.LocalError;
 import net.kullo.libkullo.api.MasterKey;
+import net.kullo.libkullo.api.MasterKeyHelpers;
 import net.kullo.libkullo.api.NetworkError;
 
 import java.util.ArrayList;
@@ -315,12 +317,12 @@ public class LoginActivity extends AppCompatActivity {
         if (validationFailures == 0) {
             // Gather data
             final String addressString = mKulloAddressEditText.getText().toString();
-            final Address address = Address.create(addressString);
+            final Address address = AddressHelpers.create(addressString);
             final ArrayList<String> masterKeyBlocks = new ArrayList<>(16);
             for (EditText block : mMasterKeyBlocksEditText) {
                 masterKeyBlocks.add(block.getText().toString());
             }
-            final MasterKey masterKey = MasterKey.createFromDataBlocks(masterKeyBlocks);
+            final MasterKey masterKey = MasterKeyHelpers.createFromDataBlocks(masterKeyBlocks);
 
             // Show waiting dialog (e.g. for long database migration)
             mCreatingSessionDialog = new MaterialDialog.Builder(this)

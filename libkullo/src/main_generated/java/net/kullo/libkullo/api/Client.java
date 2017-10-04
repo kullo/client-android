@@ -3,22 +3,30 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** A Client is the entry point to most of libkullo. */
 public abstract class Client {
     /** Constants for the use with versions() */
+    @NonNull
     public static final String BOTAN = "Botan";
 
+    @NonNull
     public static final String BOOST = "Boost";
 
+    @NonNull
     public static final String JSONCPP = "JsonCpp";
 
+    @NonNull
     public static final String LIBKULLO = "libkullo";
 
+    @NonNull
     public static final String SMARTSQLITE = "SmartSqlite";
 
+    @NonNull
     public static final String SQLITE = "SQLite";
 
     /**
@@ -29,21 +37,27 @@ public abstract class Client {
      *
      * Attention: Don't ever re-use the same DB file for multiple accounts!
      */
-    public abstract AsyncTask createSessionAsync(Address address, MasterKey masterKey, String dbFilePath, SessionListener sessionListener, ClientCreateSessionListener listener);
+    @NonNull
+    public abstract AsyncTask createSessionAsync(@NonNull Address address, @NonNull MasterKey masterKey, @NonNull String dbFilePath, @NonNull SessionListener sessionListener, @NonNull ClientCreateSessionListener listener);
 
     /** Check whether an address exists. */
-    public abstract AsyncTask addressExistsAsync(Address address, ClientAddressExistsListener listener);
+    @NonNull
+    public abstract AsyncTask addressExistsAsync(@NonNull Address address, @NonNull ClientAddressExistsListener listener);
 
     /** Check whether the master key is valid for the given address. */
-    public abstract AsyncTask checkCredentialsAsync(Address address, MasterKey masterKey, ClientCheckCredentialsListener listener);
+    @NonNull
+    public abstract AsyncTask checkCredentialsAsync(@NonNull Address address, @NonNull MasterKey masterKey, @NonNull ClientCheckCredentialsListener listener);
 
     /** Generate new keys, which is the first step to registering an account. */
-    public abstract AsyncTask generateKeysAsync(ClientGenerateKeysListener listener);
+    @NonNull
+    public abstract AsyncTask generateKeysAsync(@NonNull ClientGenerateKeysListener listener);
 
     /** Returns pairs of <library name, version number> for the libraries used. */
+    @NonNull
     public abstract HashMap<String, String> versions();
 
     /** Create a new Client instance. You will most probably only need one. */
+    @NonNull
     public static native Client create();
 
     private static final class CppProxy extends Client

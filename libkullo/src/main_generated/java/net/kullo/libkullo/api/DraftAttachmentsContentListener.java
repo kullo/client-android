@@ -3,7 +3,10 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /** Listener used in DraftAttachments.contentAsync() */
 public abstract class DraftAttachmentsContentListener {
-    public abstract void finished(long convId, long attId, byte[] content);
+    public abstract void finished(long convId, long attId, @NonNull byte[] content);
 }

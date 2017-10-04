@@ -3,6 +3,8 @@
 
 package net.kullo.libkullo.api;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -21,7 +23,7 @@ public abstract class Syncer {
      *
      * Thread-safe.
      */
-    public abstract void setListener(SyncerListener listener);
+    public abstract void setListener(@NonNull SyncerListener listener);
 
     /**
      * Get the finishing time of the last successful full sync.
@@ -30,6 +32,7 @@ public abstract class Syncer {
      *
      * Thread-safe.
      */
+    @Nullable
     public abstract DateTime lastFullSync();
 
     /**
@@ -37,7 +40,7 @@ public abstract class Syncer {
      *
      * Thread-safe.
      */
-    public abstract void requestSync(SyncMode mode);
+    public abstract void requestSync(@NonNull SyncMode mode);
 
     /**
      * Request that all attachments for the given message are downloaded.

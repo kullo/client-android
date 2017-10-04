@@ -20,77 +20,15 @@ public class AddressSet extends HashSet<Address> {
         super(c);
     }
 
-    @Override
-    public boolean contains(Object obj) {
-        Address objAddress;
-
-        try {
-            objAddress = (Address) obj;
-        } catch (ClassCastException ex) {
-            // obj is not of type Address => obj is not in set
-            return false;
-        }
-
-        for (Address a : this) {
-            if ((a == null && obj == null) || (a != null && objAddress != null && a.isEqualTo(objAddress))) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public boolean add(Address obj) {
-        if (contains(obj)) {
-            return false;
-        }
-        else {
-            super.add(obj);
-            return true;
-        }
-    }
-
-    @Override
-    public boolean remove(Object obj) {
-        Address objAddress;
-
-        try {
-            objAddress = (Address) obj;
-        } catch (ClassCastException ex) {
-            // obj is not of type Address => obj is not in set
-            return false;
-        }
-
-        for (Address a : this) {
-            if ((a == null && objAddress == null) || (a != null && objAddress != null && a.isEqualTo(objAddress))) {
-                super.remove(a);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static class AddressComparator implements Comparator<Address>
     {
-        // < 0 if lhs is less than rhs
-        // 0 if they are equal
-        // > 0 if lhs is greater than rhs
-        //
-        // Make sure that null is the last element => null is greater than everything
-        // null > a
-        // b < null
         public int compare(Address lhs, Address rhs)
         {
-            if (lhs == null && rhs == null) return 0;
-            if (lhs == null) return 1;
-            if (rhs == null) return -1;
+            if (lhs == null || rhs == null) {
+                throw new NullPointerException("Address must not be null");
+            }
 
-            // both are not-null
-            if (lhs == rhs) return 0;
-            if (lhs.isLessThan(rhs)) return -1;
-            return 1;
+            return lhs.toString().compareTo(rhs.toString());
         }
     }
 

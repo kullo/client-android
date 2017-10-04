@@ -3,6 +3,9 @@
 
 package net.kullo.libkullo.http;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 /**
  * Encapsulates the progress of a transfer, measured in bytes.
  * Defaults to 0 if unknown.

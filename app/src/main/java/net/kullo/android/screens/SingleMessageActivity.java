@@ -43,6 +43,7 @@ import net.kullo.android.ui.RecyclerItemClickListener;
 import net.kullo.android.ui.ScreenMetrics;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
+import net.kullo.libkullo.api.AddressHelpers;
 import net.kullo.libkullo.api.AttachmentsBlockDownloadProgress;
 import net.kullo.libkullo.api.NetworkError;
 import net.kullo.libkullo.api.SyncProgress;
@@ -298,7 +299,7 @@ public class SingleMessageActivity extends AppCompatActivity {
         final Address senderAddress = SessionConnector.get().getSenderAddress(mMessageId);
         final String senderName = SessionConnector.get().getSenderName(mMessageId);
         final String senderOrganization = SessionConnector.get().getSenderOrganization(mMessageId);
-        final boolean isMe = (senderAddress.isEqualTo(SessionConnector.get().getCurrentUserAddress()));
+        final boolean isMe = (senderAddress.equals(SessionConnector.get().getCurrentUserAddress()));
 
         StringBuilder senderNameOrganization = new StringBuilder();
         senderNameOrganization.append(senderName);
@@ -333,9 +334,11 @@ public class SingleMessageActivity extends AppCompatActivity {
                         case "kulloInternal": {
                             String cutPart = "kulloInternal:";
                             String addressString = linkTarget.toString().replace(cutPart, "");
-                            Address address = Address.create(addressString);
-                            boolean isMe = (SessionConnector.get().getCurrentUserAddress().isEqualTo(address));
-                            DialogMaker.makeForKulloAddress(SingleMessageActivity.this, address, isMe).show();
+                            Address address = AddressHelpers.create(addressString);
+                            if (address != null) {
+                                boolean isMe = (SessionConnector.get().getCurrentUserAddress().equals(address));
+                                DialogMaker.makeForKulloAddress(SingleMessageActivity.this, address, isMe).show();
+                            }
                             break;
                         }
                         default:

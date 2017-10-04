@@ -4,11 +4,8 @@ ext {
     TARGET_SDK_VERSION = 25
     BUILD_TOOLS_VERSION = "25.0.2"
 
-    // Available versions: ls -l $ANDROID_HOME/extras/android/m2repository/com/android/support/design
-
-    // There is a bug (?) with FloatingActionButton starting in 25.1.0
-    // See https://code.google.com/p/android/issues/detail?id=230298
-    SUPPORT_LIBRARY_VERSION = "25.3.1"
+    // Available versions: https://developer.android.com/topic/libraries/support-library/revisions.html
+    SUPPORT_LIBRARY_VERSION = "25.4.0"
 }
 
 android {
@@ -19,8 +16,8 @@ android {
         applicationId 'net.kullo.android'
         minSdkVersion 16
         targetSdkVersion TARGET_SDK_VERSION
-        versionCode 4602
-        versionName "46"
+        versionCode 4702
+        versionName "47"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
@@ -59,18 +56,18 @@ dependencies {
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.5.1'
 
     compile 'de.hdodenhof:circleimageview:2.1.0'
-    compile 'com.github.bumptech.glide:glide:3.7.0'
-    compile 'com.isseiaoki:simplecropview:1.0.16'
+    compile 'com.github.bumptech.glide:glide:3.8.0'
+    compile 'com.isseiaoki:simplecropview:1.1.6'
     compile 'net.danlew:android.joda:2.9.9'
-    compile "me.leolin:ShortcutBadger:1.1.13@aar"
+    compile "me.leolin:ShortcutBadger:1.1.18@aar"
 
     compile 'me.zhanghai.android.materialprogressbar:library:1.4.1'
 
     // Available versions:
     // ls -l $ANDROID_HOME/extras/google/m2repository/com/google/firebase/firebase-messaging
     // ls -l $ANDROID_HOME/extras/google/m2repository/com/google/android/gms/play-services-base
-    compile "com.google.firebase:firebase-messaging:10.0.1"
-    compile 'com.google.android.gms:play-services-base:10.0.1'
+    compile "com.google.firebase:firebase-messaging:10.2.6"
+    compile 'com.google.android.gms:play-services-base:10.2.6'
 
     compile project(':libkullo')
     compile project(':javautils')
@@ -90,9 +87,9 @@ android {
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/NOTICE.txt'
 
-        pickFirst 'lib/arm64-v8a/libcrystax.so'
-        pickFirst 'lib/armeabi-v7a/libcrystax.so'
-        pickFirst 'lib/x86/libcrystax.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/x86/libc++_shared.so'
     }
 }
 

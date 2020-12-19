@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens.conversationslist;
 
 import android.support.v7.widget.RecyclerView;
@@ -8,19 +13,17 @@ import android.widget.TextView;
 
 import net.kullo.android.R;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class ConversationViewHolder extends RecyclerView.ViewHolder {
-    protected CircleImageView mAvatarImage;
-    protected TextView mConversationName;
-    protected View mBaseView;
-    protected ImageView mUnreadMark;
+    @BindView(R.id.img_avatar) CircleImageView mAvatarImage;
+    @BindView(R.id.conversation_name) TextView mConversationName;
+    @BindView(R.id.unread_icon) ImageView mUnreadMark;
 
-    public ConversationViewHolder(View itemView) {
+    ConversationViewHolder(View itemView) {
         super(itemView);
-        mBaseView = itemView;
-        mAvatarImage = (CircleImageView) itemView.findViewById(R.id.img_avatar);
-        mConversationName = (TextView) itemView.findViewById(R.id.conversation_name);
-        mUnreadMark = (ImageView) itemView.findViewById(R.id.unread_icon);
+        ButterKnife.bind(this, itemView);
     }
 }

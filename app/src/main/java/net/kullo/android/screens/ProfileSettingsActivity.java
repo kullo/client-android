@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens;
 
 import android.app.Activity;
@@ -20,6 +25,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
+
+import com.bumptech.glide.Glide;
 
 import net.kullo.android.R;
 import net.kullo.android.application.CacheType;
@@ -174,7 +181,7 @@ public class ProfileSettingsActivity extends KulloActivity {
         clearIntent.setClass(this, ProfileSettingsActivity.class);
         clearIntent.setAction(ACTION_CLEAR_AVATAR);
         final LabeledIntent clearIntentOption = new LabeledIntent(clearIntent, getPackageName(),
-            getString(R.string.settings_remove_avatar), R.drawable.kullo_settings_avatar);
+            getString(R.string.settings_remove_avatar), R.drawable.dummy_avatar_120dp);
         extraIntents.add(clearIntentOption);
 
         // Extras: Cameras
@@ -294,11 +301,15 @@ public class ProfileSettingsActivity extends KulloActivity {
     }
 
     private void updateAvatarViewFromSession() {
-        byte[] avatar = SessionConnector.get().getCurrentUserAvatar();
-        if (avatar != null && avatar.length != 0) {
-            mAvatarView.setImageBitmap(AvatarUtils.avatarToBitmap(avatar));
+        final byte[] avatar = SessionConnector.get().getCurrentUserAvatar();
+        if (avatar.length > 0) {
+            Glide.with(this)
+                .load(avatar)
+                .into(mAvatarView);
         } else {
-            mAvatarView.setImageResource(R.drawable.kullo_settings_avatar);
+            Glide.with(this)
+                .load(R.drawable.dummy_avatar_120dp)
+                .into(mAvatarView);
         }
     }
 }

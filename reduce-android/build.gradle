@@ -10,12 +10,12 @@
 buildscript {
     repositories {
         jcenter()
-        maven { url "https://jitpack.io" }
+        google()
     }
     dependencies {
         // Android plugin for gradle
         // http://google.github.io/android-gradle-dsl
-        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath 'com.android.tools.build:gradle:3.1.4'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -36,11 +36,14 @@ allprojects {
 apply plugin: 'com.android.library'
 
 ext {
-    TARGET_SDK_VERSION = 25
-    BUILD_TOOLS_VERSION = "25.0.2"
+    TARGET_SDK_VERSION = 27
+    BUILD_TOOLS_VERSION = "27.0.3"
 
     // Available versions: https://developer.android.com/topic/libraries/support-library/revisions.html
-    SUPPORT_LIBRARY_VERSION = "25.4.0"
+    SUPPORT_LIBRARY_VERSION = "27.1.1"
+
+    // https://dl.google.com/dl/android/maven2/index.html
+    SUPPORT_TEST_VERSION = "1.0.2"
 }
 
 android {
@@ -64,12 +67,11 @@ android {
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
-    // Available versions: ls -l $ANDROID_HOME/extras/android/m2repository/com/android/support/test/runner
-    androidTestCompile 'com.android.support.test:runner:0.5'
-    // Set this dependency to use JUnit 4 rules
-    androidTestCompile 'com.android.support.test:rules:0.5'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "com.android.support:support-annotations:${SUPPORT_LIBRARY_VERSION}"
 
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile "com.android.support:support-annotations:${SUPPORT_LIBRARY_VERSION}"
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation "com.android.support.test:runner:${SUPPORT_TEST_VERSION}"
+    // Set this dependency to use JUnit 4 rules
+    androidTestImplementation "com.android.support.test:rules:${SUPPORT_TEST_VERSION}"
 }

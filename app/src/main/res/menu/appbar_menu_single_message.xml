@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_write"
-        android:title="@string/action_write"
+        android:title="@string/singlemessage_compose"
         app:showAsAction="always"
         android:icon="@drawable/ic_create_white_24dp"/>
 </menu>

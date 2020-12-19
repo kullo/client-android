@@ -20,7 +20,7 @@
         android:layout_toRightOf="@id/draft_attachment_icon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:maxLines="1"
+        android:singleLine="true"
         android:ellipsize="middle"
         android:textColor="@color/kulloTextPrimaryColor"
         android:gravity="left"

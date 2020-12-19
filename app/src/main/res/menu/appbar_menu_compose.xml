@@ -2,13 +2,18 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
+        android:id="@+id/action_add_audio"
+        android:title="@string/compose_attach_audio_recording"
+        app:showAsAction="ifRoom"
+        android:icon="@drawable/ic_mic_white_24dp" />
+    <item
         android:id="@+id/action_add_attachment"
-        android:title="@string/action_add_attachment"
-        app:showAsAction="always"
+        android:title="@string/compose_attach_attachment"
+        app:showAsAction="ifRoom"
         android:icon="@drawable/ic_attach_file_white_24dp" />
     <item
         android:id="@+id/action_send"
-        android:title="@string/action_send"
+        android:title="@string/compose_send"
         app:showAsAction="always"
         android:icon="@drawable/ic_send_white_24dp" />
 </menu>

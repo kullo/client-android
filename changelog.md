@@ -1,6 +1,22 @@
 Kullo for Android
 -----------------
 
+## v48
+
+ * Add audio record button in compose screen
+ * Show dummy avatar in drawer when unset; make avatar in drawer clickable
+ * Reduce time before messages are marked as read in messages list from 3 to 2 seconds
+ * Preserve scroll position when navigating up from single message
+ * Enable Java 8
+ * Use Gradle 4, build tools 26.0.3
+ * Use Kotlin in tests
+
+### Components
+
+ * Update SmartSqlite to v22
+ * Update Botan to 2.4.0
+ * Update okhttp to 3.9.1
+
 ## v47 (2017-10-04)
 
  * Migrate to Android NDK

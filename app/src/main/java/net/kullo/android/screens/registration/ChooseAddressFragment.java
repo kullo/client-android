@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens.registration;
 
 import android.os.Bundle;
@@ -29,6 +34,7 @@ import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.observers.listenerobservers.RegistrationRegisterAccountListenerObserver;
 import net.kullo.android.screens.RegistrationActivity;
+import net.kullo.android.storage.AppPreferences;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.AddressNotAvailableReason;
@@ -221,6 +227,12 @@ public class ChooseAddressFragment extends Fragment {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        KulloApplication.sharedInstance.preferences.set(
+                            AppPreferences.AppScopeKey.ACTIVE_USER,
+                            address.toString());
+                        KulloApplication.sharedInstance.preferences.set(
+                            AppPreferences.AppScopeKey.LAST_ACTIVE_USER,
+                            address.toString());
                         SessionConnector.get().storeCredentials(getActivity(), new Credentials(address, masterKey));
                         openNextView();
                     }

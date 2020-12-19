@@ -4,17 +4,6 @@
     package="net.kullo.android">
 
     <!--
-    From getExternalFilesDir():
-      Starting in KITKAT [Android 4.4, API level 19, October 2013], no permissions
-      are required to read or write to the returned path; it's always accessible
-      to the calling app. This only applies to paths generated for package name of
-      the calling application. To access paths belonging to other packages,
-      WRITE_EXTERNAL_STORAGE and/or READ_EXTERNAL_STORAGE are required.
-    -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="18" />
-
-    <!--
     Required when reading files from Gallery to avoid
       java.lang.SecurityException: Permission Denial: reading
       com.android.providers.media.MediaProvider uri
@@ -54,7 +43,6 @@
         </activity>
         <activity
             android:name=".screens.LoginActivity"
-            android:noHistory="true"
             android:screenOrientation="portrait" />
         <activity
             android:name=".screens.RegistrationActivity"
@@ -74,12 +62,21 @@
         </activity>
         <activity
             android:name=".screens.MessagesListActivity"
+            android:launchMode="singleTop"
             android:parentActivityName=".screens.ConversationsListActivity">
             <meta-data android:name="android.app.default_searchable"
                 android:value=".screens.SearchActivity" />
         </activity>
+        <!--
+        Parent may also be the search results activity, but NavUtils handles this properly.
+
+        No explicit intent with conversation ID necessary since singleTop ensures that
+        MessagesListActivity is not recreated. In case of a killed app, the parent activity
+        stack is recreated (tested in Android 4.4 and Android 6).
+        -->
         <activity
-            android:name=".screens.SingleMessageActivity" />
+            android:name=".screens.SingleMessageActivity"
+            android:parentActivityName=".screens.MessagesListActivity" />
         <activity
             android:name=".screens.ComposeActivity"
             android:windowSoftInputMode="adjustResize">

@@ -134,10 +134,9 @@ ellipsis (…)
     <string name="action_share">Teilen</string>
 
     <!-- single message -->
-    <string name="action_write">Schreiben</string>
+    <string name="singlemessage_compose">Schreiben</string>
     <string name="singlemessage_file_save_to_canceled">Speichern abgebrochen</string>
     <string name="singlemessage_file_save_failed">Speichern fehlgeschlagen</string>
-    <string name="singlemessage_save_not_available">Speichern ist erst ab Android 4.4 verfügbar. Das tut uns Leid!</string>
 
     <!-- settings -->
     <string name="settings_remove_avatar">Avatar löschen</string>
@@ -191,8 +190,9 @@ ellipsis (…)
     <string name="activity_title_compose">Schreiben</string>
     <string name="hint_new_message">Deine Nachricht</string>
     <string name="progress_send">Senden</string>
-    <string name="action_send">Absenden</string>
-    <string name="action_add_attachment">Datei anhängen</string>
+    <string name="compose_send">Absenden</string>
+    <string name="compose_attach_attachment">Datei anhängen</string>
+    <string name="compose_attach_audio_recording">Audio-Aufnahme anhängen</string>
     <string name="new_message_settings_incomplete_dialog_title">Absender-Einstellungen unvollständig</string>
     <string name="new_message_settings_incomplete_dialog_content">Deine Absender-Einstellungen sind unvollständig. Jetzt ergänzen?</string>
     <string name="new_message_input_placeholder">Nachricht</string>
@@ -209,6 +209,8 @@ ellipsis (…)
     <string name="compose_add_attachment_error_unknown">Unbekannter Fehler beim Hinzufügen einer Datei</string>
     <string name="compose_add_attachment_error_filesystem">Datei konnte nicht gelesen werden</string>
     <string name="compose_add_attachment_error_toobig">Datei zu groß</string>
+    <string name="compose_no_audio_recorder_title">Kein Audio-Recorder</string>
+    <string name="compose_no_audio_recorder_description">Es wurde keine App gefunden, die Audio-Aufnahmen durchführen kann.</string>
 
     <!-- share receiver -->
     <string name="sharereceiver_title_share_text">Text teilen</string>

@@ -1,6 +1,12 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.kulloapi;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -37,8 +43,8 @@ import net.kullo.android.observers.listenerobservers.RegistrationRegisterAccount
 import net.kullo.android.observers.listenerobservers.SyncerListenerObserver;
 import net.kullo.android.screens.LoginActivity;
 import net.kullo.android.screens.WelcomeActivity;
+import net.kullo.android.storage.AppPreferences;
 import net.kullo.javautils.RuntimeAssertion;
-import net.kullo.javautils.StrictBase64;
 import net.kullo.libkullo.api.AccountInfo;
 import net.kullo.libkullo.api.Address;
 import net.kullo.libkullo.api.AddressHelpers;
@@ -190,7 +196,7 @@ public class SessionConnector {
         if (sessionAvailable()) return new CreateSessionResult(CreateSessionState.EXISTS);
 
         Log.d(TAG, "No session available. Creating session if credentials are stored ...");
-        Credentials credentials = SessionConnector.get().loadStoredCredentials(callingActivity);
+        Credentials credentials = SessionConnector.get().loadStoredCredentials();
         if (credentials == null) {
             Log.d(TAG, "No credentials found. Moving to WelcomeActivity ...");
             callingActivity.startActivity(new Intent(callingActivity, WelcomeActivity.class));
@@ -212,8 +218,14 @@ public class SessionConnector {
 
         mTaskHolder.add(client.checkCredentialsAsync(address, masterKey, new ClientCheckCredentialsListener() {
             @Override
-            public void finished(Address address, MasterKey masterKey, boolean valid) {
+            public void finished(@NonNull Address address, @NonNull MasterKey masterKey, boolean valid) {
                 if (valid) {
+                    KulloApplication.sharedInstance.preferences.set(
+                        AppPreferences.AppScopeKey.ACTIVE_USER,
+                        address.toString());
+                    KulloApplication.sharedInstance.preferences.set(
+                        AppPreferences.AppScopeKey.LAST_ACTIVE_USER,
+                        address.toString());
                     Credentials credentials = new Credentials(address, masterKey);
                     storeCredentials(callingActivity, credentials);
                     createSession(callingActivity, credentials);
@@ -225,7 +237,7 @@ public class SessionConnector {
             }
 
             @Override
-            public void error(Address address, NetworkError error) {
+            public void error(@NonNull Address address, @NonNull NetworkError error) {
                 for (ListenerObserver observer : mListenerObservers.get(ClientCheckCredentialsListenerObserver.class)) {
                     ((ClientCheckCredentialsListenerObserver) observer).error(error);
                 }
@@ -246,7 +258,7 @@ public class SessionConnector {
         // value to caller to enable it to block using AsyncTask#waitUntilDone()
         AsyncTask task = client.createSessionAsync(credentials.getAddress(), credentials.getMasterKey(), dbFilePath, new SessionListener() {
             @Override
-            public void internalEvent(final InternalEvent event) {
+            public void internalEvent(@NonNull final InternalEvent event) {
                 callingActivity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -310,7 +322,7 @@ public class SessionConnector {
 
             @AnyThread
             @Override
-            public void migrationStarted(Address address) {
+            public void migrationStarted(@NonNull Address address) {
                 for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
                     ((ClientCreateSessionListenerObserver) observer).migrationStarted();
                 }
@@ -318,7 +330,7 @@ public class SessionConnector {
 
             @AnyThread
             @Override
-            public void finished(final Session session) {
+            public void finished(@NonNull final Session session) {
                 Log.d(TAG, "createSession finished :)");
 
                 synchronized (mSessionGuard) {
@@ -331,7 +343,7 @@ public class SessionConnector {
                     public void run() {
                         // Caution: everything in here might run after task.waitUntilDone()
 
-                        migrateUserSettings(callingActivity);
+                        copyTempUserNameAndOrganizationIntoDatabase();
 
                         for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
                             ((ClientCreateSessionListenerObserver) observer).finished();
@@ -342,7 +354,7 @@ public class SessionConnector {
 
             @AnyThread
             @Override
-            public void error(Address address, LocalError error) {
+            public void error(@NonNull Address address, @NonNull LocalError error) {
                 Log.d(TAG, address.toString() + " " + error.toString());
 
                 for (ListenerObserver observer : mListenerObservers.get(ClientCreateSessionListenerObserver.class)) {
@@ -357,32 +369,26 @@ public class SessionConnector {
     }
 
     public void storeCredentials(final Context context, Credentials credentials) {
-        SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences(
-                KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
+        final String addressString = credentials.getAddress().toString();
+        final List<String> blocks = credentials.getMasterKey().getBlocks();
+        RuntimeAssertion.require(blocks.size() == AppPreferences.MASTER_KEY_KEYS.size());
 
-        String addressString = credentials.getAddress().toString();
-        editor.putString(KulloConstants.ACTIVE_USER, addressString);
-        editor.putString(KulloConstants.LAST_ACTIVE_USER, addressString);
-
-        ArrayList<String> blockList = credentials.getMasterKey().getBlocks();
-        RuntimeAssertion.require(blockList.size() == KulloConstants.BLOCK_KEYS_AS_LIST.size());
-        for (int index = 0; index < blockList.size(); index++) {
-            editor.putString(addressString + KulloConstants.SEPARATOR + KulloConstants.BLOCK_KEYS_AS_LIST.get(index), blockList.get(index));
+        for (int index = 0; index < blocks.size(); index++) {
+            AppPreferences.UserScopeKey key = AppPreferences.MASTER_KEY_KEYS.get(index);
+            KulloApplication.sharedInstance.preferences.set(addressString, key, blocks.get(index));
         }
-
-        editor.commit();
     }
 
     @Nullable
-    public Credentials loadStoredCredentials(Context context) {
-        SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences(
-                KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
-        String addressString = sharedPref.getString(KulloConstants.ACTIVE_USER, "");
+    public Credentials loadStoredCredentials() {
+        String addressString = KulloApplication.sharedInstance.preferences.get(
+            AppPreferences.AppScopeKey.ACTIVE_USER);
+        if (addressString == null) return null;
 
         ArrayList<String> blockList = new ArrayList<>();
-        for (String key : KulloConstants.BLOCK_KEYS_AS_LIST) {
-            blockList.add(sharedPref.getString(addressString + KulloConstants.SEPARATOR + key, ""));
+        for (AppPreferences.UserScopeKey key : AppPreferences.MASTER_KEY_KEYS) {
+            String block = KulloApplication.sharedInstance.preferences.get(addressString, key);
+            blockList.add(block != null ? block : "");
         }
 
         // Check validity of loaded login data
@@ -396,56 +402,23 @@ public class SessionConnector {
     }
 
     @MainThread
-    public void migrateUserSettings(Context context) {
-        SharedPreferences sharedPref = context.getApplicationContext().getSharedPreferences(
-                KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
-
+    public void copyTempUserNameAndOrganizationIntoDatabase() {
         UserSettings userSettings;
         synchronized (mSessionGuard) {
             userSettings = mSession.userSettings();
         }
-        String addressString = userSettings.address().toString();
-        final String KEY_NAME             = addressString + KulloConstants.SEPARATOR + "user_name";
-        final String KEY_ORGANIZATION     = addressString + KulloConstants.SEPARATOR + "user_organization";
-        final String KEY_FOOTER           = addressString + KulloConstants.SEPARATOR + "user_footer";
-        final String KEY_AVATAR           = addressString + KulloConstants.SEPARATOR + "user_avatar";
-        final String KEY_AVATAR_MIME_TYPE = addressString + KulloConstants.SEPARATOR + "user_avatar_mime_type";
 
-        SharedPreferences.Editor editor = sharedPref.edit();
-        String value;
-
-        if ((value = sharedPref.getString(KEY_NAME, null)) != null) {
-            userSettings.setName(value);
-            editor.remove(KEY_NAME);
-        }
-        if ((value = sharedPref.getString(KEY_ORGANIZATION, null)) != null) {
-            userSettings.setOrganization(value);
-            editor.remove(KEY_ORGANIZATION);
-        }
-        if ((value = sharedPref.getString(KEY_FOOTER, null)) != null) {
-            userSettings.setFooter(value);
-            editor.remove(KEY_FOOTER);
-        }
-        if ((value = sharedPref.getString(KEY_AVATAR, null)) != null) {
-            try {
-                userSettings.setAvatar(StrictBase64.decode(value));
-            } catch (StrictBase64.DecodingException e) {
-                // do nothing
-            }
-            editor.remove(KEY_AVATAR);
-        }
-        if ((value = sharedPref.getString(KEY_AVATAR_MIME_TYPE, null)) != null) {
-            userSettings.setAvatarMimeType(value);
-            editor.remove(KEY_AVATAR_MIME_TYPE);
+        String name = KulloApplication.sharedInstance.preferences.get(AppPreferences.AppScopeKey.NEW_USER_NAME);
+        if (name != null) {
+            userSettings.setName(name);
+            KulloApplication.sharedInstance.preferences.clear(AppPreferences.AppScopeKey.NEW_USER_NAME);
         }
 
-        // Avoid avatar-avatarMimeType inconsistency
-        if (userSettings.avatarMimeType().isEmpty() || userSettings.avatar().length == 0) {
-            userSettings.setAvatar(new byte[0]);
-            userSettings.setAvatarMimeType("");
+        String organization = KulloApplication.sharedInstance.preferences.get(AppPreferences.AppScopeKey.NEW_USER_ORGANIZATION);
+        if (organization != null) {
+            userSettings.setOrganization(organization);
+            KulloApplication.sharedInstance.preferences.clear(AppPreferences.AppScopeKey.NEW_USER_ORGANIZATION);
         }
-
-        editor.commit();
     }
 
     @MainThread
@@ -456,6 +429,7 @@ public class SessionConnector {
     }
 
     // Callback runs on main thread
+    @SuppressLint("StaticFieldLeak")
     @MainThread
     public void logout(final Activity callingActivity, final Runnable callback) {
         Log.d(TAG, "Logging out user ...");
@@ -475,10 +449,8 @@ public class SessionConnector {
                         mSession = null;
                     }
 
-                    // remove active user entry from shared preferences
-                    SharedPreferences sharedPref = callingActivity.getApplicationContext().getSharedPreferences(
-                        KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
-                    sharedPref.edit().remove(KulloConstants.ACTIVE_USER).apply();
+                    KulloApplication.sharedInstance.preferences.clear(
+                        AppPreferences.AppScopeKey.ACTIVE_USER);
 
                     return null;
                 }
@@ -516,7 +488,7 @@ public class SessionConnector {
 
         // delete credentials from shared preferences
         SharedPreferences sharedPref = callingActivity.getApplicationContext().getSharedPreferences(
-            KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
+            KulloConstants.PREFS_FILE_DEFAULT, Context.MODE_PRIVATE);
         sharedPref.edit().clear().apply();
     }
 
@@ -633,7 +605,7 @@ public class SessionConnector {
 
             mTaskHolder.add(mSession.messages().searchAsync(query, conversationId, senderPredicate, 100, null, new MessagesSearchListener() {
                 @Override
-                public void finished(final ArrayList<MessagesSearchResult> results) {
+                public void finished(@NonNull final ArrayList<MessagesSearchResult> results) {
                     new Handler(KulloApplication.sharedInstance.getMainLooper()).post(new Runnable() {
                         @Override
                         public void run() {
@@ -655,12 +627,12 @@ public class SessionConnector {
             RuntimeAssertion.require(mSession != null);
             mTaskHolder.add(mSession.accountInfoAsync(new SessionAccountInfoListener() {
                 @Override
-                public void finished(AccountInfo accountInfo) {
+                public void finished(@NonNull AccountInfo accountInfo) {
                     callback.onDone(accountInfo);
                 }
 
                 @Override
-                public void error(NetworkError error) {
+                public void error(@NonNull NetworkError error) {
                     callback.onDone(null);
                 }
             }));
@@ -676,7 +648,7 @@ public class SessionConnector {
         }
 
         @Override
-        public void draftPartTooBig(long convId, DraftPart part, long currentSize, long maxSize) {
+        public void draftPartTooBig(long convId, @NonNull DraftPart part, long currentSize, long maxSize) {
             for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
                 //TODO generalize to pass on part
                 ((SyncerListenerObserver) observer).draftAttachmentsTooBig(convId);
@@ -684,7 +656,7 @@ public class SessionConnector {
         }
 
         @Override
-        public void progressed(SyncProgress progress) {
+        public void progressed(@NonNull SyncProgress progress) {
             for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
                 ((SyncerListenerObserver) observer).progressed(progress);
             }
@@ -698,7 +670,7 @@ public class SessionConnector {
         }
 
         @Override
-        public void error(NetworkError error) {
+        public void error(@NonNull NetworkError error) {
             for (ListenerObserver observer : mListenerObservers.get(SyncerListenerObserver.class)) {
                 ((SyncerListenerObserver) observer).error(error);
             }
@@ -906,7 +878,7 @@ public class SessionConnector {
                 }
 
                 @Override
-                public void finished(long convId, long attId, String path) {
+                public void finished(long convId, long attId, @NonNull String path) {
                     for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
                         ((DraftAttachmentsAddListenerObserver) observer).finished(convId, attId, path);
                     }
@@ -915,7 +887,7 @@ public class SessionConnector {
                 }
 
                 @Override
-                public void error(long convId, String path, LocalError error) {
+                public void error(long convId, @NonNull String path, @NonNull LocalError error) {
                     for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsAddListenerObserver.class)) {
                         ((DraftAttachmentsAddListenerObserver) observer).error(error);
                     }
@@ -975,14 +947,14 @@ public class SessionConnector {
 
         mTaskHolder.add(mSession.draftAttachments().saveToAsync(conversationId, attachmentId, path, new DraftAttachmentsSaveToListener() {
             @Override
-            public void finished(long convId, long attId, String path) {
+            public void finished(long convId, long attId, @NonNull String path) {
                 for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsSaveListenerObserver.class)) {
                     ((DraftAttachmentsSaveListenerObserver) observer).finished(convId, attId, path);
                 }
             }
 
             @Override
-            public void error(long convId, long attId, String path, LocalError error) {
+            public void error(long convId, long attId, @NonNull String path, @NonNull LocalError error) {
                 for (ListenerObserver observer : mListenerObservers.get(DraftAttachmentsSaveListenerObserver.class)) {
                     ((DraftAttachmentsSaveListenerObserver) observer).error(convId, attId, path, error.toString());
                 }
@@ -1094,9 +1066,7 @@ public class SessionConnector {
     public byte[] getCurrentUserAvatar() {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            byte[] avatar = mSession.userSettings().avatar();
-            RuntimeAssertion.require(avatar != null);
-            return avatar;
+            return mSession.userSettings().avatar();
         }
     }
 
@@ -1251,9 +1221,7 @@ public class SessionConnector {
     public ArrayList<Long> getMessageAttachmentsIds(long messageId) {
         synchronized (mSessionGuard) {
             RuntimeAssertion.require(mSession != null);
-            final ArrayList<Long> out = mSession.messageAttachments().allForMessage(messageId);
-            RuntimeAssertion.require(out != null);
-            return out;
+            return mSession.messageAttachments().allForMessage(messageId);
         }
     }
 
@@ -1315,14 +1283,14 @@ public class SessionConnector {
         RuntimeAssertion.require(mSession != null);
         mTaskHolder.add(mSession.messageAttachments().saveToAsync(messageId, attachmentId, path, new MessageAttachmentsSaveToListener() {
             @Override
-            public void finished(long msgId, long attId, String path) {
+            public void finished(long msgId, long attId, @NonNull String path) {
                 for (ListenerObserver observer : mListenerObservers.get(MessageAttachmentsSaveListenerObserver.class)) {
                     ((MessageAttachmentsSaveListenerObserver) observer).finished(msgId, attId, path);
                 }
             }
 
             @Override
-            public void error(long msgId, long attId, String path, LocalError error) {
+            public void error(long msgId, long attId, @NonNull String path, @NonNull LocalError error) {
                 for (ListenerObserver observer : mListenerObservers.get(MessageAttachmentsSaveListenerObserver.class)) {
                     ((MessageAttachmentsSaveListenerObserver) observer).error(msgId, attId, path, error.toString());
                 }
@@ -1396,7 +1364,7 @@ public class SessionConnector {
             }
 
             @Override
-            public void finished(Registration registration) {
+            public void finished(@NonNull Registration registration) {
                 mRegistration = registration;
 
                 for (ListenerObserver observer : mListenerObservers.get(ClientGenerateKeysListenerObserver.class)) {
@@ -1420,28 +1388,28 @@ public class SessionConnector {
                 "",
                 new RegistrationRegisterAccountListener() {
             @Override
-            public void challengeNeeded(Address address, Challenge challenge) {
+            public void challengeNeeded(@NonNull Address address, @NonNull Challenge challenge) {
                 for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
                     ((RegistrationRegisterAccountListenerObserver) observer).challengeNeeded(addressString, challenge);
                 }
             }
 
             @Override
-            public void addressNotAvailable(Address address, AddressNotAvailableReason reason) {
+            public void addressNotAvailable(@NonNull Address address, @NonNull AddressNotAvailableReason reason) {
                 for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
                     ((RegistrationRegisterAccountListenerObserver) observer).addressNotAvailable(addressString, reason);
                 }
             }
 
             @Override
-            public void finished(Address address, MasterKey masterKey) {
+            public void finished(@NonNull Address address, @NonNull MasterKey masterKey) {
                 for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
                     ((RegistrationRegisterAccountListenerObserver) observer).finished(address, masterKey);
                 }
             }
 
             @Override
-            public void error(Address address, NetworkError error) {
+            public void error(@NonNull Address address, @NonNull NetworkError error) {
                 for (ListenerObserver observer : mListenerObservers.get(RegistrationRegisterAccountListenerObserver.class)) {
                     ((RegistrationRegisterAccountListenerObserver) observer).error(address, error);
                 }

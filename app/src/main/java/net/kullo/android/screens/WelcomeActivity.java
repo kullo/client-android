@@ -1,10 +1,13 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens;
 
 import android.app.Dialog;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -15,13 +18,14 @@ import android.widget.RelativeLayout;
 import android.widget.Spinner;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloApplication;
 import net.kullo.android.kulloapi.Credentials;
 import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.SessionConnector;
-import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
 import net.kullo.android.notifications.GcmConnector;
 import net.kullo.android.observers.listenerobservers.ClientCreateSessionListenerObserver;
+import net.kullo.android.storage.AppPreferences;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.api.LocalError;
 
@@ -122,16 +126,7 @@ public class WelcomeActivity extends AppCompatActivity {
             }
         });
 
-        // Find stored addresses
-        ArrayList<String> storedAddresses = new ArrayList<>();
-        final SharedPreferences sharedPrefs = getSharedPreferences(KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
-        for (String key : sharedPrefs.getAll().keySet()) {
-            if (key.endsWith(KulloConstants.BLOCK_A)) {
-                // extract address: -1 to account for the separator character
-                storedAddresses.add(key.substring(0, key.length() - 1 - KulloConstants.BLOCK_A.length()));
-            }
-        }
-
+        ArrayList<String> storedAddresses = KulloApplication.sharedInstance.preferences.getLoggedInAddresses();
         if (storedAddresses.isEmpty()) {
             findViewById(R.id.open_inbox_controls).setVisibility(View.GONE);
         } else {
@@ -141,8 +136,8 @@ public class WelcomeActivity extends AppCompatActivity {
             spinnerOpenInbox.setAdapter(addressAdapter);
 
             // select the one stored in last_address by default
-            String lastActiveUser = sharedPrefs.getString(KulloConstants.LAST_ACTIVE_USER, "");
-            if (!lastActiveUser.isEmpty()) {
+            String lastActiveUser = KulloApplication.sharedInstance.preferences.get(AppPreferences.AppScopeKey.LAST_ACTIVE_USER);
+            if (lastActiveUser != null) {
                 int position = storedAddresses.indexOf(lastActiveUser);
                 spinnerOpenInbox.setSelection(position);
             }
@@ -152,9 +147,13 @@ public class WelcomeActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     String selectedAddress = spinnerOpenInbox.getSelectedItem().toString();
-                    sharedPrefs.edit().putString(KulloConstants.ACTIVE_USER, selectedAddress).apply();
+                    KulloApplication.sharedInstance.preferences.set(
+                        AppPreferences.AppScopeKey.ACTIVE_USER,
+                        selectedAddress);
                     if (checkForStoredCredentialsAndCreateSession()) {
-                        sharedPrefs.edit().putString(KulloConstants.LAST_ACTIVE_USER, selectedAddress).apply();
+                        KulloApplication.sharedInstance.preferences.set(
+                            AppPreferences.AppScopeKey.LAST_ACTIVE_USER,
+                            selectedAddress);
                         mLayoutContent.setVisibility(View.GONE);
                     }
                 }
@@ -224,7 +223,7 @@ public class WelcomeActivity extends AppCompatActivity {
     //HELPERS
 
     private boolean checkForStoredCredentialsAndCreateSession() {
-        Credentials credentials = SessionConnector.get().loadStoredCredentials(this);
+        Credentials credentials = SessionConnector.get().loadStoredCredentials();
         if (credentials == null) {
             Log.d(TAG, "No stored Kullo user settings found");
             return false;

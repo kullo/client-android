@@ -1,14 +1,20 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.MainThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -62,6 +68,7 @@ import java.io.File;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,6 +78,7 @@ import io.github.dialogsforandroid.MaterialDialog;
 public class ComposeActivity extends AppCompatActivity {
     private static final String TAG = "ComposeActivity";
     private static final int REQUEST_CODE_ATTACH_FILE = 1;
+    private static final int REQUEST_CODE_ATTACH_AUDIO_RECORDING = 2;
 
     private long mConversationId;
 
@@ -322,13 +330,7 @@ public class ComposeActivity extends AppCompatActivity {
         if (intent.hasExtra(KulloConstants.CONVERSATION_ADD_ATTACHMENTS)) {
             List<Uri> files = intent.getParcelableArrayListExtra(KulloConstants.CONVERSATION_ADD_ATTACHMENTS);
             RuntimeAssertion.require(files != null);
-
-            copyNewAttachmentFilesToCacheAsync(files, new CopiedToCacheCallback() {
-                @Override
-                void onCopiedToCache(List<PreparedAttachment> copiedFiles) {
-                    processFilesAsync(copiedFiles);
-                }
-            });
+            copyNewAttachmentFilesToCacheAsync(files, this::processFilesAsync);
         } else if (intent.hasExtra(KulloConstants.CONVERSATION_ADD_TEXT)) {
             String text = intent.getStringExtra(KulloConstants.CONVERSATION_ADD_TEXT);
             RuntimeAssertion.require(text != null);
@@ -558,42 +560,53 @@ public class ComposeActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQUEST_CODE_ATTACH_FILE) {
-            if (resultCode == Activity.RESULT_OK) {
-                RuntimeAssertion.require(data != null);
+        switch (requestCode) {
+            case REQUEST_CODE_ATTACH_FILE:
+                if (resultCode == Activity.RESULT_OK) {
+                    RuntimeAssertion.require(data != null);
 
-                final List<Uri> selectedFileUris = new ArrayList<>();
-                if (data.getClipData() != null) {
-                    final ClipData clipdata = data.getClipData();
-                    for (int i = 0; i < clipdata.getItemCount(); ++i) {
-                        final Uri u = clipdata.getItemAt(i).getUri();
-                        selectedFileUris.add(u);
+                    final List<Uri> selectedFileUris = new ArrayList<>();
+                    if (data.getClipData() != null) {
+                        final ClipData clipdata = data.getClipData();
+                        for (int i = 0; i < clipdata.getItemCount(); ++i) {
+                            final Uri u = clipdata.getItemAt(i).getUri();
+                            selectedFileUris.add(u);
+                        }
+                    } else {
+                        final Uri selectedFileUri = data.getData();
+                        RuntimeAssertion.require(selectedFileUri != null);
+                        selectedFileUris.add(selectedFileUri);
                     }
+                    Log.d(TAG, "Attachment sources: " + selectedFileUris);
+                    copyNewAttachmentFilesToCacheAsync(selectedFileUris, this::processFilesAsync);
+                } else if (resultCode == Activity.RESULT_CANCELED) {
+                    Toast.makeText(this, R.string.select_file_canceled, Toast.LENGTH_SHORT).show();
                 } else {
+                    RuntimeAssertion.fail("Unknown result code");
+                }
+                break;
+            case REQUEST_CODE_ATTACH_AUDIO_RECORDING:
+                if (resultCode == Activity.RESULT_OK) {
+                    Log.d(TAG, data.toString());
                     final Uri selectedFileUri = data.getData();
                     RuntimeAssertion.require(selectedFileUri != null);
-                    selectedFileUris.add(selectedFileUri);
+                    copyNewAttachmentFilesToCacheAsync(
+                        Collections.singletonList(selectedFileUri),
+                        this::processFilesAsync);
+                } else if (resultCode == Activity.RESULT_CANCELED) {
+                    Toast.makeText(this, R.string.select_file_canceled, Toast.LENGTH_SHORT).show();
+                } else {
+                    RuntimeAssertion.fail("Unknown result code");
                 }
-                Log.d(TAG, "Attachment sources: " + selectedFileUris);
-
-                copyNewAttachmentFilesToCacheAsync(selectedFileUris, new CopiedToCacheCallback() {
-                    @Override
-                    void onCopiedToCache(List<PreparedAttachment> copiedFiles) {
-                        processFilesAsync(copiedFiles);
-                    }
-                });
-            } else if (resultCode == Activity.RESULT_CANCELED){
-                Toast.makeText(this, R.string.select_file_canceled, Toast.LENGTH_SHORT).show();
-            } else {
-                RuntimeAssertion.fail("Unknown result code");
-            }
-        } else {
-            RuntimeAssertion.fail("Unknown request code: " + requestCode);
+                break;
+            default:
+                RuntimeAssertion.fail("Unknown request code: " + requestCode);
+                break;
         }
     }
 
-    abstract class CopiedToCacheCallback {
-        abstract void onCopiedToCache(List<PreparedAttachment> selectedFileUris);
+    interface CopiedToCacheCallback {
+        void onCopiedToCache(List<PreparedAttachment> selectedFileUris);
     }
 
     @MainThread
@@ -649,6 +662,9 @@ public class ComposeActivity extends AppCompatActivity {
                 return true;
             case R.id.action_add_attachment:
                 startFileSelectionActivity();
+                return true;
+            case R.id.action_add_audio:
+                startAudioRecordingActivity();
                 return true;
             case R.id.action_send:
                 send();
@@ -797,10 +813,22 @@ public class ComposeActivity extends AppCompatActivity {
         intent.setType("*/*");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setAction(Intent.ACTION_GET_CONTENT);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-        }
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         startActivityForResult(intent, REQUEST_CODE_ATTACH_FILE);
+    }
+
+    private void startAudioRecordingActivity() {
+        try {
+            final Intent intent = new Intent();
+            intent.setAction(MediaStore.Audio.Media.RECORD_SOUND_ACTION);
+            startActivityForResult(intent, REQUEST_CODE_ATTACH_AUDIO_RECORDING);
+        } catch (ActivityNotFoundException e) {
+            new MaterialDialog.Builder(this)
+                .title(R.string.compose_no_audio_recorder_title)
+                .content(R.string.compose_no_audio_recorder_description)
+                .positiveText(R.string.ok)
+                .show();
+        }
     }
 
     @NonNull

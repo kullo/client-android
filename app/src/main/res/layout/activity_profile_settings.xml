@@ -80,7 +80,7 @@ http://stackoverflow.com/a/8639921
                 android:layout_width="120dp"
                 android:layout_height="120dp"
                 android:scaleType="centerCrop"
-                android:src="@drawable/kullo_settings_avatar"
+                android:src="@drawable/dummy_avatar_120dp"
                 android:background="@drawable/background_for_transparent_images"
                 />
 

@@ -59,7 +59,7 @@
                                 android:layout_width="40dp"
                                 android:layout_height="40dp"
                                 android:layout_marginRight="12dp"
-                                android:src="@drawable/kullo_settings_avatar"
+                                android:src="@drawable/dummy_avatar_120dp"
                                 />
 
 

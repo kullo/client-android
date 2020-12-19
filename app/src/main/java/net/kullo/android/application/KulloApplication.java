@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.application;
 
 import android.app.Activity;
@@ -25,6 +30,7 @@ import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.littlehelpers.AddressSet;
 import net.kullo.android.littlehelpers.CiStringComparator;
 import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.storage.AppPreferences;
 import net.kullo.javautils.RuntimeAssertion;
 import net.kullo.libkullo.LibKullo;
 
@@ -57,8 +63,9 @@ public class KulloApplication extends Application
     public static final int PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE = 1001;
 
     public AddressSet startConversationParticipants = new AddressSet();
+    public AppPreferences preferences;
 
-    private static final int LATEST_PREFERENCES_VERSION = 3;
+    private static final int LATEST_PREFERENCES_VERSION = 4;
 
     // only access this variable in updateForegroundActivitiesCount()
     private int mCountActivitiesInForeground = 0;
@@ -86,8 +93,10 @@ public class KulloApplication extends Application
         LibKullo.init();
         initGlide();
 
+        preferences = new AppPreferences(this);
+
         deleteObsoletePreferences();
-        migratePreferences(getSharedPreferences(KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE));
+        migratePreferences(getSharedPreferences(KulloConstants.PREFS_FILE_DEFAULT, Context.MODE_PRIVATE));
 
         cleanExternalFilesDirAsync();
         cleanCacheDirAsync();
@@ -283,148 +292,170 @@ public class KulloApplication extends Application
 
     private void deleteObsoletePreferences() {
         // delete encrypted prefs
-        SharedPreferences old1 = getSharedPreferences(KulloConstants.ACCOUNT_PREFS_OBSOLETE, Context.MODE_PRIVATE);
+        SharedPreferences old1 = getSharedPreferences(KulloConstants.PREFS_FILE_OBSOLETE_ACCOUNT, Context.MODE_PRIVATE);
         old1.edit().clear().apply();
 
         // remove former obsolete preferences
-        SharedPreferences old2 = getSharedPreferences(KulloConstants.USER_SETTINGS_PREFS_OBSOLETE, Context.MODE_PRIVATE);
+        SharedPreferences old2 = getSharedPreferences(KulloConstants.PREFS_FILE_OBSOLETE_USER_SETTINGS, Context.MODE_PRIVATE);
         old2.edit().clear().apply();
     }
 
     // Do not increase LATEST_PREFERENCES_VERSION for tests because it will
     // migrate production data since AndroidTestCase creates an Application.
-    private static void migratePreferences(SharedPreferences currentPrefs) {
+    private static void migratePreferences(@NonNull SharedPreferences currentPrefs) {
         migratePreferences(currentPrefs, LATEST_PREFERENCES_VERSION);
     }
 
-    public static void migratePreferences(SharedPreferences currentPrefs, int versionLimit) {
-        final int currentPreferencesVersion = currentPrefs.getInt(KulloConstants.ACCOUNT_PREFS_VERSION_KEY, 0);
+    public static void migratePreferences(@NonNull SharedPreferences currentPrefs, int versionLimit) {
+        final int currentPreferencesVersion = currentPrefs.getInt(KulloConstants.PREFS_KEY_VERSION, 0);
 
-        if (currentPreferencesVersion < versionLimit) {
-            Log.i(TAG, "Preferences migration necessary. Current: " + currentPreferencesVersion
-                    + " Latest: " + versionLimit);
-
-            int version = currentPreferencesVersion;
-
-            if (version == 0 && version < versionLimit) {
-                // Before this migration, only one account was stored. So we can
-                // assume that there 0 or 1 accounts.
-                version++;
-                Log.i(TAG, "Migrating preferences to version " + version + " ...");
-                SharedPreferences.Editor editor = currentPrefs.edit();
-
-                String addressString = currentPrefs.getString(KulloConstants.KULLO_ADDRESS, "");
-
-                if (!addressString.isEmpty()) {
-                    // move address
-                    editor.putString(KulloConstants.ACTIVE_USER, addressString);
-                    editor.putString(KulloConstants.LAST_ACTIVE_USER, addressString);
-                    editor.remove(KulloConstants.KULLO_ADDRESS);
-
-                    // move master key
-                    for (String oldKey : KulloConstants.BLOCK_KEYS_AS_LIST) {
-                        String newKey = addressString + "_" + oldKey;
-                        movePreferencesStringEntry(currentPrefs, editor, oldKey, newKey);
-                    }
-                }
-
-                editor.putInt(KulloConstants.ACCOUNT_PREFS_VERSION_KEY, version);
-                editor.apply();
-            }
-
-            if (version == 1 && version < versionLimit)
-            {
-                // Before this migration, multiple accounts can be stored
-                version++;
-                Log.i(TAG, "Migrating preferences to version " + version + " ...");
-                SharedPreferences.Editor editor = currentPrefs.edit();
-
-                final String oldSeparator = "_";
-                final String newSeparator = "|";
-
-                final List<String> fieldsOrdered = Arrays.asList(
-                        "user_avatar_mime_type", // must be before user_avatar to ensure "mime_type" is not matched as part of the Kullo address
-                        "user_avatar",
-                        "user_organization",
-                        "user_name",
-                        "user_footer"
-                );
-
-                // key_address -> key|address
-                for (String oldKey : currentPrefs.getAll().keySet()) {
-                    boolean currentKeyMoved = false;
-                    for (String field : fieldsOrdered) {
-                        if (!currentKeyMoved && oldKey.startsWith(field + oldSeparator)) {
-                            String address = oldKey.substring(field.length() + oldSeparator.length());
-                            if (KulloUtils.isValidKulloAddress(address)) {
-                                String newKey = field + newSeparator + address;
-                                Log.d(TAG, "Moving preferences entry from " + oldKey + " to " + newKey);
-                                movePreferencesStringEntry(currentPrefs, editor, oldKey, newKey);
-                                currentKeyMoved = true;
-                            }
-                        }
-                    }
-                }
-
-                // address_key -> address|key
-                for (String oldKey : currentPrefs.getAll().keySet()) {
-                    boolean currentKeyMoved = false;
-                    for (String field : KulloConstants.BLOCK_KEYS_AS_LIST) {
-                        if (!currentKeyMoved && oldKey.endsWith(oldSeparator + field)) {
-                            String address = oldKey.substring(0,
-                                    oldKey.length() - field.length() - oldSeparator.length());
-                            if (KulloUtils.isValidKulloAddress(address)) {
-                                String newKey = address + newSeparator + field;
-                                Log.d(TAG, "Moving preferences entry from " + oldKey + " to " + newKey);
-                                movePreferencesStringEntry(currentPrefs, editor, oldKey, newKey);
-                                currentKeyMoved = true;
-                            }
-                        }
-                    }
-                }
-
-                editor.putInt(KulloConstants.ACCOUNT_PREFS_VERSION_KEY, version);
-                editor.apply();
-            }
-
-            if (version == 2 && version < versionLimit) {
-                // Before this migration, multiple accounts can be stored
-                version++;
-                Log.i(TAG, "Migrating preferences to version " + version + " ...");
-                SharedPreferences.Editor editor = currentPrefs.edit();
-
-                final List<String> fieldsOrdered = Arrays.asList(
-                        "user_avatar_mime_type", // must be before user_avatar to ensure "mime_type" is not matched as part of the Kullo address
-                        "user_avatar",
-                        "user_organization",
-                        "user_name",
-                        "user_footer"
-                );
-
-                final String separator = "|";
-
-                // key|address -> address|key
-                for (String oldKey : currentPrefs.getAll().keySet()) {
-                    boolean currentKeyMoved = false;
-                    for (String field : fieldsOrdered) {
-                        if (!currentKeyMoved && oldKey.startsWith(field + separator)) {
-                            String address = oldKey.substring(field.length() + separator.length());
-                            if (KulloUtils.isValidKulloAddress(address)) {
-                                String newKey = address + separator + field;
-                                Log.d(TAG, "Moving preferences entry from " + oldKey + " to " + newKey);
-                                movePreferencesStringEntry(currentPrefs, editor, oldKey, newKey);
-                                currentKeyMoved = true;
-                            }
-                        }
-                    }
-                }
-
-                editor.putInt(KulloConstants.ACCOUNT_PREFS_VERSION_KEY, version);
-                editor.apply();
-            }
-
-        } else {
+        if (currentPreferencesVersion >= versionLimit) {
             Log.d(TAG, "No preferences migration necessary.");
+            return;
+        }
+
+        Log.i(TAG, "Preferences migration necessary. Current: " + currentPreferencesVersion
+            + " Latest: " + versionLimit);
+
+        int version = currentPreferencesVersion;
+
+        if (version == 0 && version < versionLimit) {
+            // Before this migration, only one account was stored. So we can
+            // assume that there 0 or 1 accounts.
+            version++;
+            Log.i(TAG, "Migrating preferences to version " + version + " ...");
+            SharedPreferences.Editor editor = currentPrefs.edit();
+
+            String addressString = currentPrefs.getString(KulloConstants.KULLO_ADDRESS, "");
+
+            if (!addressString.isEmpty()) {
+                // move address
+                editor.putString(KulloConstants.ACTIVE_USER, addressString);
+                editor.putString(KulloConstants.LAST_ACTIVE_USER, addressString);
+                editor.remove(KulloConstants.KULLO_ADDRESS);
+
+                // move master key
+                for (String oldKey : KulloConstants.BLOCK_KEYS_AS_LIST) {
+                    String newKey = addressString + "_" + oldKey;
+                    movePreferencesStringEntry(currentPrefs, editor, oldKey, newKey);
+                }
+            }
+
+            editor.putInt(KulloConstants.PREFS_KEY_VERSION, version);
+            editor.apply();
+        }
+
+        if (version == 1 && version < versionLimit)
+        {
+            // Before this migration, multiple accounts can be stored
+            version++;
+            Log.i(TAG, "Migrating preferences to version " + version + " ...");
+            SharedPreferences.Editor editor = currentPrefs.edit();
+
+            final String oldSeparator = "_";
+            final String newSeparator = "|";
+
+            final List<String> fieldsOrdered = Arrays.asList(
+                "user_avatar_mime_type", // must be before user_avatar to ensure "mime_type" is not matched as part of the Kullo address
+                "user_avatar",
+                "user_organization",
+                "user_name",
+                "user_footer"
+            );
+
+            // key_address -> key|address
+            for (String oldKey : currentPrefs.getAll().keySet()) {
+                boolean currentKeyMoved = false;
+                for (String field : fieldsOrdered) {
+                    if (!currentKeyMoved && oldKey.startsWith(field + oldSeparator)) {
+                        String address = oldKey.substring(field.length() + oldSeparator.length());
+                        if (KulloUtils.isValidKulloAddress(address)) {
+                            String newKey = field + newSeparator + address;
+                            Log.d(TAG, "Moving preferences entry from " + oldKey + " to " + newKey);
+                            movePreferencesStringEntry(currentPrefs, editor, oldKey, newKey);
+                            currentKeyMoved = true;
+                        }
+                    }
+                }
+            }
+
+            // address_key -> address|key
+            for (String oldKey : currentPrefs.getAll().keySet()) {
+                boolean currentKeyMoved = false;
+                for (String field : KulloConstants.BLOCK_KEYS_AS_LIST) {
+                    if (!currentKeyMoved && oldKey.endsWith(oldSeparator + field)) {
+                        String address = oldKey.substring(0,
+                            oldKey.length() - field.length() - oldSeparator.length());
+                        if (KulloUtils.isValidKulloAddress(address)) {
+                            String newKey = address + newSeparator + field;
+                            Log.d(TAG, "Moving preferences entry from " + oldKey + " to " + newKey);
+                            movePreferencesStringEntry(currentPrefs, editor, oldKey, newKey);
+                            currentKeyMoved = true;
+                        }
+                    }
+                }
+            }
+
+            editor.putInt(KulloConstants.PREFS_KEY_VERSION, version);
+            editor.apply();
+        }
+
+        if (version == 2 && version < versionLimit) {
+            // Before this migration, multiple accounts can be stored
+            version++;
+            Log.i(TAG, "Migrating preferences to version " + version + " ...");
+            SharedPreferences.Editor editor = currentPrefs.edit();
+
+            final List<String> fieldsOrdered = Arrays.asList(
+                "user_avatar_mime_type", // must be before user_avatar to ensure "mime_type" is not matched as part of the Kullo address
+                "user_avatar",
+                "user_organization",
+                "user_name",
+                "user_footer"
+            );
+
+            final String separator = "|";
+
+            // key|address -> address|key
+            for (String oldKey : currentPrefs.getAll().keySet()) {
+                boolean currentKeyMoved = false;
+                for (String field : fieldsOrdered) {
+                    if (!currentKeyMoved && oldKey.startsWith(field + separator)) {
+                        String address = oldKey.substring(field.length() + separator.length());
+                        if (KulloUtils.isValidKulloAddress(address)) {
+                            String newKey = address + separator + field;
+                            Log.d(TAG, "Moving preferences entry from " + oldKey + " to " + newKey);
+                            movePreferencesStringEntry(currentPrefs, editor, oldKey, newKey);
+                            currentKeyMoved = true;
+                        }
+                    }
+                }
+            }
+
+            editor.putInt(KulloConstants.PREFS_KEY_VERSION, version);
+            editor.apply();
+        }
+
+        if (version == 3 && version < versionLimit) {
+            // Remove profile settings which are now in libkullo database
+            version++;
+            Log.i(TAG, "Migrating preferences to version " + version + " ...");
+            SharedPreferences.Editor editor = currentPrefs.edit();
+
+            // Remove address|fieldSuffix
+            for (final String settingsKey : currentPrefs.getAll().keySet()) {
+                if (settingsKey.endsWith("|user_name") ||
+                    settingsKey.endsWith("|user_organization") ||
+                    settingsKey.endsWith("|user_footer") ||
+                    settingsKey.endsWith("|user_avatar") ||
+                    settingsKey.endsWith("|user_avatar_mime_type")
+                    ) {
+                    editor.remove(settingsKey);
+                }
+            }
+
+            editor.putInt(KulloConstants.PREFS_KEY_VERSION, version);
+            editor.apply();
         }
     }
 

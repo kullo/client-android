@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens.conversationslist;
 
 
@@ -11,18 +16,15 @@ import android.view.ViewGroup;
 
 import net.kullo.android.R;
 import net.kullo.android.kulloapi.ConversationData;
-import net.kullo.android.util.adapters.KulloIdsAdapter;
 import net.kullo.android.kulloapi.SessionConnector;
 import net.kullo.android.littlehelpers.AvatarUtils;
+import net.kullo.android.util.adapters.KulloIdsAdapter;
 import net.kullo.javautils.RuntimeAssertion;
-
-import org.joda.time.DateTimeZone;
 
 import java.util.ArrayList;
 
 public class ConversationsAdapter extends KulloIdsAdapter<ConversationViewHolder> {
     public static final String TAG = "ConversationsAdapter";
-    public static final DateTimeZone LOCAL_TIME_ZONE = DateTimeZone.getDefault();
 
     private Activity mBaseActivity;
 
@@ -54,9 +56,9 @@ public class ConversationsAdapter extends KulloIdsAdapter<ConversationViewHolder
 
         // draw background if item is selected
         if (isSelected(conversationId)) {
-            holder.mBaseView.setBackgroundColor(mBaseActivity.getResources().getColor(R.color.kulloSelectionColor));
+            holder.itemView.setBackgroundColor(mBaseActivity.getResources().getColor(R.color.kulloSelectionColor));
         } else {
-            holder.mBaseView.setBackgroundColor(Color.TRANSPARENT);
+            holder.itemView.setBackgroundColor(Color.TRANSPARENT);
         }
 
         // draw mark if conversation contains unread messages

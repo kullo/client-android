@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.littlehelpers;
 
 import android.content.Context;
@@ -6,7 +11,6 @@ import android.support.annotation.NonNull;
 
 import net.kullo.android.R;
 import net.kullo.android.application.KulloApplication;
-import net.kullo.android.screens.conversationslist.ConversationsAdapter;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -63,7 +67,7 @@ public class Formatting {
     public static String getLocalDateText(DateTime dateLatestMessage) {
         Context context = KulloApplication.sharedInstance;
         DateTimeFormatter formatterCalendarDate = KulloApplication.sharedInstance.getShortDateFormatter();
-        LocalDateTime localDateReceived = new LocalDateTime(dateLatestMessage, ConversationsAdapter.LOCAL_TIME_ZONE);
+        LocalDateTime localDateReceived = new LocalDateTime(dateLatestMessage, LOCAL_TIME_ZONE);
 
         String dateString;
         if(localDateReceived.toLocalDate().equals(new LocalDate())) {

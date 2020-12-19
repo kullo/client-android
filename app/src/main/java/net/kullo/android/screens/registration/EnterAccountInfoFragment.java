@@ -1,23 +1,29 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens.registration;
 
+import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
-import android.os.Bundle;
-import android.content.SharedPreferences;
-import android.content.Context;
-import android.widget.Button;
-import android.widget.EditText;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 
 import net.kullo.android.R;
+import net.kullo.android.application.KulloApplication;
 import net.kullo.android.screens.RegistrationActivity;
-import net.kullo.android.littlehelpers.KulloConstants;
+import net.kullo.android.storage.AppPreferences;
 
 public class EnterAccountInfoFragment extends Fragment {
 
+    @SuppressWarnings("unused")
+    private static final String TAG = EnterAccountInfoFragment.class.getSimpleName();
     private EditText mNameEdit;
     private EditText mOrganizationEdit;
 
@@ -44,24 +50,16 @@ public class EnterAccountInfoFragment extends Fragment {
     }
 
     public void storeData() {
-        String nameString = mNameEdit.getText().toString();
-        String organizationString = mOrganizationEdit.getText().toString();
+        String name = mNameEdit.getText().toString().trim();
+        String organization = mOrganizationEdit.getText().toString().trim();
 
-        SharedPreferences sharedPref = getActivity().getApplicationContext().getSharedPreferences(
-            KulloConstants.ACCOUNT_PREFS_PLAIN, Context.MODE_PRIVATE);
-
-        String address = sharedPref.getString(KulloConstants.ACTIVE_USER, "");
-        if (!address.isEmpty()) {
-            SharedPreferences.Editor editor = sharedPref.edit();
-            final String KEY_NAME         = address + KulloConstants.SEPARATOR + "user_name";
-            final String KEY_ORGANIZATION = address + KulloConstants.SEPARATOR + "user_organization";
-
-            if (!nameString.isEmpty()) editor.putString(KEY_NAME, nameString);
-            if (!organizationString.isEmpty()) editor.putString(KEY_ORGANIZATION, organizationString);
-            editor.commit();
+        if (!name.isEmpty()) {
+            KulloApplication.sharedInstance.preferences.set(AppPreferences.AppScopeKey.NEW_USER_NAME, name);
+        }
+        if (!organization.isEmpty()) {
+            KulloApplication.sharedInstance.preferences.set(AppPreferences.AppScopeKey.NEW_USER_ORGANIZATION, organization);
         }
     }
-
 
     public void openNextView() {
         ((RegistrationActivity)getActivity()).nextFragment();

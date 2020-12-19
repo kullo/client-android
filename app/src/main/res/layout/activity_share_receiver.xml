@@ -128,7 +128,7 @@
                                 android:layout_height="wrap_content"
                                 android:padding="@dimen/md_additions_card_content_padding"
                                 android:textSize="@dimen/md_additions_card_supporting_text"
-                                android:maxLines="1"
+                                android:singleLine="true"
                                 android:ellipsize="middle"
                                 />
                         </LinearLayout>

@@ -1,3 +1,15 @@
+Version 48
+
+<en-GB>
+● New audio record button for quick voicemail attachments (external recorder app required)
+● Small UI updates and many invisible refinements
+</en-GB>
+
+<de-DE>
+● Neuer Audio-Recorder-Button für schnelle Sprachenachrichten (externe Recorder-App notwendig)
+● Kleinere Änderungen der Benutzeroberfläche und viele unsichtbare Verbesserungen
+</de-DE>
+
 Version 47
 
 <en-GB>

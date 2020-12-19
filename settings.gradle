@@ -3,6 +3,5 @@ include 'libkullo'
 include 'javautils'
 include 'reduce-android'
 
-// Use slash to avoid include of parent 'dialogs-for-android'
-// https://discuss.gradle.org/t/exclude-directories-that-aggregate-subprojects-from-being-built/7184
-include 'dialogs-for-android/core'
+include ":dialogs-for-android_core"
+project(":dialogs-for-android_core").projectDir = file("dialogs-for-android/core")

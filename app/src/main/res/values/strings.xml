@@ -129,10 +129,9 @@ ellipsis (…)
     <string name="action_start_conversation_with">Start conversation with</string>
 
     <!-- single message -->
-    <string name="action_write">Write</string>
+    <string name="singlemessage_compose">Write</string>
     <string name="singlemessage_file_save_to_canceled">Save action canceled</string>
     <string name="singlemessage_file_save_failed">Save action failed</string>
-    <string name="singlemessage_save_not_available">Saving is only available on Android 4.4 and newer. Sorry!</string>
 
     <!-- message attachments -->
     <string name="attachments_cannot_open_externaldir_title">Cannot open external storage</string>
@@ -199,8 +198,9 @@ ellipsis (…)
     <string name="activity_title_compose">Write</string>
     <string name="hint_new_message">Your message</string>
     <string name="progress_send">Sending</string>
-    <string name="action_send">Send</string>
-    <string name="action_add_attachment">Attach file</string>
+    <string name="compose_send">Send</string>
+    <string name="compose_attach_attachment">Attach file</string>
+    <string name="compose_attach_audio_recording">Attach audio recording</string>
     <string name="error_attachment_too_big">Draft attachment too big.</string>
     <string name="new_message_settings_incomplete_dialog_title">User settings incomplete</string>
     <string name="new_message_settings_incomplete_dialog_content">Your user settings are incomplete. Do you want to set these now?</string>
@@ -218,6 +218,8 @@ ellipsis (…)
     <string name="compose_add_attachment_error_unknown">Unknown error while adding file</string>
     <string name="compose_add_attachment_error_filesystem">Error reading file</string>
     <string name="compose_add_attachment_error_toobig">File too big</string>
+    <string name="compose_no_audio_recorder_title">No audio recorder</string>
+    <string name="compose_no_audio_recorder_description">No app found that can record audio.</string>
 
     <!-- share receiver -->
     <string name="sharereceiver_title_share_text">Share text</string>

@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens;
 
 import android.animation.ValueAnimator;
@@ -30,6 +35,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
+
 import net.kullo.android.R;
 import net.kullo.android.application.KulloActivity;
 import net.kullo.android.kulloapi.ConversationsComparatorDsc;
@@ -39,7 +46,6 @@ import net.kullo.android.kulloapi.DialogMaker;
 import net.kullo.android.kulloapi.KulloUtils;
 import net.kullo.android.kulloapi.LockedSessionCallback;
 import net.kullo.android.kulloapi.SessionConnector;
-import net.kullo.android.littlehelpers.AvatarUtils;
 import net.kullo.android.littlehelpers.Formatting;
 import net.kullo.android.littlehelpers.KulloConstants;
 import net.kullo.android.littlehelpers.Ui;
@@ -245,6 +251,13 @@ public class ConversationsListActivity extends KulloActivity implements
         RuntimeAssertion.require(mNavigationHeaderNameView != null);
         RuntimeAssertion.require(mNavigationHeaderAddressView != null);
         RuntimeAssertion.require(mNavigationHeaderArrowIcon != null);
+
+        mNavigationHeaderAvatarView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openProfileActivity();
+            }
+        });
 
         // Initializing Drawer Layout and ActionBarToggle
         Ui.setStatusBarColor(mDrawerLayout);
@@ -569,12 +582,15 @@ public class ConversationsListActivity extends KulloActivity implements
         mNavigationHeaderNameView.setText(SessionConnector.get().getCurrentUserName());
         mNavigationHeaderAddressView.setText(SessionConnector.get().getCurrentUserAddress().toString());
 
-        byte[] avatar = SessionConnector.get().getCurrentUserAvatar();
+        final byte[] avatar = SessionConnector.get().getCurrentUserAvatar();
         if (avatar.length > 0) {
-            mNavigationHeaderAvatarView.setImageBitmap(AvatarUtils.avatarToBitmap(avatar));
-            mNavigationHeaderAvatarView.setVisibility(View.VISIBLE);
+            Glide.with(this)
+                .load(avatar)
+                .into(mNavigationHeaderAvatarView);
         } else {
-            mNavigationHeaderAvatarView.setVisibility(View.INVISIBLE);
+            Glide.with(this)
+                .load(R.drawable.dummy_avatar_120dp)
+                .into(mNavigationHeaderAvatarView);
         }
     }
 
@@ -590,7 +606,7 @@ public class ConversationsListActivity extends KulloActivity implements
                 // nothing to do here: drawer will be closed on item selected, and we're already in the proper activity
                 break;
             case R.id.menuitem_profile_settings:
-                startActivity(new Intent(this, ProfileSettingsActivity.class));
+                openProfileActivity();
                 break;
             case R.id.menuitem_masterkey:
                 startActivity(new Intent(this, MasterKeyActivity.class));
@@ -622,6 +638,10 @@ public class ConversationsListActivity extends KulloActivity implements
         // Closing drawer on item click
         mDrawerLayout.closeDrawers();
         return true;
+    }
+
+    private void openProfileActivity() {
+        startActivity(new Intent(this, ProfileSettingsActivity.class));
     }
 
     @Override

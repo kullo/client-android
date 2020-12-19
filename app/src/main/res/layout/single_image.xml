@@ -25,7 +25,7 @@
             android:padding="@dimen/md_additions_card_content_padding"
             android:textSize="@dimen/md_additions_card_supporting_text"
             android:text="Bild1.png (320 KB)"
-            android:maxLines="1"
+            android:singleLine="true"
             android:ellipsize="middle"
             />
     </LinearLayout>

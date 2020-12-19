@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.littlehelpers;
 
 import android.text.Editable;
@@ -18,15 +23,15 @@ public class KulloConstants {
     public static final String CONVERSATION_ADD_ATTACHMENTS = "conversation_add_attachments";
     public static final String CONVERSATION_ADD_TEXT = "conversation_add_text";
 
-    // shared preferences
-    public static final String ACCOUNT_PREFS_PLAIN = "net.kullo.android.SETTINGS";
-    public static final String ACCOUNT_PREFS_VERSION_KEY = "net.kullo.android.SETTINGS_VERSION";
-    // obsolete preferences (keep to clear existing sensitive user data)
-    public static final String ACCOUNT_PREFS_OBSOLETE = "net.kullo.android.ACCOUNT_PREFS";
-    public static final String USER_SETTINGS_PREFS_OBSOLETE = "net.kullo.android.USER_SETTINGS_PREFS";
+    // shared preferences files
+    public static final String PREFS_FILE_DEFAULT = "net.kullo.android.SETTINGS";
+    // obsolete preferences files (keep to clear existing sensitive user data)
+    public static final String PREFS_FILE_OBSOLETE_ACCOUNT = "net.kullo.android.ACCOUNT_PREFS";
+    public static final String PREFS_FILE_OBSOLETE_USER_SETTINGS = "net.kullo.android.USER_SETTINGS_PREFS";
 
     public static final String SEPARATOR = "|";
     public static final String KULLO_ADDRESS = "kullo_address";
+    public static final String PREFS_KEY_VERSION = "net.kullo.android.SETTINGS_VERSION";
     public static final String ACTIVE_USER = "active_user";
     public static final String LAST_ACTIVE_USER = "last_active_user";
     public static final String BLOCK_A = "block_a";

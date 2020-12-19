@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -77,7 +82,7 @@ public class MessagesListActivity extends KulloActivity {
 
     // when requested, scroll to top will be performed at the end of onResume()
     private boolean mScrollToTopRequested;
-    private static int MESSAGE_VISIBILITY_BEFORE_READ_MS = 3000;
+    private static int MESSAGE_VISIBILITY_BEFORE_READ_MS = 2000;
     private ItemVisibilityObserver<Long> mVisibleMessagesObserver = new ItemVisibilityObserver<>(MESSAGE_VISIBILITY_BEFORE_READ_MS);
     private Timer mVisibleItemsObserverTimer;
 

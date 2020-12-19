@@ -1,4 +1,9 @@
-/* Copyright 2015-2017 Kullo GmbH. All rights reserved. */
+/*
+ * Copyright 2015–2018 Kullo GmbH
+ *
+ * This source code is licensed under the 3-clause BSD license. See LICENSE.txt
+ * in the root directory of this source tree for details.
+ */
 package net.kullo.android.screens;
 
 import android.content.Intent;
@@ -40,15 +45,6 @@ import java.util.List;
 
 import io.github.dialogsforandroid.MaterialDialog;
 
-/**
- * Launching activity.
- *
- * Checks if credentials are stored and logs in using the {@link SessionConnector}.
- * After session is retrieved, {@link SessionConnector} calls Observers.
- *
- * Input fields are validated, errors are shown. With shown errors we need more space,
- * thus the header fades out if validation errors are shown.
- */
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
 
@@ -60,7 +56,6 @@ public class LoginActivity extends AppCompatActivity {
     private @Nullable MaterialDialog mMigratingDialog;
     private ClientCreateSessionListenerObserver mClientCreateSessionListenerObserver;
     private ClientCheckCredentialsListenerObserver mClientCheckCredentialsListenerObserver;
-    private boolean mSaveCurrentFormInputToPersistentStorage;
 
     //LIFECYCLE
 
@@ -68,6 +63,9 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "Creating a login activity");
+
+        clearObsoleteLoginActivityPreferences();
+
         setContentView(R.layout.activity_login);
 
         Ui.prepareActivityForTaskManager(this);
@@ -77,45 +75,16 @@ public class LoginActivity extends AppCompatActivity {
 
         registerListenerObservers();
         Ui.setStatusBarColor(this);
-        mSaveCurrentFormInputToPersistentStorage = true;
         connectLayout();
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        SharedPreferences preferences = getPreferences(MODE_PRIVATE);
-        String storedAddress = preferences.getString(KulloConstants.ACTIVE_USER, "");
-        if (!storedAddress.isEmpty()) {
-            mKulloAddressEditText.setText(storedAddress);
-        }
-
-        for (int i = 0; i < mMasterKeyBlocksEditText.size(); i++) {
-            String storedBlock = preferences.getString("block_" + i, "");
-            if (!storedBlock.isEmpty()) {
-                mMasterKeyBlocksEditText.get(i).setText(storedBlock);
-            }
-        }
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-
+    private void clearObsoleteLoginActivityPreferences() {
+        // Those preferences (no name set, stored in screens.LoginActivity.xml)
+        // were needed when android:noHistory was "true" for LoginActivity.
+        // Android default is that we automatically restore activity, scroll position
+        // text input and focused input field.
         SharedPreferences.Editor preferencesEditor = getPreferences(MODE_PRIVATE).edit();
-
-        if (mSaveCurrentFormInputToPersistentStorage) {
-            preferencesEditor.putString(KulloConstants.ACTIVE_USER, mKulloAddressEditText.getText().toString());
-
-            for (int i = 0 ; i < mMasterKeyBlocksEditText.size() ; i++) {
-                preferencesEditor.putString("block_" + i, mMasterKeyBlocksEditText.get(i).getText().toString());
-            }
-
-            preferencesEditor.apply();
-        } else {
-            preferencesEditor.clear().apply();
-        }
+        preferencesEditor.clear().apply();
     }
 
     @Override
@@ -363,7 +332,6 @@ public class LoginActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mSaveCurrentFormInputToPersistentStorage = false;
 
                         startActivity(new Intent(LoginActivity.this, ConversationsListActivity.class));
                         finish();

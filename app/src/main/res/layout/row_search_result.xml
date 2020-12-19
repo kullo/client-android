@@ -14,7 +14,7 @@
         android:layout_height="@dimen/md_additions_list_avatar_size"
         android:layout_marginLeft="@dimen/md_additions_list_padding"
         android:layout_marginRight="@dimen/md_additions_list_padding"
-        android:src="@drawable/kullo_settings_avatar"
+        android:src="@drawable/dummy_avatar_120dp"
         />
 
     <LinearLayout
